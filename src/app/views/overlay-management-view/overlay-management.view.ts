@@ -87,7 +87,6 @@ export class OverlayManagementView {
   readonly animationTypeModel = signal<OverlayAnimationType>("fade");
   readonly animationDirectionModel = signal<OverlayDirection>("top");
   readonly transparentBgModel = signal<boolean>(false);
-  readonly opacityModel = signal<number>(1.0);
 
   readonly availableChannels = computed(() => this.chatList.getVisibleChannels());
 
@@ -112,7 +111,6 @@ export class OverlayManagementView {
     this.animationTypeModel.set(this.readOverlayAnimationType(w.id) ?? "fade");
     this.animationDirectionModel.set(this.readOverlayAnimationDirection(w.id) ?? "top");
     this.transparentBgModel.set(this.readOverlayTransparentBg(w.id) ?? false);
-    this.opacityModel.set(readOverlayOpacity(w.id) ?? 1.0);
 
     // Ensure overlay server is started so OBS can load the URL immediately.
     void invoke("startOverlayServer", { port: w.port }).catch(() => {});
@@ -200,7 +198,6 @@ export class OverlayManagementView {
       port: w.port,
       widgetId: w.id,
       transparentBg: this.transparentBgModel(),
-      opacity: this.opacityModel(),
     }).catch((err) => {
       console.error("[Overlay] Failed to open preview window:", err);
     });
@@ -220,7 +217,6 @@ export class OverlayManagementView {
     localStorage.setItem(overlayAnimationTypeKey(w.id), this.animationTypeModel());
     localStorage.setItem(overlayAnimationDirectionKey(w.id), this.animationDirectionModel());
     localStorage.setItem(overlayTransparentBgKey(w.id), this.transparentBgModel().toString());
-    localStorage.setItem(overlayOpacityKey(w.id), this.opacityModel().toString());
 
     // Same-window updates (overlay view already listens for this).
     window.dispatchEvent(new Event("unichat-overlay-config-changed"));
@@ -237,7 +233,6 @@ export class OverlayManagementView {
       animationDirection: this.animationDirectionModel(),
       maxMessages: this.maxMessagesModel(),
       transparentBg: this.transparentBgModel(),
-      opacity: this.opacityModel(),
     }).catch((err) => {
       console.error("[OverlayManagement] Failed to send config to backend:", err);
     });
@@ -311,14 +306,6 @@ export class OverlayManagementView {
     this.transparentBgModel.set(value);
   }
 
-  get opacity(): number {
-    return this.opacityModel();
-  }
-
-  set opacity(value: number) {
-    this.opacityModel.set(value);
-  }
-
   toggleChannel(platform: string, channelName: string): void {
     const compositeKey = `${platform}:${channelName}`;
     const current = this.channelIdsModel();
@@ -352,17 +339,4 @@ export class OverlayManagementView {
     const channel = this.availableChannels().find((ch) => ch.id === channelId);
     return channel ? `${channel.channelName} (${channel.platform})` : channelId;
   }
-}
-
-function overlayOpacityKey(widgetId: string): string {
-  return `unichat-overlay-opacity:${widgetId}`;
-}
-
-function readOverlayOpacity(widgetId: string): number | null {
-  const raw = localStorage.getItem(overlayOpacityKey(widgetId));
-  if (raw) {
-    const parsed = parseFloat(raw);
-    return isNaN(parsed) ? null : parsed;
-  }
-  return null;
 }

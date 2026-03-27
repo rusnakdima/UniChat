@@ -52,20 +52,9 @@ export class OverlayView implements OnDestroy {
   readonly animationDirection = signal<OverlayDirection>("top");
   readonly maxMessages = signal<number>(6);
   readonly transparentBg = signal<boolean>(false);
-  readonly opacity = signal<number>(1.0);
 
   readonly backgroundColor = computed(() => {
-    if (this.transparentBg()) {
-      return "transparent";
-    }
-    // Use RGBA with opacity for background only (not content)
-    const alpha = this.opacity();
-    return `rgba(15, 23, 42, ${alpha})`; // slate-950 with opacity
-  });
-
-  readonly contentOpacity = computed(() => {
-    // When transparentBg is enabled, apply opacity to content for OBS
-    return this.opacity();
+    return this.transparentBg() ? "transparent" : "rgba(0, 0, 0, 1)";
   });
 
   readonly activeWidget: WidgetConfig | null = (() => {
@@ -110,7 +99,6 @@ export class OverlayView implements OnDestroy {
       this.animationDirection();
       this.maxMessages();
       this.customCssText();
-      this.opacity();
       this.backgroundColor();
       this.cdr.markForCheck();
     });
@@ -150,7 +138,6 @@ export class OverlayView implements OnDestroy {
     const animationDirection = readOverlayAnimationDirection(widget.id) ?? "top";
     const maxMessages = readOverlayMaxMessages(widget.id) ?? 6;
     const transparentBg = readOverlayTransparentBg(widget.id) ?? false;
-    const opacity = readOverlayOpacity(widget.id) ?? 1.0;
 
     this.customCssText.set(customCss);
     this.textSize.set(textSize);
@@ -158,7 +145,6 @@ export class OverlayView implements OnDestroy {
     this.animationDirection.set(animationDirection);
     this.maxMessages.set(maxMessages);
     this.transparentBg.set(transparentBg);
-    this.opacity.set(opacity);
   }
 
   private onOverlayConfigChanged(): void {
@@ -224,7 +210,6 @@ export class OverlayView implements OnDestroy {
       const currentAnimationDirection = config.animationDirection || "top";
       const currentMaxMessages = config.maxMessages || 6;
       const currentTransparentBg = config.transparentBg || false;
-      const currentOpacity = config.opacity ?? 1.0;
 
       const hasChanged =
         this.lastKnownConfig.get("filter") !== currentFilter ||
@@ -234,8 +219,7 @@ export class OverlayView implements OnDestroy {
         this.lastKnownConfig.get("animationType") !== currentAnimationType ||
         this.lastKnownConfig.get("animationDirection") !== currentAnimationDirection ||
         this.lastKnownConfig.get("maxMessages") !== String(currentMaxMessages) ||
-        this.lastKnownConfig.get("transparentBg") !== String(currentTransparentBg) ||
-        this.lastKnownConfig.get("opacity") !== String(currentOpacity);
+        this.lastKnownConfig.get("transparentBg") !== String(currentTransparentBg);
 
       if (hasChanged) {
         this.lastKnownConfig.set("filter", currentFilter);
@@ -246,7 +230,6 @@ export class OverlayView implements OnDestroy {
         this.lastKnownConfig.set("animationDirection", currentAnimationDirection);
         this.lastKnownConfig.set("maxMessages", String(currentMaxMessages));
         this.lastKnownConfig.set("transparentBg", String(currentTransparentBg));
-        this.lastKnownConfig.set("opacity", String(currentOpacity));
 
         // Apply new config
         this.currentFilter = currentFilter as WidgetFilter;
@@ -257,7 +240,6 @@ export class OverlayView implements OnDestroy {
         this.animationDirection.set(currentAnimationDirection as OverlayDirection);
         this.maxMessages.set(currentMaxMessages);
         this.transparentBg.set(currentTransparentBg);
-        this.opacity.set(currentOpacity);
 
         // Reconnect WebSocket with new filter/channels (convert to plain channel names)
         const plainChannelIds = this.getPlainChannelIds(this.currentChannelIds);
@@ -301,18 +283,45 @@ export class OverlayView implements OnDestroy {
   overlayMessages(): OverlayChatMessage[] {
     const messages = this.overlayWs.messages();
 
-    // Filter by enabled channels if channel selection is active
+    // Filter by enabled channels
     // Convert composite keys (platform:channelName) to plain channel names for filtering
     // because messages have sourceChannelId as plain channel name
     const plainChannelIds = this.getPlainChannelIds(this.currentChannelIds);
-    const filtered =
-      plainChannelIds && plainChannelIds.length > 0
-        ? messages.filter((msg) => {
-            return plainChannelIds!.includes(msg.sourceChannelId || "");
-          })
-        : messages;
+    
+    // If channelIds is explicitly set to empty array, hide all messages
+    // If channelIds is undefined/null, show all messages (no filter)
+    if (this.currentChannelIds !== undefined && this.currentChannelIds !== null) {
+      if (this.currentChannelIds.length === 0) {
+        // Empty selection = hide all messages
+        return [];
+      }
+      // Filter by selected channels
+      const filtered = messages.filter((msg) => {
+        return plainChannelIds!.includes(msg.sourceChannelId || "");
+      });
+      return filtered.slice(0, this.maxMessages());
+    }
+    
+    // No channel filter = show all messages
+    return messages.slice(0, this.maxMessages());
+  }
 
-    return filtered.slice(0, this.maxMessages());
+  /**
+   * Returns messages in the correct order based on animationDirection setting.
+   * - "top" or "left" = top-down flow (newest at bottom, normal order)
+   * - "bottom" or "right" = bottom-up flow (newest at top, reversed order)
+   */
+  orderedMessages(): OverlayChatMessage[] {
+    const messages = this.overlayMessages();
+    const direction = this.animationDirection();
+    
+    // For "bottom" or "right" direction, reverse the order (newest at top)
+    if (direction === "bottom" || direction === "right") {
+      return [...messages].reverse();
+    }
+    
+    // For "top" or "left" direction, keep normal order (newest at bottom)
+    return messages;
   }
 
   animationCss(): string {
@@ -542,19 +551,6 @@ function readOverlayTransparentBg(widgetId: string): boolean | null {
   const raw = localStorage.getItem(overlayTransparentBgKey(widgetId));
   if (raw === "true" || raw === "false") {
     return raw === "true";
-  }
-  return null;
-}
-
-function overlayOpacityKey(widgetId: string): string {
-  return `unichat-overlay-opacity:${widgetId}`;
-}
-
-function readOverlayOpacity(widgetId: string): number | null {
-  const raw = localStorage.getItem(overlayOpacityKey(widgetId));
-  if (raw) {
-    const parsed = parseFloat(raw);
-    return isNaN(parsed) ? null : parsed;
   }
   return null;
 }

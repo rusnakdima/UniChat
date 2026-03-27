@@ -11,12 +11,6 @@ export interface PlatformChatConfig {
   apiKey?: string;
 }
 
-export interface MockMessageTemplate {
-  author: string;
-  text: string;
-  badges: string[];
-}
-
 @Injectable({
   providedIn: "root",
 })
@@ -34,9 +28,6 @@ export abstract class BaseChatProviderService {
     }
 
     this.connectedChannels.add(channelId);
-    setTimeout(() => {
-      this.simulateIncomingMessages(channelId);
-    }, 1000);
   }
 
   disconnect(channelId: string): void {
@@ -47,41 +38,10 @@ export abstract class BaseChatProviderService {
     return this.connectedChannels.has(channelId);
   }
 
-  protected getMockMessages(): MockMessageTemplate[] {
-    // Default implementation returns empty array - override in subclasses if needed
-    return [];
-  }
-
   protected abstract getActionStates(): {
     reply: ReturnType<typeof createMessageActionState>;
     delete: ReturnType<typeof createMessageActionState>;
   };
-
-  private simulateIncomingMessages(channelId: string): void {
-    if (!this.connectedChannels.has(channelId)) {
-      return;
-    }
-
-    const mockMessages = this.getMockMessages();
-
-    for (const mockMsg of mockMessages) {
-      if (!this.connectedChannels.has(channelId)) {
-        break;
-      }
-
-      setTimeout(
-        () => {
-          if (!this.connectedChannels.has(channelId)) {
-            return;
-          }
-
-          const message = this.createMessage(channelId, mockMsg);
-          this.chatStorageService.addMessage(channelId, message);
-        },
-        Math.random() * 5000 + 2000
-      );
-    }
-  }
 
   protected createMessage(channelId: string, data: Partial<ChatMessage>): ChatMessage {
     const timestamp = new Date().toISOString();

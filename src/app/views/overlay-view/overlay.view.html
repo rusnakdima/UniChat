@@ -7,19 +7,18 @@
   <style [textContent]="animationCss()"></style>
 
   <!-- Main Content Block - Centered, Full Width -->
-  <div class="mx-auto w-full" [style.opacity]="contentOpacity()">
+  <div class="mx-auto w-full">
     <!-- Messages Container -->
-    @if (overlayMessages().length === 0) {
+    @if (orderedMessages().length === 0) {
       <div class="flex h-64 items-center justify-center">
         <div class="text-center">
           <mat-icon class="mx-auto h-16 w-16 text-slate-600">chat_bubble_outline</mat-icon>
           <p class="mt-4 text-sm uppercase tracking-[0.2em] text-slate-400">Waiting for messages</p>
-          <p class="mt-2 text-xs text-slate-500">{{ widgetSummary() }}</p>
         </div>
       </div>
     } @else {
       <div class="flex flex-col gap-2" [class]="messagesContainerClasses()">
-        @for (message of overlayMessages(); track message.id) {
+        @for (message of orderedMessages(); track message.id) {
           <article class="flex items-center gap-2 message-item">
             <!-- Channel/Platform Icon (only if multiple channels) -->
             @if (hasMultipleChannels()) {
