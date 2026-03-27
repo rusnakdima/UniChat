@@ -18,6 +18,7 @@ import { ChatHistoryHeaderComponent } from "@components/chat-history-header/chat
 import { ChatChannel } from "@models/chat.model";
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
+import { AvatarCacheService } from "@services/core/avatar-cache.service";
 
 @Component({
   selector: "app-dashboard-mixed-feed",
@@ -41,6 +42,7 @@ export class DashboardMixedFeedComponent {
   private readonly dashboardPreferences = inject(DashboardPreferencesService);
   private readonly twitchChat = inject(TwitchChatService);
   private readonly chatStorage = inject(ChatStorageService);
+  private readonly avatarCache = inject(AvatarCacheService);
 
   // Reference to the history header component
   readonly historyHeader = viewChild<
@@ -54,9 +56,6 @@ export class DashboardMixedFeedComponent {
   readonly orderedVisibleChannels = computed(() => this.orderVisibleChannels());
   private isDragging = false;
   private suppressNextClick = false;
-
-  // Cache for channel profile images
-  private channelImageCache = new Map<string, string>();
 
   readonly enabledVisibleChannels = computed(() =>
     this.orderedVisibleChannels().filter((ch) => !this.disabledChannels().has(ch.id))
@@ -207,15 +206,17 @@ export class DashboardMixedFeedComponent {
 
   /** Get channel profile image URL (loads on demand for Twitch) */
   async getChannelImageUrl(channel: ChatChannel): Promise<string | null> {
-    if (this.channelImageCache.has(channel.id)) {
-      return this.channelImageCache.get(channel.id)!;
+    // Check centralized cache first
+    const cached = this.avatarCache.getChannelAvatar(channel.id);
+    if (cached) {
+      return cached;
     }
 
     if (channel.platform === "twitch") {
       try {
         const imageUrl = await this.twitchChat.fetchChannelProfileImage(channel.channelName);
         if (imageUrl) {
-          this.channelImageCache.set(channel.id, imageUrl);
+          this.avatarCache.setChannelAvatar(channel.id, imageUrl);
           return imageUrl;
         }
       } catch {
@@ -227,15 +228,15 @@ export class DashboardMixedFeedComponent {
   }
 
   hasChannelImage(channel: ChatChannel): boolean {
-    return this.channelImageCache.has(channel.id);
+    return this.avatarCache.hasChannelAvatar(channel.id);
   }
 
   getCachedChannelImage(channel: ChatChannel): string | null {
-    return this.channelImageCache.get(channel.id) ?? null;
+    return this.avatarCache.getChannelAvatar(channel.id) ?? null;
   }
 
   readonly loadChannelImage = (channel: ChatChannel): void => {
-    if (!this.channelImageCache.has(channel.id)) {
+    if (!this.avatarCache.hasChannelAvatar(channel.id)) {
       void this.getChannelImageUrl(channel);
     }
   };

@@ -12,6 +12,7 @@ import { UserProfilePopoverService } from "@services/ui/user-profile-popover.ser
 import { MessageTypeStylingService } from "@services/ui/message-type-styling.service";
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatListService } from "@services/data/chat-list.service";
+import { AvatarCacheService } from "@services/core/avatar-cache.service";
 import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@helpers/chat.helper";
 
 @Component({
@@ -36,6 +37,7 @@ export class ChatMessageCardComponent {
   readonly messageTypeStyling = inject(MessageTypeStylingService);
   private readonly twitchChat = inject(TwitchChatService);
   private readonly chatListService = inject(ChatListService);
+  private readonly avatarCache = inject(AvatarCacheService);
 
   readonly isSafeRemoteImageUrl = isSafeRemoteImageUrl;
 
@@ -79,13 +81,15 @@ export class ChatMessageCardComponent {
     const msg = this.message();
     const cacheKey = `${msg.platform}:${msg.sourceUserId}`;
 
-    if (ChatMessageCardComponent.userImageCache.has(cacheKey)) {
-      return ChatMessageCardComponent.userImageCache.get(cacheKey)!;
+    // Check centralized cache first
+    const cached = this.avatarCache.getUserAvatar(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     // For Kick and YouTube, avatar is already set in the message
     if (msg.authorAvatarUrl) {
-      ChatMessageCardComponent.userImageCache.set(cacheKey, msg.authorAvatarUrl);
+      this.avatarCache.setUserAvatar(cacheKey, msg.authorAvatarUrl);
       return msg.authorAvatarUrl;
     }
 
@@ -94,7 +98,7 @@ export class ChatMessageCardComponent {
       try {
         const imageUrl = await this.twitchChat.fetchUserProfileImage(msg.author);
         if (imageUrl) {
-          ChatMessageCardComponent.userImageCache.set(cacheKey, imageUrl);
+          this.avatarCache.setUserAvatar(cacheKey, imageUrl);
           return imageUrl;
         }
       } catch {
@@ -109,14 +113,14 @@ export class ChatMessageCardComponent {
   hasUserImage(): boolean {
     const msg = this.message();
     const cacheKey = `${msg.platform}:${msg.sourceUserId}`;
-    return ChatMessageCardComponent.userImageCache.has(cacheKey);
+    return this.avatarCache.hasUserAvatar(cacheKey);
   }
 
   /** Get cached user image URL */
   getCachedUserImage(): string | null {
     const msg = this.message();
     const cacheKey = `${msg.platform}:${msg.sourceUserId}`;
-    return ChatMessageCardComponent.userImageCache.get(cacheKey) ?? null;
+    return this.avatarCache.getUserAvatar(cacheKey) ?? null;
   }
 
   /** Load user image on demand */
@@ -131,8 +135,10 @@ export class ChatMessageCardComponent {
     const msg = this.message();
     const cacheKey = `${msg.platform}:${msg.sourceChannelId}`;
 
-    if (ChatMessageCardComponent.channelImageCache.has(cacheKey)) {
-      return ChatMessageCardComponent.channelImageCache.get(cacheKey)!;
+    // Check centralized cache first
+    const cached = this.avatarCache.getChannelAvatar(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     // Try to get channel info from ChatListService
@@ -145,7 +151,7 @@ export class ChatMessageCardComponent {
         // Fetch channel profile image from decapi.me (public API, no auth required)
         const imageUrl = await this.twitchChat.fetchUserProfileImage(channel.channelName);
         if (imageUrl) {
-          ChatMessageCardComponent.channelImageCache.set(cacheKey, imageUrl);
+          this.avatarCache.setChannelAvatar(cacheKey, imageUrl);
           return imageUrl;
         }
       } catch {
@@ -161,14 +167,14 @@ export class ChatMessageCardComponent {
   hasChannelImage(): boolean {
     const msg = this.message();
     const cacheKey = `${msg.platform}:${msg.sourceChannelId}`;
-    return ChatMessageCardComponent.channelImageCache.has(cacheKey);
+    return this.avatarCache.hasChannelAvatar(cacheKey);
   }
 
   /** Get cached channel image URL */
   getCachedChannelImage(): string | null {
     const msg = this.message();
     const cacheKey = `${msg.platform}:${msg.sourceChannelId}`;
-    return ChatMessageCardComponent.channelImageCache.get(cacheKey) ?? null;
+    return this.avatarCache.getChannelAvatar(cacheKey) ?? null;
   }
 
   /** Load channel image on demand */

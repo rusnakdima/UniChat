@@ -23,6 +23,7 @@ import { ChatHistoryHeaderComponent } from "@components/chat-history-header/chat
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
+import { AvatarCacheService } from "@services/core/avatar-cache.service";
 
 @Component({
   selector: "app-dashboard-split-feed",
@@ -51,6 +52,7 @@ export class DashboardSplitFeedComponent {
   private readonly twitchChat = inject(TwitchChatService);
   private readonly chatStorage = inject(ChatStorageService);
   private readonly chatProviderCoordinator = inject(ChatProviderCoordinatorService);
+  private readonly avatarCache = inject(AvatarCacheService);
 
   // Reference to the history header component
   readonly historyHeader = viewChild<
@@ -70,9 +72,6 @@ export class DashboardSplitFeedComponent {
 
   // Track block widths in pixels for precise resizing
   blockWidthsPx = signal<Map<string, number>>(new Map());
-
-  // Cache for channel profile images
-  private channelImageCache = new Map<string, string>();
 
   constructor() {
     // Keep persisted block widths consistent with the currently visible platform subset.
@@ -373,9 +372,10 @@ export class DashboardSplitFeedComponent {
 
   /** Get channel profile image URL (loads on demand for Twitch) */
   async getChannelImageUrl(channel: ChatChannel): Promise<string | null> {
-    // Return cached image if available
-    if (this.channelImageCache.has(channel.channelId)) {
-      return this.channelImageCache.get(channel.channelId)!;
+    // Check centralized cache first
+    const cached = this.avatarCache.getChannelAvatar(channel.channelId);
+    if (cached) {
+      return cached;
     }
 
     // For Twitch channels, fetch from API
@@ -383,7 +383,7 @@ export class DashboardSplitFeedComponent {
       try {
         const imageUrl = await this.twitchChat.fetchChannelProfileImage(channel.channelName);
         if (imageUrl) {
-          this.channelImageCache.set(channel.channelId, imageUrl);
+          this.avatarCache.setChannelAvatar(channel.channelId, imageUrl);
           return imageUrl;
         }
       } catch {
@@ -396,17 +396,17 @@ export class DashboardSplitFeedComponent {
 
   /** Check if channel has image available (for template) */
   hasChannelImage(channel: ChatChannel): boolean {
-    return this.channelImageCache.has(channel.channelId);
+    return this.avatarCache.hasChannelAvatar(channel.channelId);
   }
 
   /** Get cached image URL (for template) */
   getCachedChannelImage(channel: ChatChannel): string | null {
-    return this.channelImageCache.get(channel.channelId) ?? null;
+    return this.avatarCache.getChannelAvatar(channel.channelId) ?? null;
   }
 
   /** Load channel image on demand */
   loadChannelImage(channel: ChatChannel): void {
-    if (!this.channelImageCache.has(channel.channelId)) {
+    if (!this.avatarCache.hasChannelAvatar(channel.channelId)) {
       void this.getChannelImageUrl(channel);
     }
   }
