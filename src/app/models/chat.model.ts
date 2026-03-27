@@ -14,6 +14,12 @@ export type WidgetStatus = "live" | "draft";
 
 export type WidgetFilter = "all" | "supporters";
 
+export type OverlayAnimationType = "none" | "fade" | "slide" | "pop";
+
+export type OverlayDirection = "top" | "bottom" | "left" | "right";
+
+export type MessageType = "returning" | "highlighted" | "regular";
+
 export type MessageActionKind = "reply" | "delete";
 
 export type MessageActionStatus = "available" | "disabled" | "pending" | "failed";
@@ -52,6 +58,23 @@ export interface RawPayloadMetadata {
   providerChannelId: string;
   providerUserId: string;
   preview: string;
+  emotes?: ChatMessageEmote[];
+  badgeIcons?: ChatBadgeIcon[];
+}
+
+export interface ChatMessageEmote {
+  provider: "twitch" | "7tv" | "kick";
+  id: string;
+  code: string;
+  start: number;
+  end: number;
+  url: string;
+}
+
+export interface ChatBadgeIcon {
+  id: string;
+  label: string;
+  url: string;
 }
 
 export interface ChatMessage {
@@ -71,6 +94,9 @@ export interface ChatMessage {
   replyToMessageId?: string;
   actions: Record<MessageActionKind, MessageAction>;
   rawPayload: RawPayloadMetadata;
+  authorAvatarUrl?: string;
+  messageType?: MessageType;
+  messageTypeReason?: string;
 }
 
 export interface SplitLayout {
@@ -85,6 +111,8 @@ export interface DashboardPreferences {
   feedMode: FeedMode;
   densityMode: DensityMode;
   splitLayout: SplitLayout;
+  /** `channelId` (provider id) hidden in mixed feed; others stay visible */
+  mixedDisabledChannelIds: string[];
 }
 
 export interface WidgetConfig {
@@ -95,6 +123,7 @@ export interface WidgetConfig {
   sceneHint: string;
   themeHint: string;
   port: number;
+  channelIds?: string[]; // Channels to include in overlay (empty/undefined = all channels)
 }
 
 export interface DashboardStats {
@@ -124,6 +153,7 @@ export interface ChatChannel {
   platform: PlatformType;
   channelId: string;
   channelName: string;
+  channelImageUrl?: string;
   isAuthorized: boolean;
   accountId?: string;
   isVisible: boolean;
@@ -143,4 +173,17 @@ export interface AuthorizationState {
   twitch: AuthStatus;
   kick: AuthStatus;
   youtube: AuthStatus;
+}
+
+export interface UserProfileState {
+  loading: boolean;
+  hasMoreMessages: boolean;
+  loadedMessageCount: number;
+  lastLoadedTimestamp?: string;
+}
+
+export interface ChatHistoryLoadState {
+  loaded: boolean;
+  hasMore: boolean;
+  oldestMessageTimestamp?: string;
 }

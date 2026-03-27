@@ -27,18 +27,4 @@ export class DashboardStateService {
   });
 
   readonly featuredWidget = computed(() => this.widgets()[0]);
-
-  readonly overlayPreviewMessages = computed(() => {
-    const widget = this.featuredWidget();
-
-    if (!widget) {
-      return [];
-    }
-
-    const messages = this.messages();
-    const filtered =
-      widget.filter === "supporters" ? messages.filter((m) => m.isSupporter) : messages;
-
-    return filtered.filter((message) => message.canRenderInOverlay).slice(0, 6);
-  });
 }

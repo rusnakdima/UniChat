@@ -1,0 +1,25 @@
+<div class="flex w-full items-center justify-center gap-2">
+  @if (isLoading()) {
+    <mat-spinner diameter="16" class="inline-block" />
+    <span class="text-xs font-medium text-slate-600 dark:text-slate-400">
+      Loading previous messages...
+    </span>
+  } @else if (hasError()) {
+    <span class="text-xs font-medium text-red-600 dark:text-red-400">
+      Failed to load history. Please try again.
+    </span>
+  } @else if (!hasMore()) {
+    <span class="text-xs font-medium text-slate-500 dark:text-slate-500">
+      No more previous messages
+    </span>
+  } @else {
+    <button
+      type="button"
+      (click)="onLoadPreviousClick()"
+      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+    >
+      <mat-icon class="!h-4 !w-4 !text-sm">keyboard_arrow_up</mat-icon>
+      <span>Load Previous Messages</span>
+    </button>
+  }
+</div>

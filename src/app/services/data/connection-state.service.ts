@@ -42,7 +42,7 @@ export class ConnectionStateService {
   readonly connectionMap = this.connectionsSignal.asReadonly();
 
   connectChannel(channelId: string): void {
-    const channel = this.chatListService.getChannels().find((ch) => ch.id === channelId);
+    const channel = this.findChannel(channelId);
 
     if (!channel) {
       return;
@@ -77,7 +77,7 @@ export class ConnectionStateService {
     });
 
     setTimeout(() => {
-      const channel = this.chatListService.getChannels().find((ch) => ch.id === channelId);
+      const channel = this.findChannel(channelId);
 
       if (!channel) {
         return;
@@ -99,9 +99,7 @@ export class ConnectionStateService {
     this.connectionsSignal.update((connections) => {
       const current = connections[channelId] ?? {
         channelId,
-        platform:
-          this.chatListService.getChannels().find((ch) => ch.id === channelId)?.platform ??
-          "twitch",
+        platform: this.findChannel(channelId)?.platform ?? "twitch",
         status: "disconnected" as PlatformStatus,
         latencyMs: 0,
         viewers: 0,
@@ -117,5 +115,22 @@ export class ConnectionStateService {
         [channelId]: { ...current, ...patch },
       };
     });
+  }
+
+  setChannelStatus(
+    channelId: string,
+    status: PlatformStatus,
+    patch?: Partial<Pick<ChannelConnection, "latencyMs" | "viewers" | "capabilities">>
+  ): void {
+    this.updateConnection(channelId, {
+      status,
+      ...(patch ?? {}),
+    });
+  }
+
+  private findChannel(channelId: string) {
+    return this.chatListService
+      .getChannels()
+      .find((channel) => channel.id === channelId || channel.channelId === channelId);
   }
 }

@@ -1,8 +1,9 @@
 import { inject, Injectable } from "@angular/core";
-import { ChatMessage, PlatformType } from "@models/chat.model";
+import { ChatMessage, MessageType, PlatformType } from "@models/chat.model";
 import { createMessageActionState } from "@helpers/chat.helper";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
+import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 
 export interface PlatformChatConfig {
   server?: string;
@@ -22,6 +23,7 @@ export interface MockMessageTemplate {
 export abstract class BaseChatProviderService {
   protected readonly chatStorageService = inject(ChatStorageService);
   protected readonly authorizationService = inject(AuthorizationService);
+  protected readonly messageTypeDetector = inject(MessageTypeDetectorService);
 
   abstract readonly platform: PlatformType;
   protected connectedChannels = new Set<string>();
@@ -80,35 +82,48 @@ export abstract class BaseChatProviderService {
 
   protected createMessage(channelId: string, data: Partial<ChatMessage>): ChatMessage {
     const timestamp = new Date().toISOString();
-    const userId = `${this.platform}-user-${Date.now()}`;
-    const messageId = `${this.platform}-${channelId}-${Date.now()}`;
+    const userId = data.sourceUserId ?? `${this.platform}-user-${Date.now()}`;
+    const sourceMessageId = data.sourceMessageId ?? `${this.platform}-${channelId}-${Date.now()}`;
+    const messageId = data.id ?? sourceMessageId;
     const actionStates = this.getActionStates();
 
-    return {
+    const baseMessage: ChatMessage = {
       id: messageId,
       platform: this.platform,
-      sourceMessageId: messageId,
+      sourceMessageId,
       sourceChannelId: channelId,
       sourceUserId: userId,
       author: data.author ?? "Anonymous",
       text: data.text ?? "",
-      timestamp,
+      timestamp: data.timestamp ?? timestamp,
       badges: data.badges ?? [],
       isSupporter: this.isSupporter(data.badges),
-      isOutgoing: false,
-      isDeleted: false,
-      canRenderInOverlay: true,
+      isOutgoing: data.isOutgoing ?? false,
+      isDeleted: data.isDeleted ?? false,
+      canRenderInOverlay: data.canRenderInOverlay ?? true,
+      replyToMessageId: data.replyToMessageId,
       actions: {
-        reply: actionStates.reply,
-        delete: actionStates.delete,
+        reply: data.actions?.reply ?? actionStates.reply,
+        delete: data.actions?.delete ?? actionStates.delete,
       },
-      rawPayload: {
+      rawPayload: data.rawPayload ?? {
         providerEvent: this.getProviderEventName(),
         providerChannelId: channelId,
         providerUserId: userId,
         preview: data.text ?? "",
       },
+      authorAvatarUrl: data.authorAvatarUrl,
     };
+
+    // Detect and assign message type
+    const { type, reason } = this.messageTypeDetector.detectMessageType(baseMessage);
+    baseMessage.messageType = type;
+    baseMessage.messageTypeReason = reason;
+
+    // Update last message time for future detection
+    this.messageTypeDetector.updateLastMessageTime(baseMessage);
+
+    return baseMessage;
   }
 
   protected isSupporter(badges?: string[]): boolean {

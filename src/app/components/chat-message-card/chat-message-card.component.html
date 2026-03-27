@@ -1,26 +1,106 @@
 <article
   class="group flex gap-3 rounded-xl border bg-white p-3 transition hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10"
-  [class]="
-    highlighted()
-      ? 'border-emerald-500 ring-2 ring-emerald-400/70 shadow-md'
-      : 'border-slate-200 dark:border-white/10'
-  "
+  [ngClass]="getMessageClasses()"
+  [attr.data-message-type]="getMessageType()"
 >
   <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+    <!-- Header Row: Platform (mixed only), User Info, Time -->
     <div class="flex items-center justify-between gap-2">
-      <div class="flex flex-wrap items-center gap-1.5">
-        <span [class]="presentation.messageBadgeClasses(message())">{{
-          presentation.platformLabel(message().platform)
-        }}</span>
-        @for (badge of message().badges; track badge) {
+      <div class="flex min-w-0 items-center gap-1.5">
+        <!-- Platform/Service Icon (only in mixed feed with channelLabel) -->
+        @if (channelLabel()) {
+          <img
+            [src]="presentation.platformIconUrl(message().platform)"
+            [alt]="presentation.platformLabel(message().platform)"
+            [title]="presentation.platformLabel(message().platform)"
+            class="h-5 w-5 shrink-0 rounded-sm object-contain"
+            loading="lazy"
+          />
+          <!-- Channel Image (only in mixed feed) -->
+          @if (hasChannelImage()) {
+            <img
+              [src]="getCachedChannelImage()!"
+              [alt]="channelLabel()!"
+              [title]="channelLabel()!"
+              class="h-6 w-6 rounded-full object-cover"
+              loading="lazy"
+            />
+          } @else {
+            <div
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+            >
+              {{ channelLabel()!.charAt(0) }}
+            </div>
+          }
+        }
+
+        <!-- User Profile Image -->
+        <button
+          type="button"
+          class="shrink-0 outline-none transition focus-visible:ring-2 focus-visible:ring-sky-500/60 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
+          (click)="onUsernameClick($event); loadUserImage(); loadChannelImage()"
+          [title]="'View profile · ' + message().author"
+        >
+          @if (hasUserImage()) {
+            <img
+              [src]="getCachedUserImage()!"
+              [alt]="message().author"
+              class="h-6 w-6 rounded-full object-cover"
+              loading="lazy"
+              (error)="onEmoteImageError($event)"
+            />
+          } @else {
+            <div
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+              [class]="presentation.usernameColorClasses(message().author)"
+            >
+              {{ message().author.charAt(0) }}
+            </div>
+          }
+        </button>
+
+        <!-- Badges (User Roles & Badges) -->
+        @for (badgeIcon of visibleBadgeIcons(); track badgeIcon.id) {
+          <img
+            [src]="badgeIcon.url"
+            [alt]="badgeIcon.label"
+            [title]="badgeIcon.label"
+            class="h-4 w-4 shrink-0 rounded-sm align-middle"
+            loading="lazy"
+            (error)="onBadgeIconError(badgeIcon.url, $event)"
+          />
+        }
+
+        <!-- Username -->
+        <button
+          type="button"
+          class="max-w-full truncate text-left text-sm font-semibold outline-none transition hover:underline focus-visible:ring-2 focus-visible:ring-sky-500/60 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
+          [class]="presentation.usernameColorClasses(message().author)"
+          (click)="onUsernameClick($event)"
+          [title]="'View profile · ' + message().author"
+        >
+          {{ message().author }}
+        </button>
+
+        <!-- Message Type Badge -->
+        @if (getMessageTypeConfig().badgeLabel; as badgeLabel) {
           <span
-            class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.15em] text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
+            class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-400/20 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:from-amber-400/30 dark:to-orange-400/30 dark:text-amber-400"
+            [matTooltip]="getMessageTypeConfig().tooltip"
+            matTooltipShowDelay="150"
+            matTooltipPosition="above"
           >
-            {{ badge }}
+            @if (getMessageTypeConfig().badgeIcon; as badgeIcon) {
+              <mat-icon class="!h-3 !w-3 !text-xs">{{ badgeIcon }}</mat-icon>
+            }
+            {{ badgeLabel }}
           </span>
         }
       </div>
-      <div class="flex items-center gap-1">
+
+      <!-- Time (right aligned) -->
+      <div class="flex shrink-0 items-center gap-2">
+        <!-- Action Buttons (hover only) -->
         <div
           class="flex items-center gap-0.5 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-x-0 opacity-0 -translate-x-2"
         >
@@ -45,6 +125,7 @@
             </button>
           }
         </div>
+        <!-- Time Label -->
         <span
           class="shrink-0 cursor-help text-[11px] text-slate-500 dark:text-slate-400"
           [matTooltip]="presentation.messageFullTimeLabel(message())"
@@ -56,15 +137,7 @@
       </div>
     </div>
 
-    <div class="flex items-baseline justify-between gap-2">
-      <h3
-        class="truncate text-sm font-semibold"
-        [class]="presentation.usernameColorClasses(message().author)"
-      >
-        {{ message().author }}
-      </h3>
-    </div>
-
+    <!-- Reply Section (if exists) -->
     @if (interactions.replyParentSnippet(message()); as snippet) {
       <div
         class="flex gap-2 rounded-lg border border-slate-200/90 bg-slate-50/90 px-2.5 py-2 text-xs dark:border-white/10 dark:bg-white/5"
@@ -79,8 +152,36 @@
       </div>
     }
 
+    <!-- Message Text -->
     <p class="break-words text-sm text-slate-700 dark:text-slate-300">
-      {{ message().text }}
+      @for (segment of richText.buildSegments(message()); track $index) {
+        @if (segment.type === "text") {
+          <span>{{ segment.value }}</span>
+        } @else if (segment.type === "link") {
+          <button
+            type="button"
+            class="inline max-w-full break-all text-left text-sky-600 underline decoration-sky-500/35 underline-offset-2 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300"
+            (click)="onLinkClick(segment, $event)"
+          >
+            {{ segment.value }}
+          </button>
+        } @else if (segment.emote && isSafeRemoteImageUrl(segment.emote.url)) {
+          <img
+            [src]="segment.emote.url"
+            [alt]="segment.emote.code"
+            [title]="segment.emote.code"
+            class="mx-0.5 inline h-6 w-6 align-middle"
+            loading="lazy"
+            (error)="onEmoteImageError($event)"
+          />
+        } @else if (segment.emote) {
+          <span
+            class="mx-0.5 inline align-middle text-xs text-slate-500 dark:text-slate-400"
+            [title]="segment.emote.code"
+            >{{ segment.emote.code }}</span
+          >
+        }
+      }
     </p>
   </div>
 </article>

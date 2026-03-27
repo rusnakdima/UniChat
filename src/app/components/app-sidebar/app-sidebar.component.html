@@ -1,0 +1,39 @@
+<nav
+  class="flex h-full w-14 flex-col items-center justify-between gap-3 border-r border-slate-200 bg-white py-3 dark:border-white/10 dark:bg-slate-950"
+>
+  <div class="flex flex-col items-center gap-3">
+    @for (item of menu; track item.path) {
+      <button
+        type="button"
+        class="relative flex h-11 w-11 items-center justify-center rounded-xl transition"
+        [class]="
+          isActive(item.path)
+            ? 'bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white'
+            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
+        "
+        (click)="navigate(item.path)"
+      >
+        <mat-icon class="text-lg">{{ item.icon }}</mat-icon>
+        <span class="sr-only">{{ item.label }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="flex flex-col items-center gap-3">
+    <button
+      type="button"
+      (click)="toggleTheme()"
+      class="flex h-11 w-11 items-center justify-center rounded-xl transition"
+      [class]="
+        themeMode() === 'light'
+          ? 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+          : 'text-slate-400 hover:bg-white/10'
+      "
+    >
+      <mat-icon class="text-lg">
+        {{ themeMode() === "dark" ? "light_mode" : "dark_mode" }}
+      </mat-icon>
+      <span class="sr-only">Toggle theme</span>
+    </button>
+  </div>
+</nav>

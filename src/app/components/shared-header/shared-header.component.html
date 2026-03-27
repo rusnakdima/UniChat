@@ -1,0 +1,30 @@
+<header
+  class="sticky top-0 z-50 flex w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur dark:border-white/10 dark:bg-slate-900/80"
+>
+  <div class="flex items-center gap-4">
+    @if (showBackButton()) {
+      <a
+        [routerLink]="backLink()"
+        [queryParams]="backQueryParams()"
+        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+      >
+        <mat-icon class="text-lg">arrow_back</mat-icon>
+      </a>
+    }
+
+    <div class="flex flex-col">
+      <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+        {{ title() }}
+      </h1>
+      @if (subtitle()) {
+        <p class="text-xs text-slate-600 dark:text-slate-400">
+          {{ subtitle() }}
+        </p>
+      }
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <ng-content />
+  </div>
+</header>

@@ -1,14 +1,33 @@
-import { Injectable, computed, signal } from "@angular/core";
-import { ChatMessage, PlatformType } from "@models/chat.model";
+import { computed, inject, Injectable, signal } from "@angular/core";
+import { ChatMessage, PlatformType, ChatHistoryLoadState, MessageType } from "@models/chat.model";
 import { sortMessagesByRecency } from "@helpers/chat.helper";
+import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
+import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
+import { invoke } from "@tauri-apps/api/core";
+
+const maxMessagesPerChannel = 4000;
+const channelMessagesStorageKey = "unichat.channelMessages.v1";
 
 @Injectable({
   providedIn: "root",
 })
 export class ChatStorageService {
   private readonly channelMessagesSignal = signal<Record<string, ChatMessage[]>>({});
+  private readonly loadedChannels = signal<Set<string>>(new Set());
+  private readonly historyLoadState = signal<Record<string, ChatHistoryLoadState>>({});
+  private readonly overlayBridge = inject(OverlaySourceBridgeService);
+  private readonly messageTypeDetector = inject(MessageTypeDetectorService);
 
   readonly channelMessages = this.channelMessagesSignal.asReadonly();
+  readonly loadedChannelsSet = this.loadedChannels.asReadonly();
+  readonly historyLoadStates = this.historyLoadState.asReadonly();
+
+  constructor() {
+    // Don't load persisted messages on startup - start fresh each session
+    // Messages are only from current live chat session
+    // this.channelMessagesSignal.set(this.loadPersistedChannelMessages());
+    this.channelMessagesSignal.set({});
+  }
 
   readonly allMessages = computed(() => {
     const allMessages: ChatMessage[] = [];
@@ -31,6 +50,29 @@ export class ChatStorageService {
     };
   });
 
+  isChannelLoaded(channelId: string): boolean {
+    return this.loadedChannels().has(channelId);
+  }
+
+  markChannelAsLoaded(channelId: string): void {
+    this.loadedChannels.update((set) => {
+      const newSet = new Set(set);
+      newSet.add(channelId);
+      return newSet;
+    });
+  }
+
+  getHistoryLoadState(channelId: string): ChatHistoryLoadState {
+    return this.historyLoadState()[channelId] ?? { loaded: false, hasMore: true };
+  }
+
+  setHistoryLoadState(channelId: string, state: ChatHistoryLoadState): void {
+    this.historyLoadState.update((store) => ({
+      ...store,
+      [channelId]: state,
+    }));
+  }
+
   getMessagesByChannel(channelId: string): ChatMessage[] {
     return this.channelMessagesSignal()[channelId] ?? [];
   }
@@ -40,6 +82,11 @@ export class ChatStorageService {
   }
 
   addMessage(channelId: string, message: ChatMessage): void {
+    // Detect and assign message type before adding
+    const { type, reason } = this.messageTypeDetector.detectMessageType(message);
+    message.messageType = type;
+    message.messageTypeReason = reason;
+
     this.channelMessagesSignal.update((store) => {
       const channelMessages = store[channelId] ?? [];
       const existingIndex = channelMessages.findIndex((msg) => msg.id === message.id);
@@ -52,12 +99,62 @@ export class ChatStorageService {
 
       return {
         ...store,
-        [channelId]: sortMessagesByRecency([...channelMessages, message]),
+        [channelId]: this.limitMessages(sortMessagesByRecency([...channelMessages, message])),
       };
     });
+    this.persistChannelMessages();
+
+    // Update last message time after adding
+    this.messageTypeDetector.updateLastMessageTime(message);
+
+    // Forward to overlay via WebSocket (existing)
+    this.overlayBridge.forwardMessage(message);
+
+    // Also store in backend for overlay to fetch
+    this.sendToOverlayBackend(message);
+  }
+
+  private async sendToOverlayBackend(message: ChatMessage): Promise<void> {
+    if (!message.canRenderInOverlay || !message.text) {
+      return;
+    }
+
+    // Use hardcoded widget-main ID (same as overlay view uses)
+    const widgetId = "widget-main";
+
+    try {
+      await invoke("sendOverlayMessage", {
+        widgetId,
+        message: {
+          id: message.id,
+          platform: message.platform,
+          author: message.author,
+          text: message.text,
+          timestamp: message.timestamp,
+          isSupporter: message.isSupporter,
+          sourceChannelId: message.sourceChannelId,
+          authorAvatarUrl: message.authorAvatarUrl,
+          emotes: message.rawPayload.emotes,
+        },
+      });
+    } catch (err) {
+      console.warn("[ChatStorage] Failed to send message to overlay backend:", err);
+    }
   }
 
   addMessages(channelId: string, messages: ChatMessage[]): void {
+    // Sort messages chronologically (oldest first) for correct type detection
+    const sortedMessages = [...messages].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    // Detect and assign message types for all messages in chronological order
+    for (const message of sortedMessages) {
+      const { type, reason } = this.messageTypeDetector.detectMessageType(message);
+      message.messageType = type;
+      message.messageTypeReason = reason;
+    }
+
     this.channelMessagesSignal.update((store) => {
       const channelMessages = store[channelId] ?? [];
       const messageMap = new Map(channelMessages.map((msg) => [msg.id, msg]));
@@ -68,9 +165,65 @@ export class ChatStorageService {
 
       return {
         ...store,
-        [channelId]: sortMessagesByRecency(Array.from(messageMap.values())),
+        [channelId]: this.limitMessages(sortMessagesByRecency(Array.from(messageMap.values()))),
       };
     });
+    this.persistChannelMessages();
+
+    // Update last message times after adding (in chronological order)
+    for (const message of sortedMessages) {
+      this.messageTypeDetector.updateLastMessageTime(message);
+    }
+
+    // Forward messages in original order for display
+    for (const message of messages) {
+      this.overlayBridge.forwardMessage(message);
+    }
+
+    // Also store in backend for overlay to fetch
+    for (const message of messages) {
+      this.sendToOverlayBackend(message);
+    }
+  }
+
+  prependMessages(channelId: string, messages: ChatMessage[]): void {
+    // Sort messages chronologically (oldest first) for correct type detection
+    const sortedMessages = [...messages].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    // Detect and assign message types for all messages in chronological order
+    for (const message of sortedMessages) {
+      const { type, reason } = this.messageTypeDetector.detectMessageType(message);
+      message.messageType = type;
+      message.messageTypeReason = reason;
+    }
+
+    this.channelMessagesSignal.update((store) => {
+      const channelMessages = store[channelId] ?? [];
+      const messageMap = new Map(channelMessages.map((msg) => [msg.id, msg]));
+
+      for (const message of messages) {
+        messageMap.set(message.id, message);
+      }
+
+      const sortedMessages = sortMessagesByRecency(Array.from(messageMap.values()));
+      return {
+        ...store,
+        [channelId]: this.limitMessages(sortedMessages),
+      };
+    });
+    this.persistChannelMessages();
+
+    // Update last message times after adding (in chronological order)
+    for (const message of sortedMessages) {
+      this.messageTypeDetector.updateLastMessageTime(message);
+    }
+
+    // Forward messages in original order for display
+    for (const message of messages) {
+      this.overlayBridge.forwardMessage(message);
+    }
   }
 
   removeMessage(channelId: string, messageId: string): void {
@@ -86,22 +239,89 @@ export class ChatStorageService {
         [channelId]: channelMessages.filter((msg) => msg.id !== messageId),
       };
     });
+    this.persistChannelMessages();
   }
 
   updateMessage(channelId: string, messageId: string, updates: Partial<ChatMessage>): void {
-    this.channelMessagesSignal.update((store) => {
-      const channelMessages = store[channelId];
+    const channelMessages = this.channelMessagesSignal()[channelId];
+    if (!channelMessages) {
+      return;
+    }
 
-      if (!channelMessages) {
+    const existing = channelMessages.find((m) => m.id === messageId);
+    if (!existing) {
+      return;
+    }
+
+    const shouldForward =
+      updates.text !== undefined ||
+      updates.timestamp !== undefined ||
+      updates.author !== undefined ||
+      updates.platform !== undefined ||
+      updates.isSupporter !== undefined ||
+      updates.isDeleted !== undefined ||
+      updates.canRenderInOverlay !== undefined;
+
+    const updated: ChatMessage = { ...existing, ...updates };
+
+    this.channelMessagesSignal.update((store) => {
+      const messages = store[channelId];
+      if (!messages) {
         return store;
       }
 
       return {
         ...store,
-        [channelId]: channelMessages.map((msg) =>
-          msg.id === messageId ? { ...msg, ...updates } : msg
-        ),
+        [channelId]: messages.map((msg) => (msg.id === messageId ? updated : msg)),
       };
     });
+    this.persistChannelMessages();
+
+    if (shouldForward) {
+      this.overlayBridge.forwardMessage(updated);
+    }
+  }
+
+  private persistChannelMessages(): void {
+    // Disabled: Don't persist messages to localStorage
+    // Messages are session-only and cleared on app restart
+    // try {
+    //   localStorage.setItem(channelMessagesStorageKey, JSON.stringify(this.channelMessagesSignal()));
+    // } catch {
+    //   // Ignore storage quota/runtime errors; keep in-memory behavior.
+    // }
+  }
+
+  private loadPersistedChannelMessages(): Record<string, ChatMessage[]> {
+    try {
+      const raw = localStorage.getItem(channelMessagesStorageKey);
+      if (!raw) {
+        return {};
+      }
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || typeof parsed !== "object") {
+        return {};
+      }
+      const out: Record<string, ChatMessage[]> = {};
+      for (const [channelId, rows] of Object.entries(parsed as Record<string, unknown>)) {
+        if (!Array.isArray(rows)) {
+          continue;
+        }
+        const safeRows = rows.filter(
+          (row) => row !== null && typeof row === "object"
+        ) as ChatMessage[];
+        out[channelId] = this.limitMessages(sortMessagesByRecency(safeRows));
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  }
+
+  private limitMessages(messages: ChatMessage[]): ChatMessage[] {
+    if (messages.length <= maxMessagesPerChannel) {
+      return messages;
+    }
+    return messages.slice(0, maxMessagesPerChannel);
   }
 }

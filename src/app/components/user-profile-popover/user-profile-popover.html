@@ -1,0 +1,103 @@
+@if (popover.open(); as st) {
+  <div class="fixed inset-0 z-[45]" aria-hidden="true" (click)="popover.close()"></div>
+  @if (layout(); as L) {
+    <div
+      role="dialog"
+      aria-label="User profile"
+      class="fixed z-[50] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900"
+      [style.top.px]="L.top"
+      [style.left.px]="L.left"
+      [style.width.px]="L.width"
+      [style.height.px]="L.height"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="shrink-0 border-b border-slate-200 px-3 py-3 dark:border-white/10">
+        <div class="flex items-center gap-2">
+          <div class="min-w-0 flex-1">
+            @if (twitchUserInfo()) {
+              <div class="flex items-center gap-2">
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="truncate text-base font-semibold"
+                    [class]="presentation.usernameColorClasses(st.message.author)"
+                  >
+                    {{ twitchUserInfo()!.display_name }}
+                  </p>
+                  <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span
+                      class="inline-flex rounded px-1.5 py-0.5 font-medium uppercase tracking-wider text-[10px]"
+                      [class]="presentation.messageBadgeClasses(st.message)"
+                    >
+                      {{ presentation.platformLabel(st.message.platform) }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            } @else if (twitchUserInfoLoading()) {
+              <p class="text-base font-semibold text-slate-500 dark:text-slate-400">Loading...</p>
+              <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <span
+                  class="inline-flex rounded px-1.5 py-0.5 font-medium uppercase tracking-wider text-[10px]"
+                  [class]="presentation.messageBadgeClasses(st.message)"
+                >
+                  {{ presentation.platformLabel(st.message.platform) }}
+                </span>
+              </p>
+            } @else {
+              <p
+                class="truncate text-base font-semibold"
+                [class]="presentation.usernameColorClasses(st.message.author)"
+              >
+                {{ st.message.author }}
+              </p>
+              <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <span
+                  class="inline-flex rounded px-1.5 py-0.5 font-medium uppercase tracking-wider text-[10px]"
+                  [class]="presentation.messageBadgeClasses(st.message)"
+                >
+                  {{ presentation.platformLabel(st.message.platform) }}
+                </span>
+              </p>
+            }
+          </div>
+          <button
+            type="button"
+            class="shrink-0 rounded-lg p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-white/10 dark:hover:text-white"
+            (click)="popover.close()"
+            title="Close"
+          >
+            <mat-icon class="!text-xl">close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 overflow-y-auto px-4 py-6 text-center"
+      >
+        @if (twitchUserInfoLoading()) {
+          <mat-spinner diameter="24" class="mx-auto" />
+          <p class="text-sm text-slate-500 dark:text-slate-400">Loading profile...</p>
+        } @else if (twitchUserInfo()) {
+          <div class="flex flex-col items-center">
+            <p
+              class="truncate text-lg font-semibold"
+              [class]="presentation.usernameColorClasses(st.message.author)"
+            >
+              {{ twitchUserInfo()!.display_name }}
+            </p>
+            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+              <span
+                class="inline-flex rounded px-2 py-1 font-medium uppercase tracking-wider text-[10px]"
+                [class]="presentation.messageBadgeClasses(st.message)"
+              >
+                {{ presentation.platformLabel(st.message.platform) }}
+              </span>
+            </p>
+          </div>
+        } @else {
+          <p class="text-sm text-slate-500 dark:text-slate-400">Profile unavailable</p>
+        }
+      </div>
+    </div>
+  }
+}

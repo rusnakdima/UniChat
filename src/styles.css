@@ -1,5 +1,5 @@
 /* Material Icons */
-@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+@import "@material-icons/font/css/all.css";
 
 app-root {
   display: block;
@@ -10,7 +10,57 @@ app-root {
 @source "../node_modules/flowbite";
 @custom-variant dark (&:where(.dark, .dark *));
 
-.material-icons {
+/* ===== Page Layout Utilities ===== */
+
+/* Adaptive centered container for non-dashboard pages */
+.page-container {
+  @apply mx-auto w-full max-w-5xl px-4 py-8;
+}
+
+/* Dashboard layout - no scroll, full viewport */
+.dashboard-layout {
+  @apply flex h-screen w-full min-h-0 flex-col overflow-hidden;
+}
+
+/* Standard page layout - scrollable content */
+.page-layout {
+  @apply flex min-h-0 flex-1 flex-col overflow-y-auto;
+}
+
+/* Custom Checkbox Styling (TaskFlow-inspired) */
+input[type="checkbox"].peer {
+  @apply sr-only;
+}
+
+input[type="checkbox"].peer + .checkmark {
+  @apply relative inline-flex h-5 w-5 cursor-pointer items-center justify-center;
+}
+
+input[type="checkbox"].peer + .checkmark::before {
+  content: "";
+  @apply h-5 w-5 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent transition-all duration-200;
+}
+
+input[type="checkbox"].peer:checked + .checkmark::before {
+  @apply bg-blue-600 border-blue-500;
+}
+
+input[type="checkbox"].peer:checked + .checkmark::after {
+  content: "";
+  @apply absolute h-2.5 w-2.5 bg-white rounded-sm top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+}
+
+input[type="checkbox"].peer:focus + .checkmark::before {
+  @apply ring-2 ring-blue-500/30;
+}
+
+input[type="checkbox"].peer:disabled + .checkmark::before {
+  @apply bg-red-700 border-red-700 cursor-not-allowed;
+}
+
+.material-icons,
+.mat-icon,
+.mat-mdc-icon {
   font-family: "Material Icons";
   font-weight: normal;
   font-style: normal;
@@ -24,4 +74,66 @@ app-root {
   direction: ltr;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Align with Angular Material's <mat-icon> rendering. */
+mat-icon {
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  font-family:
+    "Material Icons", "Material Icons Outlined", "Material Icons Round", "Material Icons Sharp",
+    sans-serif !important;
+}
+
+/* ===== Message Type Styling ===== */
+
+/* Returning User - Warm amber highlight */
+.message-type-returning {
+  @apply border-amber-300/50 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5;
+}
+
+/* Highlighted Message - Premium gold styling */
+.message-type-highlighted {
+  @apply border-purple-400/60 bg-purple-50/40 dark:border-purple-500/40 dark:bg-purple-500/10;
+  border-width: 2px;
+  animation: message-highlighted-pulse 2s ease-in-out infinite;
+}
+
+/* ===== Message Animations ===== */
+
+/* Highlighted message pulse animation */
+@keyframes message-highlighted-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.4);
+  }
+}
+
+/* Dark mode adjustments */
+.dark .message-type-highlighted {
+  animation: message-highlighted-pulse-dark 2s ease-in-out infinite;
+}
+
+@keyframes message-highlighted-pulse-dark {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.3);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .message-type-highlighted {
+    animation: none;
+  }
 }

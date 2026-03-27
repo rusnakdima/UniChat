@@ -1,13 +1,21 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
-import { PlatformType } from "@models/chat.model";
+import { ChatAccount, PlatformType } from "@models/chat.model";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import {
-  getAuthorizationUrl,
   getPlatformBadgeClasses,
   getPlatformLabel,
+  YOUTUBE_DATA_API_KEY_STORAGE_KEY,
 } from "@helpers/chat.helper";
 
 @Component({
@@ -19,26 +27,56 @@ import {
 export class SettingsModal {
   readonly authorizationService = inject(AuthorizationService);
   readonly chatListService = inject(ChatListService);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
   readonly isOpen = input<boolean>(false);
   readonly closed = output<void>();
+  readonly mode = input<"modal" | "page">("modal");
 
   readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
   readonly getPlatformBadgeClasses = getPlatformBadgeClasses;
 
   newChannelName = "";
   selectedPlatform: PlatformType = "twitch";
+  selectedAccountId = "";
+  youtubeApiKey = "";
+
+  /** Edit mode state */
+  editingChannelId: string | null = null;
+  editingChannelName: string = "";
+
+  constructor() {
+    effect(() => {
+      if (this.isOpen()) {
+        this.youtubeApiKey = localStorage.getItem(YOUTUBE_DATA_API_KEY_STORAGE_KEY) ?? "";
+        this.changeDetectorRef.markForCheck();
+      }
+    });
+  }
 
   close(): void {
     this.closed.emit();
   }
 
+  saveYoutubeApiKey(): void {
+    const trimmed = this.youtubeApiKey.trim();
+    if (trimmed) {
+      localStorage.setItem(YOUTUBE_DATA_API_KEY_STORAGE_KEY, trimmed);
+    } else {
+      localStorage.removeItem(YOUTUBE_DATA_API_KEY_STORAGE_KEY);
+    }
+  }
+
   authorize(platform: PlatformType): void {
-    this.authorizationService.authorize(platform);
+    void this.authorizationService.authorize(platform);
   }
 
   deauthorize(platform: PlatformType): void {
-    this.authorizationService.deauthorize(platform);
+    void this.authorizationService.deauthorize(platform);
+  }
+
+  deauthorizeAccount(platform: PlatformType): void {
+    void this.authorizationService.deauthorize(platform);
   }
 
   addChannel(): void {
@@ -46,7 +84,12 @@ export class SettingsModal {
       return;
     }
 
-    this.chatListService.addChannel(this.selectedPlatform, this.newChannelName.trim());
+    this.chatListService.addChannel(
+      this.selectedPlatform,
+      this.newChannelName.trim(),
+      undefined,
+      this.selectedAccountId || undefined
+    );
     this.newChannelName = "";
   }
 
@@ -58,11 +101,54 @@ export class SettingsModal {
     this.chatListService.toggleChannelVisibility(channelId);
   }
 
-  getAuthUrl(platform: PlatformType): string {
-    return getAuthorizationUrl(platform);
+  /** Start editing a channel name */
+  startEditChannel(channelId: string, currentName: string): void {
+    this.editingChannelId = channelId;
+    this.editingChannelName = currentName;
+    this.changeDetectorRef.markForCheck();
+  }
+
+  /** Save edited channel name */
+  saveEditChannel(): void {
+    if (!this.editingChannelId || !this.editingChannelName.trim()) {
+      return;
+    }
+    this.chatListService.updateChannelName(this.editingChannelId, this.editingChannelName.trim());
+    this.editingChannelId = null;
+    this.editingChannelName = "";
+    this.changeDetectorRef.markForCheck();
+  }
+
+  /** Cancel editing */
+  cancelEditChannel(): void {
+    this.editingChannelId = null;
+    this.editingChannelName = "";
+    this.changeDetectorRef.markForCheck();
+  }
+
+  getAuthorizedAccounts(platform: PlatformType) {
+    return this.authorizationService.accounts().filter((account) => account.platform === platform);
+  }
+
+  getChannelManagementAccounts(): ChatAccount[] {
+    return this.authorizationService.accounts();
+  }
+
+  getAccountLabelById(accountId: string | undefined): string | null {
+    if (!accountId) {
+      return null;
+    }
+    const account = this.getChannelManagementAccounts().find((item) => item.id === accountId);
+    return account?.username ?? null;
   }
 
   getPlatformLbl(platform: PlatformType): string {
     return getPlatformLabel(platform);
+  }
+
+  getChannelNamePlaceholder(): string {
+    return this.selectedPlatform === "youtube"
+      ? "@handle, channel URL, or Studio / watch link"
+      : "Channel name...";
   }
 }

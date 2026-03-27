@@ -1,6 +1,6 @@
-@if (feedData.visiblePlatformsInOrder().length === 0) {
+@if (feedData.platformsWithVisibleChannels().length === 0) {
   <div
-    class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center dark:border-white/15 dark:bg-slate-900/40"
+    class="flex h-full w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center dark:border-white/15 dark:bg-slate-900/40"
   >
     <p class="text-sm font-medium text-slate-700 dark:text-slate-200">No channels yet</p>
     <p class="mt-2 max-w-sm text-xs text-slate-500 dark:text-slate-400">
@@ -9,165 +9,224 @@
     </p>
   </div>
 } @else {
-  <div
-    cdkDropList
-    [cdkDropListData]="feedData.visiblePlatformsInOrder()"
-    cdkDropListOrientation="horizontal"
-    (cdkDropListDropped)="onPlatformDrop($event)"
-    class="flex min-h-0 min-w-0 flex-1 flex-row items-stretch gap-3 overflow-hidden"
-  >
-    @for (platform of feedData.visiblePlatformsInOrder(); track platform) {
-      <div cdkDrag class="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
+  <div class="flex h-full w-full flex-col overflow-hidden">
+    <!-- Single Row Container for resizable blocks -->
+    <div
+      #gridContainer
+      cdkDropList
+      [cdkDropListData]="feedData.platformsWithVisibleChannels()"
+      cdkDropListOrientation="horizontal"
+      (cdkDropListDropped)="onPlatformDrop($event)"
+      class="relative flex h-full w-full flex-row items-stretch gap-1 overflow-hidden p-1"
+    >
+      <!-- Resize tracker line - only show during resize, not drag -->
+      @if (isResizing() && !isReorderingChannels()) {
         <div
-          class="flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
+          class="pointer-events-none absolute bottom-0 top-0 z-50 w-px bg-emerald-500 shadow-lg"
+          [style.left.px]="resizeTrackerX() - getContainerLeft()"
+        ></div>
+      }
+
+      @for (
+        platform of feedData.platformsWithVisibleChannels();
+        track platform;
+        let last = $last;
+        let i = $index
+      ) {
+        <!-- Block -->
+        <div
+          cdkDrag
+          [cdkDragData]="platform"
+          [cdkDragDisabled]="isReorderingChannels()"
+          class="relative flex h-full flex-col"
+          [style.flex]="getBlockFlex(platform)"
+          [style.min-width]="'100px'"
         >
           <div
-            class="flex shrink-0 cursor-move flex-col gap-0.5 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
-            cdkDragHandle
+            class="flex h-full w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
           >
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-sm font-semibold tracking-tight text-slate-900 dark:text-white">
-                {{ presentation.platformLabel(platform) }}
-              </span>
-              <mat-icon class="pointer-events-none size-4 text-slate-400">drag_indicator</mat-icon>
-            </div>
-            <p
-              class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400"
-            >
-              {{ presentation.platformLabel(platform) }} ·
-              {{ orderedChannels(platform).length }} channels
-            </p>
-          </div>
-
-          <div
-            class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-2 py-2 dark:border-white/10 dark:bg-slate-900/50"
-            role="radiogroup"
-            [attr.aria-label]="'Channels: ' + presentation.platformLabel(platform)"
-          >
-            <span
-              class="w-full text-[10px] font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 sm:w-auto"
-            >
-              Channels:
-            </span>
-            @for (ch of orderedChannels(platform); track ch.id) {
-              <button
-                type="button"
-                role="radio"
-                [attr.aria-checked]="isChannelActive(platform, ch)"
-                (click)="selectChannel(platform, ch)"
-                class="inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition sm:max-w-[14rem]"
-                [class]="
-                  isChannelActive(platform, ch)
-                    ? 'border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400'
-                    : 'border-slate-200 bg-white text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-100'
-                "
-              >
-                <span
-                  class="inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.2em]"
-                  [class]="presentation.getPlatformBadgeClasses(platform)"
-                >
-                  {{ presentation.platformLabel(platform) }}
-                </span>
-                <span class="min-w-0 truncate text-left">{{ ch.channelName }}</span>
-              </button>
-            }
-          </div>
-
-          <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            @if (activeChannelId(platform); as cid) {
+            <!-- Resize Handle - Only show if NOT the last item (between blocks) -->
+            @if (!last) {
               <div
-                class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain px-2 py-2"
-                [appChatScrollRegion]="feedData.scrollTokenForChannel(platform, cid)"
+                class="absolute inset-y-0 right-0 z-20 flex w-1.5 cursor-col-resize items-center justify-center transition-colors hover:bg-slate-300 dark:hover:bg-slate-600"
+                [class.bg-slate-300]="isResizing() && resizeData()?.platform === platform"
+                [class.dark-bg-slate-600]="isResizing() && resizeData()?.platform === platform"
+                (mousedown)="onResizeStart(platform, $event); $event.stopPropagation()"
+                role="separator"
               >
-                <div class="flex flex-col gap-y-2">
-                  @for (
-                    message of feedData.getMessagesForChannel(platform, cid);
-                    track message.id
-                  ) {
-                    <app-chat-message-card
-                      [message]="message"
-                      [highlighted]="interactions.isHighlightedMessage(message.id)"
-                    />
-                  }
+                <div class="flex h-full w-px flex-col items-center justify-center gap-1">
+                  <div class="h-3 w-px rounded-full bg-slate-400 dark:bg-slate-500"></div>
+                  <div class="h-3 w-px rounded-full bg-slate-400 dark:bg-slate-500"></div>
+                  <div class="h-3 w-px rounded-full bg-slate-400 dark:bg-slate-500"></div>
                 </div>
               </div>
             }
-          </div>
 
-          <div
-            class="flex shrink-0 flex-col border-t border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
-          >
-            @if (interactions.replyTargetMessage(); as rt) {
-              @if (rt.platform === platform) {
-                <div
-                  class="flex items-start gap-2 border-b border-emerald-200/80 bg-emerald-50/95 px-3 py-2 dark:border-emerald-500/25 dark:bg-emerald-950/50"
-                >
-                  <mat-icon class="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
-                    >reply</mat-icon
-                  >
-                  <div class="min-w-0 flex-1">
-                    <p
-                      class="text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300"
-                    >
-                      Replying to
-                    </p>
-                    <p class="line-clamp-2 text-xs text-slate-800 dark:text-slate-100">
-                      <span class="font-semibold">{{ rt.author }}</span>
-                      <span class="text-slate-600 dark:text-slate-400"> · </span>
-                      {{ rt.text }}
-                    </p>
-                  </div>
+            <div
+              class="flex shrink-0 cursor-move items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
+              cdkDragHandle
+            >
+              <span class="min-w-0 truncate text-sm font-semibold tracking-tight">
+                <span class="text-slate-900 dark:text-white">{{
+                  presentation.platformLabel(platform)
+                }}</span>
+                <span class="font-medium text-slate-500 dark:text-slate-400">
+                  · {{ orderedChannels(platform).length }}
+                  @if (orderedChannels(platform).length === 1) {
+                    channel
+                  } @else {
+                    channels
+                  }
+                </span>
+              </span>
+              <mat-icon class="pointer-events-none size-4 shrink-0 text-slate-400"
+                >drag_indicator</mat-icon
+              >
+            </div>
+
+            <div
+              class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-2 py-2 dark:border-white/10 dark:bg-slate-900/50"
+              role="radiogroup"
+              [attr.aria-label]="'Channels: ' + presentation.platformLabel(platform)"
+            >
+              <span
+                class="w-full text-[10px] font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 sm:w-auto"
+              >
+                Channels:
+              </span>
+              <div
+                cdkDropList
+                [cdkDropListData]="orderedChannelIds(platform)"
+                (cdkDropListDropped)="onChannelDrop(platform, $event)"
+                cdkDropListOrientation="horizontal"
+                class="flex flex-wrap items-center gap-2"
+              >
+                @for (ch of draggableOrderedChannels(platform); track ch.id) {
                   <button
                     type="button"
-                    (click)="interactions.cancelReplyContext()"
-                    class="shrink-0 rounded-lg p-1 text-slate-500 transition hover:bg-emerald-100 dark:hover:bg-white/10"
-                    title="Cancel reply"
+                    role="radio"
+                    cdkDrag
+                    [cdkDragData]="ch.channelId"
+                    (cdkDragStarted)="onChannelDragStarted()"
+                    (cdkDragEnded)="onChannelDragEnded()"
+                    [attr.aria-checked]="isChannelActive(platform, ch)"
+                    (click)="onChannelClick(platform, ch); loadChannelImage(ch)"
+                    class="cursor-move inline-flex max-w-full min-w-0 items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:max-w-[14rem]"
+                    [class]="
+                      isChannelActive(platform, ch)
+                        ? 'border-slate-800 bg-slate-800 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:shadow-none'
+                        : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/12 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-white/18 dark:hover:bg-white/[0.1]'
+                    "
                   >
-                    <mat-icon class="!text-lg">close</mat-icon>
+                    @if (hasChannelImage(ch)) {
+                      <img
+                        [src]="getCachedChannelImage(ch)!"
+                        [alt]="ch.channelName"
+                        class="h-4 w-4 rounded-full object-cover"
+                        loading="lazy"
+                      />
+                    } @else {
+                      <div
+                        class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                      >
+                        {{ ch.channelName.charAt(0) }}
+                      </div>
+                    }
+                    <span class="min-w-0 truncate text-left">{{ ch.channelName }}</span>
                   </button>
-                </div>
-              }
-            }
+                }
+              </div>
+            </div>
 
-            <div class="flex gap-2 p-2">
-              <input
-                type="text"
-                [placeholder]="composerPlaceholder(platform)"
-                class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500"
-                #sendInput
-                (keydown.enter)="sendSplitComposer(platform, sendInput)"
-              />
-              <button
-                type="button"
-                (click)="sendSplitComposer(platform, sendInput)"
-                class="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
-              >
-                {{
-                  interactions.replyTargetMessageId() &&
-                  interactions.replyTargetMessage()?.platform === platform
-                    ? "Reply"
-                    : "Send"
-                }}
-              </button>
+            <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+              @if (activeChannelId(platform); as cid) {
+                <app-chat-history-header
+                  #historyHeader
+                  [channelId]="cid"
+                  [platform]="platform"
+                  (loadHistory)="onLoadHistory($event)"
+                />
+              } @else {
+                <app-chat-history-header #historyHeader (loadHistory)="onLoadHistory($event)" />
+              }
+              @if (activeChannelId(platform); as cid) {
+                @let colMsgs = feedData.getMessagesForChannel(platform, cid);
+                <app-chat-scroll-region
+                  [scrollToken]="feedData.scrollTokenForChannel(platform, cid)"
+                  [messages]="colMsgs"
+                >
+                  <div class="flex flex-col gap-y-2 px-2 py-2">
+                    @for (message of colMsgs; track message.id) {
+                      <app-chat-message-card
+                        [message]="message"
+                        [highlighted]="interactions.isHighlightedMessage(message.id)"
+                      />
+                    }
+                  </div>
+                </app-chat-scroll-region>
+              }
+            </div>
+
+            <div
+              class="flex shrink-0 flex-col border-t border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
+            >
+              @if (interactions.replyTargetMessage(); as rt) {
+                @if (rt.platform === platform) {
+                  <div
+                    class="flex items-start gap-2 border-b border-emerald-200/80 bg-emerald-50/95 px-3 py-2 dark:border-emerald-500/25 dark:bg-emerald-950/50"
+                  >
+                    <mat-icon class="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      >reply</mat-icon
+                    >
+                    <div class="min-w-0 flex-1">
+                      <p
+                        class="text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300"
+                      >
+                        Replying to
+                      </p>
+                      <p class="line-clamp-2 text-xs text-slate-800 dark:text-slate-100">
+                        <span class="font-semibold">{{ rt.author }}</span>
+                        <span class="text-slate-600 dark:text-slate-400"> · </span>
+                        {{ rt.text }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      (click)="interactions.cancelReplyContext()"
+                      class="shrink-0 rounded-lg p-1 text-slate-500 transition hover:bg-emerald-100 dark:hover:bg-white/10"
+                      title="Cancel reply"
+                    >
+                      <mat-icon class="!text-lg">close</mat-icon>
+                    </button>
+                  </div>
+                }
+              }
+
+              <div class="flex gap-2 p-2">
+                <input
+                  type="text"
+                  [placeholder]="composerPlaceholder(platform)"
+                  class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500"
+                  #sendInput
+                  (keydown.enter)="sendSplitComposer(platform, sendInput)"
+                />
+                <button
+                  type="button"
+                  (click)="sendSplitComposer(platform, sendInput)"
+                  class="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                >
+                  {{
+                    interactions.replyTargetMessageId() &&
+                    interactions.replyTargetMessage()?.platform === platform
+                      ? "Reply"
+                      : "Send"
+                  }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-
-        <ng-template cdkDragPreview>
-          <div
-            class="flex min-h-32 w-full max-w-md flex-col overflow-hidden rounded-2xl border-2 border-dashed border-slate-400 bg-slate-100/50 p-3 opacity-90 dark:border-white/40 dark:bg-white/10"
-          >
-            <div class="flex flex-1 items-center justify-center text-slate-400 dark:text-slate-500">
-              <span class="text-sm font-medium">Drop to reorder</span>
-            </div>
-          </div>
-        </ng-template>
-        <ng-template cdkDragPlaceholder>
-          <div
-            class="flex min-h-0 min-w-0 flex-1 basis-0 flex-col rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-50 dark:border-emerald-400/40 dark:bg-emerald-500/10"
-          ></div>
-        </ng-template>
-      </div>
-    }
+      }
+    </div>
   </div>
 }

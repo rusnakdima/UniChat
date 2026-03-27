@@ -21,6 +21,24 @@ const platformBadgeClasses: Record<PlatformType, string> = {
     "bg-rose-500/15 text-rose-700 ring-1 ring-inset ring-rose-500/30 dark:bg-rose-500/20 dark:text-rose-200 dark:ring-rose-400/30",
 };
 
+/** Mixed filter bar: channel disabled (muted pill) — strong label contrast on light/dark surfaces */
+const platformBadgeClassesMixedDisabled: Record<PlatformType, string> = {
+  twitch:
+    "bg-fuchsia-200/90 text-fuchsia-950 ring-1 ring-inset ring-fuchsia-600/40 dark:bg-fuchsia-950/55 dark:text-fuchsia-100 dark:ring-fuchsia-400/35",
+  kick: "bg-emerald-200/90 text-emerald-950 ring-1 ring-inset ring-emerald-600/40 dark:bg-emerald-950/55 dark:text-emerald-100 dark:ring-emerald-400/35",
+  youtube:
+    "bg-rose-200/90 text-rose-950 ring-1 ring-inset ring-rose-600/40 dark:bg-rose-950/55 dark:text-rose-100 dark:ring-rose-400/35",
+};
+
+/** Mixed filter bar: channel enabled (solid slate pill) — light labels on dark btn, crisp chips on light btn */
+const platformBadgeClassesMixedEnabled: Record<PlatformType, string> = {
+  twitch:
+    "bg-fuchsia-500/50 text-white ring-1 ring-inset ring-fuchsia-200/40 dark:bg-fuchsia-700 dark:text-white dark:ring-fuchsia-900/50",
+  kick: "bg-emerald-500/50 text-white ring-1 ring-inset ring-emerald-200/40 dark:bg-emerald-700 dark:text-white dark:ring-emerald-900/50",
+  youtube:
+    "bg-rose-500/50 text-white ring-1 ring-inset ring-rose-200/40 dark:bg-rose-700 dark:text-white dark:ring-rose-900/50",
+};
+
 const statusClasses: Record<PlatformStatus | WidgetStatus, string> = {
   disconnected:
     "bg-slate-500/15 text-slate-700 ring-1 ring-inset ring-slate-500/30 dark:bg-slate-500/20 dark:text-slate-200 dark:ring-slate-400/30",
@@ -56,6 +74,32 @@ export function sortMessagesChronological(messages: ChatMessage[]): ChatMessage[
   );
 }
 
+const BLANK_PIXEL_GIF =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+/**
+ * Reject values that would become app-relative URLs in `<img src>` (e.g. bare `557341058` → `/557341058` → 404 spam).
+ */
+export function isSafeRemoteImageUrl(url: string | undefined | null): boolean {
+  if (!url?.trim()) {
+    return false;
+  }
+  const u = url.trim();
+  return u.startsWith("https://") || u.startsWith("http://");
+}
+
+/** Stop repeat network errors after a failed emote/badge image load. */
+export function silenceBrokenChatImage(ev: Event): void {
+  const el = ev.target;
+  if (!(el instanceof HTMLImageElement)) {
+    return;
+  }
+  el.onerror = null;
+  el.removeAttribute("srcset");
+  el.src = BLANK_PIXEL_GIF;
+  el.style.display = "none";
+}
+
 export function buildSplitFeed(messages: ChatMessage[]): Record<PlatformType, ChatMessage[]> {
   return {
     twitch: messages.filter((message) => message.platform === "twitch"),
@@ -82,6 +126,15 @@ export function getPlatformLabel(platform: PlatformType): string {
 
 export function getPlatformBadgeClasses(platform: PlatformType): string {
   return platformBadgeClasses[platform];
+}
+
+export function getPlatformBadgeClassesMixedFilter(
+  platform: PlatformType,
+  channelEnabled: boolean
+): string {
+  return channelEnabled
+    ? platformBadgeClassesMixedEnabled[platform]
+    : platformBadgeClassesMixedDisabled[platform];
 }
 
 export function getStatusClasses(status: PlatformStatus | WidgetStatus): string {
@@ -225,4 +278,53 @@ function getProviderEventName(platform: PlatformType): string {
     case "youtube":
       return "liveChatMessage";
   }
+}
+
+/** Browser storage key for the YouTube Data API v3 key (read-only live chat). */
+export const YOUTUBE_DATA_API_KEY_STORAGE_KEY = "unichat-youtube-api-key";
+
+/**
+ * Canonical id for a YouTube row in channel list: @handle (no @), UC… id, or v: + video id from URLs.
+ */
+export function normalizeYouTubeProviderInput(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const studioMatch = trimmed.match(/studio\.youtube\.com\/video\/([a-zA-Z0-9_-]{11})/i);
+  if (studioMatch?.[1]) {
+    return `v:${studioMatch[1]}`;
+  }
+
+  const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/i);
+  if (watchMatch?.[1] && /youtube\.com/i.test(trimmed)) {
+    return `v:${watchMatch[1]}`;
+  }
+
+  const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?|#|\/|$)/i);
+  if (shortMatch?.[1]) {
+    return `v:${shortMatch[1]}`;
+  }
+
+  const channelMatch = trimmed.match(/youtube\.com\/channel\/(UC[\w-]{22})/i);
+  if (channelMatch?.[1]) {
+    return channelMatch[1];
+  }
+
+  const handleMatch = trimmed.match(/youtube\.com\/@([\w.-]+)/i);
+  if (handleMatch?.[1]) {
+    return handleMatch[1].toLowerCase();
+  }
+
+  const atHandle = trimmed.startsWith("@") ? trimmed.slice(1).trim() : trimmed;
+  if (atHandle !== trimmed) {
+    return atHandle.toLowerCase();
+  }
+
+  if (/^UC[\w-]{22}$/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return trimmed.replace(/^@/, "").toLowerCase();
 }

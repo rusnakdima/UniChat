@@ -6,6 +6,7 @@ const storageKey = "unichat-dashboard-preferences";
 const defaultPreferences: DashboardPreferences = {
   feedMode: "mixed",
   densityMode: "comfortable",
+  mixedDisabledChannelIds: [],
   splitLayout: {
     orderedPlatforms: ["twitch", "kick", "youtube"],
     hiddenPlatforms: [],
@@ -25,6 +26,20 @@ export class DashboardPreferencesService {
   private readonly preferencesSignal = signal<DashboardPreferences>(this.readPreferences());
 
   readonly preferences = this.preferencesSignal.asReadonly();
+
+  constructor() {
+    // Keep multiple overlay documents in sync (OBS + app) via `storage` events.
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener("storage", (ev) => {
+      if (ev.key !== storageKey) {
+        return;
+      }
+      this.preferencesSignal.set(this.readPreferences());
+    });
+  }
 
   setFeedMode(feedMode: FeedMode): void {
     this.updatePreferences({
@@ -153,6 +168,14 @@ export class DashboardPreferencesService {
     });
   }
 
+  setMixedDisabledChannelIds(channelIds: string[]): void {
+    const preferences = this.preferencesSignal();
+    this.updatePreferences({
+      ...preferences,
+      mixedDisabledChannelIds: [...channelIds],
+    });
+  }
+
   private readPreferences(): DashboardPreferences {
     const storedValue = localStorage.getItem(storageKey);
 
@@ -170,8 +193,15 @@ export class DashboardPreferencesService {
         Array.isArray(parsed.splitLayout?.hiddenPlatforms) &&
         typeof parsed.splitLayout?.columnWidths === "object"
       ) {
+        const mixedDisabled =
+          Array.isArray(parsed.mixedDisabledChannelIds) &&
+          parsed.mixedDisabledChannelIds.every((id) => typeof id === "string")
+            ? [...parsed.mixedDisabledChannelIds]
+            : [];
+
         return {
           ...parsed,
+          mixedDisabledChannelIds: mixedDisabled,
           splitLayout: {
             ...parsed.splitLayout,
             columnWidths: {

@@ -1,48 +1,60 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from "@angular/core";
-import { SettingsModal } from "@components/settings-modal/settings-modal";
+import { ChangeDetectionStrategy, Component, effect, inject, viewChild } from "@angular/core";
+import { MatIconModule } from "@angular/material/icon";
 import { DashboardMixedFeedComponent } from "@components/dashboard-mixed-feed/dashboard-mixed-feed.component";
 import { DashboardSplitFeedComponent } from "@components/dashboard-split-feed/dashboard-split-feed.component";
-import { FeedMode } from "@models/chat.model";
-import { ThemeService } from "@services/core/theme.service";
+import { UserProfilePopoverComponent } from "@components/user-profile-popover/user-profile-popover";
+import { FeedMode, PlatformType } from "@models/chat.model";
 import { ChatListService } from "@services/data/chat-list.service";
+import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
+import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
+import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
+import { ChatStateManagerService } from "@services/data/chat-state-manager.service";
 
 @Component({
   selector: "app-dashboard-view",
-  imports: [SettingsModal, DashboardSplitFeedComponent, DashboardMixedFeedComponent],
+  imports: [
+    DashboardSplitFeedComponent,
+    DashboardMixedFeedComponent,
+    UserProfilePopoverComponent,
+    MatIconModule,
+  ],
   templateUrl: "./dashboard.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardView {
-  readonly themeService = inject(ThemeService);
   readonly chatListService = inject(ChatListService);
   readonly dashboardPreferencesService = inject(DashboardPreferencesService);
   readonly chatProviderCoordinator = inject(ChatProviderCoordinatorService);
+  readonly dashboardStateService = inject(DashboardStateService);
+  readonly overlaySourceBridge = inject(OverlaySourceBridgeService);
+  private readonly feedData = inject(DashboardFeedDataService);
+  private readonly chatStateManager = inject(ChatStateManagerService);
 
-  readonly themeMode = this.themeService.themeMode;
+  // Reference to split feed component for resetting sizes
+  readonly splitFeed = viewChild<DashboardSplitFeedComponent>(DashboardSplitFeedComponent);
+
   readonly feedModes: FeedMode[] = ["mixed", "split"];
-  readonly isSettingsOpen = signal(false);
 
   constructor() {
+    const featured = this.dashboardStateService.featuredWidget();
+    const port = featured?.port ?? 1421;
+    void this.overlaySourceBridge.ensureConnected(port);
+
+    // Track channel connections using global state from ChatStateManagerService.
+    // This prevents re-connecting channels when navigating back from settings.
     effect(() => {
-      const channels = this.chatListService.getVisibleChannels();
-      for (const channel of channels) {
-        this.chatProviderCoordinator.connectChannel(channel.channelId, channel.platform);
+      const channels = this.feedData.allVisibleChannels();
+
+      // Only connect channels that aren't already connected globally
+      for (const ch of channels) {
+        if (!this.chatStateManager.isChannelConnected(ch.channelId)) {
+          this.chatProviderCoordinator.connectChannel(ch.channelId, ch.platform);
+          this.chatStateManager.markChannelAsConnected(ch.channelId);
+        }
       }
     });
-  }
-
-  openSettings(): void {
-    this.isSettingsOpen.set(true);
-  }
-
-  closeSettings(): void {
-    this.isSettingsOpen.set(false);
-  }
-
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
   }
 
   setFeedMode(feedMode: FeedMode): void {
@@ -51,5 +63,9 @@ export class DashboardView {
 
   getFeedMode(): FeedMode {
     return this.dashboardPreferencesService.preferences().feedMode;
+  }
+
+  resetSplitSizes(): void {
+    this.splitFeed()?.resetBlockSizes();
   }
 }

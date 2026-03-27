@@ -12,11 +12,11 @@ import {
   getProviderCapabilities,
   sortMessagesByRecency,
 } from "@helpers/chat.helper";
-import { mockMessages } from "@views/dashboard-view/dashboard.mock";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
+import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
 
 @Injectable({
   providedIn: "root",
@@ -26,32 +26,11 @@ export class ChatStateService {
   private readonly connectionStateService = inject(ConnectionStateService);
   private readonly authorizationService = inject(AuthorizationService);
   private readonly chatStorageService = inject(ChatStorageService);
+  private readonly providerCoordinator = inject(ChatProviderCoordinatorService);
 
   readonly messages = computed(() => this.chatStorageService.allMessages());
 
   readonly splitFeed = computed(() => buildSplitFeed(this.messages()));
-
-  constructor() {
-    this.initializeMockMessages();
-  }
-
-  private initializeMockMessages(): void {
-    const messagesByChannel: Record<string, ChatMessage[]> = {};
-
-    for (const message of mockMessages) {
-      const channelId = message.sourceChannelId;
-
-      if (!messagesByChannel[channelId]) {
-        messagesByChannel[channelId] = [];
-      }
-
-      messagesByChannel[channelId].push(message);
-    }
-
-    for (const [channelId, messages] of Object.entries(messagesByChannel)) {
-      this.chatStorageService.addMessages(channelId, messages);
-    }
-  }
 
   getMessagesByChannel(channelId: string): ChatMessage[] {
     return this.chatStorageService.getMessagesByChannel(channelId);
@@ -107,7 +86,11 @@ export class ChatStateService {
     this.chatStorageService.addMessage(message.sourceChannelId, replyMessage);
   }
 
-  sendOutgoingChatMessage(channelId: string, platform: PlatformType, text: string): void {
+  async sendOutgoingChatMessage(
+    channelId: string,
+    platform: PlatformType,
+    text: string
+  ): Promise<void> {
     const trimmed = text.trim();
 
     if (!trimmed || !channelId) {
@@ -118,6 +101,12 @@ export class ChatStateService {
     const channel = channels.find((c) => c.channelId === channelId && c.platform === platform);
 
     if (!channel) {
+      return;
+    }
+
+    const sentToProvider = await this.providerCoordinator.sendMessage(channelId, platform, trimmed);
+    if (platform === "twitch" && sentToProvider) {
+      // Twitch IRC echoes own message back; avoid duplicate local synthetic message.
       return;
     }
 
@@ -138,10 +127,14 @@ export class ChatStateService {
       canRenderInOverlay: true,
       actions: {
         reply: createMessageActionState("reply", "disabled", "Cannot reply to own message"),
-        delete: createMessageActionState("delete", "available"),
+        delete: createMessageActionState(
+          "delete",
+          sentToProvider ? "available" : "disabled",
+          sentToProvider ? undefined : "Provider send failed or channel is not connected."
+        ),
       },
       rawPayload: {
-        providerEvent: "outgoing_send",
+        providerEvent: sentToProvider ? "outgoing_send" : "outgoing_send_failed",
         providerChannelId: channelId,
         providerUserId: "local-user",
         preview: trimmed.slice(0, 120),
@@ -152,7 +145,7 @@ export class ChatStateService {
     this.refreshMessageCapabilities();
   }
 
-  deleteMessage(messageId: string): void {
+  async deleteMessage(messageId: string): Promise<void> {
     const message = this.messages().find((msg) => msg.id === messageId);
 
     if (!message) {
@@ -167,6 +160,16 @@ export class ChatStateService {
 
       return;
     }
+
+    const channels = this.chatListService.getVisibleChannels();
+    const channel = channels.find((ch) => ch.channelId === message.sourceChannelId);
+    const platform = channel?.platform ?? message.platform;
+
+    await this.providerCoordinator.deleteMessage(
+      message.sourceChannelId,
+      platform,
+      message.sourceMessageId
+    );
 
     this.chatStorageService.updateMessage(message.sourceChannelId, messageId, {
       text: "Message removed from view.",
@@ -193,7 +196,10 @@ export class ChatStateService {
         continue;
       }
 
-      const isAuthorized = this.authorizationService.isAuthorized(channel.platform);
+      const account = channel.accountId
+        ? this.authorizationService.accounts().find((item) => item.id === channel.accountId)
+        : undefined;
+      const isAuthorized = channel.isAuthorized && !!account;
       const capabilities = getProviderCapabilities(channel.platform, isAuthorized);
 
       this.chatStorageService.updateMessage(message.sourceChannelId, message.id, {
