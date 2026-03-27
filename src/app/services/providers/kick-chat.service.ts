@@ -381,12 +381,14 @@ export class KickChatService extends BaseChatProviderService {
       if (!response.ok) {
         const error = await response.text();
         console.warn(`[KickChat] Failed to send message: ${response.status}`, error);
-        return false;
+        // Surface error to user via console (could be extended with UI notification)
+        throw new Error(`Kick API error ${response.status}: ${error || response.statusText}`);
       }
 
       return true;
     } catch (error) {
-      console.error("[KickChat] Error sending message:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("[KickChat] Error sending message:", message);
       return false;
     }
   }

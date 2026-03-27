@@ -124,6 +124,15 @@ export interface WidgetConfig {
   themeHint: string;
   port: number;
   channelIds?: string[]; // Channels to include in overlay (empty/undefined = all channels)
+  
+  // Overlay appearance settings
+  customCss?: string; // Custom CSS styles
+  textSize?: number; // Font size in pixels
+  animationType?: OverlayAnimationType; // Animation style
+  animationDirection?: OverlayDirection; // Animation entrance direction
+  maxMessages?: number; // Maximum messages to display
+  transparentBg?: boolean; // Enable transparent background
+  opacity?: number; // Background opacity (0.0 - 1.0)
 }
 
 export interface DashboardStats {

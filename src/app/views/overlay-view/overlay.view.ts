@@ -193,9 +193,9 @@ export class OverlayView implements OnDestroy {
   private async pollBackendConfig(widgetId: string): Promise<void> {
     try {
       // Try Tauri command first (works in preview window)
-      let config: any | null = null;
+      let config: WidgetConfig | null = null;
       try {
-        config = await invoke<any>("getOverlayConfig", { widgetId });
+        config = await invoke<WidgetConfig>("getOverlayConfig", { widgetId });
       } catch (tauriError) {
         // Tauri invoke failed (e.g., in OBS browser source), try HTTP fallback
         try {
