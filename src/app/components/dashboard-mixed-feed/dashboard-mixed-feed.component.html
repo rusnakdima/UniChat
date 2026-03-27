@@ -92,6 +92,17 @@
     </div>
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <!-- Connection Error Banners for all channels with errors -->
+      @for (channel of orderedVisibleChannels(); track channel.id) {
+        @if (connectionStateService.hasError(channel.channelId)) {
+          <div class="shrink-0 px-3 pt-2">
+            <app-connection-error-banner
+              [channelId]="channel.channelId"
+              [platform]="channel.platform"
+            />
+          </div>
+        }
+      }
       <app-chat-history-header #historyHeader (loadHistory)="onLoadHistory($event)" />
       @let mixedMsgs = feedData.getMixedFeedChronological();
       <app-chat-scroll-region [scrollToken]="feedData.mixedScrollToken()" [messages]="mixedMsgs">

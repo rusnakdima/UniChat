@@ -19,6 +19,8 @@ import { ChatChannel } from "@models/chat.model";
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
+import { ConnectionErrorBannerComponent } from "@components/connection-error-banner/connection-error-banner.component";
+import { ConnectionStateService } from "@services/data/connection-state.service";
 
 @Component({
   selector: "app-dashboard-mixed-feed",
@@ -30,6 +32,7 @@ import { AvatarCacheService } from "@services/core/avatar-cache.service";
     ChatScrollRegionComponent,
     ChatMessageCardComponent,
     ChatHistoryHeaderComponent,
+    ConnectionErrorBannerComponent,
   ],
   templateUrl: "./dashboard-mixed-feed.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +42,7 @@ export class DashboardMixedFeedComponent {
   readonly chatListService = inject(ChatListService);
   readonly presentation = inject(ChatMessagePresentationService);
   readonly interactions = inject(DashboardChatInteractionService);
+  readonly connectionStateService = inject(ConnectionStateService);
   private readonly dashboardPreferences = inject(DashboardPreferencesService);
   private readonly twitchChat = inject(TwitchChatService);
   private readonly chatStorage = inject(ChatStorageService);

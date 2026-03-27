@@ -24,6 +24,8 @@ import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
+import { ConnectionErrorBannerComponent } from "@components/connection-error-banner/connection-error-banner.component";
+import { ConnectionStateService } from "@services/data/connection-state.service";
 
 @Component({
   selector: "app-dashboard-split-feed",
@@ -36,6 +38,7 @@ import { AvatarCacheService } from "@services/core/avatar-cache.service";
     ChatScrollRegionComponent,
     ChatMessageCardComponent,
     ChatHistoryHeaderComponent,
+    ConnectionErrorBannerComponent,
   ],
   templateUrl: "./dashboard-split-feed.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +49,7 @@ export class DashboardSplitFeedComponent {
   readonly interactions = inject(DashboardChatInteractionService);
   readonly splitUi = inject(SplitFeedUiService);
   readonly blockResize = inject(BlockResizeService);
+  readonly connectionStateService = inject(ConnectionStateService);
   private readonly chatStateService = inject(ChatStateService);
   private readonly chatListService = inject(ChatListService);
   private readonly dashboardPreferencesService = inject(DashboardPreferencesService);
