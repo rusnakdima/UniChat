@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
 import { ChatMessage, PlatformType, ChatHistoryLoadState, MessageType } from "@models/chat.model";
-import { sortMessagesByRecency } from "@helpers/chat.helper";
+import { sortMessagesByRecency, groupByPlatform } from "@helpers/chat.helper";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 import { invoke } from "@tauri-apps/api/core";
@@ -67,12 +67,7 @@ export class ChatStorageService {
 
   readonly messagesByPlatform = computed(() => {
     const allMessages = this.allMessages();
-
-    return {
-      twitch: allMessages.filter((msg) => msg.platform === "twitch"),
-      kick: allMessages.filter((msg) => msg.platform === "kick"),
-      youtube: allMessages.filter((msg) => msg.platform === "youtube"),
-    };
+    return groupByPlatform(allMessages);
   });
 
   isChannelLoaded(channelId: string): boolean {

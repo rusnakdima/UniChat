@@ -59,10 +59,20 @@ export function silenceBrokenChatImage(ev: Event): void {
 }
 
 export function buildSplitFeed(messages: ChatMessage[]): Record<PlatformType, ChatMessage[]> {
+  return groupByPlatform(messages);
+}
+
+/**
+ * Group items by platform type
+ * Utility function to avoid duplicate filtering logic
+ */
+export function groupByPlatform<T extends { platform: PlatformType }>(
+  items: T[]
+): Record<PlatformType, T[]> {
   return {
-    twitch: messages.filter((message) => message.platform === "twitch"),
-    kick: messages.filter((message) => message.platform === "kick"),
-    youtube: messages.filter((message) => message.platform === "youtube"),
+    twitch: items.filter((item) => item.platform === "twitch"),
+    kick: items.filter((item) => item.platform === "kick"),
+    youtube: items.filter((item) => item.platform === "youtube"),
   };
 }
 
@@ -111,11 +121,7 @@ export function getWidgetSummary(widget: WidgetConfig, messages: ChatMessage[]):
 export function groupChannelsByPlatform(
   channels: ChatChannel[]
 ): Record<PlatformType, ChatChannel[]> {
-  return {
-    twitch: channels.filter((channel) => channel.platform === "twitch"),
-    kick: channels.filter((channel) => channel.platform === "kick"),
-    youtube: channels.filter((channel) => channel.platform === "youtube"),
-  };
+  return groupByPlatform(channels);
 }
 
 export function getAuthorizationUrl(platform: PlatformType): string {
