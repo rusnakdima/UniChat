@@ -31,10 +31,14 @@ use crate::routes::youtube_route::{
 };
 use crate::services::auth::oauth_provider_service::OAuthProviderService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
+use crate::services::message_router_service::MessageRouterService;
+use crate::services::message_filter_service::MessageFilterService;
 
 pub struct AppState {
   pub oauthProviderService: Arc<OAuthProviderService>,
   pub overlayServerService: Arc<OverlayServerService>,
+  pub messageRouterService: Arc<MessageRouterService>,
+  pub messageFilterService: Arc<MessageFilterService>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -44,9 +48,21 @@ pub fn run() {
     .plugin(tauri_plugin_deep_link::init())
     .setup(|app| {
       let frontend_dist_dir = resolve_frontend_dist_dir();
+      
+      // Initialize overlay server
+      let overlay_server = Arc::new(OverlayServerService::new(frontend_dist_dir));
+      
+      // Initialize message filter service
+      let message_filter = Arc::new(MessageFilterService::new());
+      
+      // Initialize message router service (will be wired to overlay server after start)
+      let message_router = Arc::new(MessageRouterService::new(1000, None));
+      
       app.manage(AppState {
         oauthProviderService: Arc::new(OAuthProviderService::new()),
-        overlayServerService: Arc::new(OverlayServerService::new(frontend_dist_dir)),
+        overlayServerService: overlay_server,
+        messageRouterService: message_router,
+        messageFilterService: message_filter,
       });
       Ok(())
     })
