@@ -9,6 +9,7 @@ import { createMessageActionState } from "@helpers/chat.helper";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
 import tmi from "tmi.js";
 import { IconsCatalogService } from "@services/ui/icons-catalog.service";
+import { EmoteUrlService } from "@services/ui/emote-url.service";
 
 export interface TwitchUserInfo {
   id: string;
@@ -125,6 +126,7 @@ export class TwitchChatService extends BaseChatProviderService {
     (channelId: string, status: TwitchConnectionStatus) => void
   >();
   private readonly iconsCatalog = inject(IconsCatalogService);
+  private readonly emoteUrl = inject(EmoteUrlService);
 
   override connect(channelId: string): void {
     void this.iconsCatalog.ensureGlobalLoaded();
@@ -960,7 +962,7 @@ export class TwitchChatService extends BaseChatProviderService {
           code,
           start,
           end,
-          url: `https://static-cdn.jtvnw.net/emoticons/v2/${encodeURIComponent(emoteId)}/default/dark/1.0`,
+          url: this.emoteUrl.getTwitchEmote(emoteId),
         });
       }
     }
