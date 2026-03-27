@@ -175,6 +175,16 @@ export interface ChannelConnectionError {
   isRecoverable: boolean;
 }
 
+export interface RoomState {
+  isSlowMode: boolean;
+  slowModeWaitTime?: number; // seconds between messages
+  isFollowersOnly: boolean;
+  followersOnlyMinutes?: number; // minutes required to follow
+  isSubscribersOnly: boolean;
+  isEmotesOnly: boolean;
+  isR9k: boolean; // unique messages only
+}
+
 export interface ChannelConnection {
   channelId: string;
   platform: PlatformType;
@@ -183,6 +193,7 @@ export interface ChannelConnection {
   viewers: number;
   capabilities: PlatformCapabilities;
   error?: ChannelConnectionError;
+  roomState?: RoomState;
 }
 
 export interface AuthorizationState {

@@ -11,6 +11,7 @@ import tmi from "tmi.js";
 import { IconsCatalogService } from "@services/ui/icons-catalog.service";
 import { EmoteUrlService } from "@services/ui/emote-url.service";
 import { ConnectionErrorService, ConnectionErrorCode } from "@services/core/connection-error.service";
+import { ConnectionStateService } from "@services/data/connection-state.service";
 
 export interface TwitchUserInfo {
   id: string;
@@ -129,6 +130,7 @@ export class TwitchChatService extends BaseChatProviderService {
   private readonly iconsCatalog = inject(IconsCatalogService);
   private readonly emoteUrl = inject(EmoteUrlService);
   private readonly errorService = inject(ConnectionErrorService);
+  private readonly connectionStateService = inject(ConnectionStateService);
 
   override connect(channelId: string): void {
     void this.iconsCatalog.ensureGlobalLoaded();
@@ -177,9 +179,32 @@ export class TwitchChatService extends BaseChatProviderService {
     });
     client.on("disconnected", () => {
       this.emitStatus(normalizedChannel, "disconnected");
+      this.connectionStateService.clearRoomState(normalizedChannel);
     });
     client.on("reconnect", () => {
       this.emitStatus(normalizedChannel, "reconnecting");
+    });
+    client.on("roomstate", (channel: string, state: tmi.RoomState) => {
+      // Handle Twitch room state changes (slow mode, followers-only, etc.)
+      // Note: tmi.js uses string "0" or "-1" for slow mode, parse accordingly
+      const slowValue = state.slow;
+      const slowModeWaitTime = typeof slowValue === "string" ? parseInt(slowValue, 10) : (slowValue ? 0 : undefined);
+      
+      const followersValue = state["followers-only"];
+      const isFollowersOnly = followersValue === true || followersValue === "0";
+      const followersOnlyMinutes = isFollowersOnly && typeof followersValue === "string" && followersValue !== "0" 
+        ? parseInt(followersValue, 10) 
+        : undefined;
+
+      this.connectionStateService.updateRoomState(normalizedChannel, {
+        isSlowMode: slowValue === true || (typeof slowValue === "string" && slowValue !== "0"),
+        slowModeWaitTime: slowModeWaitTime,
+        isFollowersOnly,
+        followersOnlyMinutes,
+        isSubscribersOnly: state["subs-only"] ?? false,
+        isEmotesOnly: state["emote-only"] ?? false,
+        isR9k: state.r9k ?? false,
+      });
     });
     // @ts-ignore - tmi.js emits connectionfailure but not in types
     client.on("connectionfailure", () => {

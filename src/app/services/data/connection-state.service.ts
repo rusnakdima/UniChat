@@ -5,6 +5,7 @@ import {
   PlatformStatus,
   PlatformType,
   ChannelConnectionError,
+  RoomState,
 } from "@models/chat.model";
 import { getProviderCapabilities } from "@helpers/chat.helper";
 import { ChatListService } from "@services/data/chat-list.service";
@@ -94,6 +95,38 @@ export class ConnectionStateService {
         ...(existingError ?? {}),
       },
     });
+  }
+
+  /**
+   * Update room state for a channel (slow mode, followers-only, etc.)
+   */
+  updateRoomState(channelId: string, roomState: Partial<RoomState>): void {
+    const current = this.connectionsSignal()[channelId];
+    this.updateConnection(channelId, {
+      roomState: {
+        isSlowMode: false,
+        isFollowersOnly: false,
+        isSubscribersOnly: false,
+        isEmotesOnly: false,
+        isR9k: false,
+        ...current?.roomState,
+        ...roomState,
+      },
+    });
+  }
+
+  /**
+   * Get room state for a channel
+   */
+  getRoomState(channelId: string): RoomState | undefined {
+    return this.connectionsSignal()[channelId]?.roomState;
+  }
+
+  /**
+   * Clear room state (called on disconnect)
+   */
+  clearRoomState(channelId: string): void {
+    this.updateConnection(channelId, { roomState: undefined });
   }
 
   connectChannel(channelId: string): void {

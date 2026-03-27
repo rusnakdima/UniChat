@@ -22,4 +22,9 @@
       <span>Load Previous Messages</span>
     </button>
   }
+
+  <!-- Room State Indicators (only when channel is specified) -->
+  @if (channelId()) {
+    <app-room-state-indicators [channelId]="channelId()!" />
+  }
 </div>
