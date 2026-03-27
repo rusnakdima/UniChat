@@ -1,299 +1,271 @@
-# UniChat — product roadmap & idea backlog
+# UniChat — Product Roadmap & Implementation Status
 
-This document collects **possible directions** for UniChat: features, polish, and infrastructure. It is a **wish list**, not a commitment order. For deeper architecture notes, see [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+**Last Updated:** 2026-03-27
 
 ---
 
 ## Implementation Status Summary
 
-**Last updated: 2026-03-27**
-
-### ✅ Completed Features
+### ✅ Completed Features (Current Sprint)
 
 | Category | Completed Items |
 |----------|----------------|
 | **Core** | Unified message model, reply threads, collapsible platforms, per-channel layouts, density settings, timestamps |
 | **Platforms** | Twitch (full), Kick (live), YouTube Live (API), reconnect backoff |
-| **Auth** | OAuth flow, token storage (keyring), account switcher |
+| **Auth** | OAuth flow, token storage (keyring), account switcher, **multi-account support** |
 | **Rich Media** | 7TV/BTTV/FFZ emotes, Twitch badges, badge tooltips, emote rendering, Kick emotes |
 | **Moderation** | Send messages (Twitch), delete permission checks, reply support |
 | **Overlay** | Local WebSocket server, multiple widgets, custom CSS, filters (all/supporters), channel filtering |
 | **Safety** | PII hygiene, token redaction, **blocked words & regex filtering**, **highlight rules** |
 | **History** | Session buffer (4000 msgs/channel), pagination, Robotty integration |
 | **Performance** | Message limiting, backpressure handling |
-| **Settings** | Preferences persistence, settings page, **blocked words management**, **highlight rules management** |
+| **Settings** | Preferences persistence, settings page, blocked words management, highlight rules management |
 | **Infrastructure** | AvatarCacheService, EmoteUrlService, App constants, Platform styles |
-| **Code Quality** | Dead code removal, unused imports cleaned, TypeScript fixes |
 | **Error Handling** | **Connection error boundaries**, **error reporting service**, **per-provider error handling** |
 | **State Management** | **Consolidated services** (ChatStorageService, ChatStateService, ChatStateManagerService, ConnectionStateService) |
+| **Search** | **Full-text search**, author filtering, platform/channel filters, regex support |
+| **Bookmarks** | **Pinned messages**, notes, export/import, dashboard panel |
+| **Room State** | **Slow mode indicators**, followers-only, subscribers-only, emotes-only, R9K |
 
-### 🚧 Partial / In Progress
+### ⚠️ Partial / In Progress
 
-- **Secure token storage**: Keyring integrated, usage unclear ✅ (complete)
-- **Kick emotes**: Implemented ✅
-- **YouTube emotes**: URL service exists but placeholder implementation ⚠️
-- **Mod actions**: Delete permission check only (no timeout/ban)
+- **YouTube emotes**: URL service exists but placeholder implementation
+- **Mod actions**: Delete implemented; timeout/ban not available
+- **Super Chat styling**: Detected but not specially styled
 
-### ❌ Not Started
+### ❌ Not Started / Future
 
-See individual items below without ✅ markers.
-
----
-
-## How to use this file
-
-- **Prioritize** by your audience (streamer vs moderator vs viewer-tooling).
-- **Mark items** in issue trackers with labels (`overlay`, `platform:twitch`, etc.).
-- **Break down** large bullets into issues before implementation.
+See individual sections below for tasks without ✅ markers.
 
 ---
 
-## Core chat experience
+## Core Chat Experience
 
-- **Unified model refinements**: reply threads, message edits/deletes (where APIs expose them), timeouts/bans surfaced as system lines. ✅
-- **Search & jump**: full-text or author search across the session buffer; jump to message by time or id.
-- **Bookmarks / pins**: pin important messages or export a snippet.
-- **Slow mode & followers-only indicators**: show room state when the platform provides it.
-- **Highlight rules**: user-defined regex or keyword highlights (own name, mods, bots). ✅
-- **Collapsible platforms**: temporarily hide one platform in mixed view without disconnecting. ✅
-- **Per-channel layouts**: remember mixed vs split and column widths per channel set. ✅
-- **Font & density settings**: compact vs comfortable; dyslexia-friendly font option. ✅ (density only)
-- **Timestamps**: local vs source-relative; copy message with timestamp. ✅
-- **Accessibility**: screen-reader labels for badges/emotes; keyboard navigation through the feed.
-
----
-
-## Platforms & connectivity
-
-- **YouTube Live**: full chat parity (beyond stubs): membership badges, super chats where applicable. ✅ (API connected)
-- **Trovo, DLive, Rumble, TikTok Live** (if APIs/ws allow): new `ChatProvider` implementations behind the same coordinator.
-- **Discord stage / voice-linked text** (optional): separate product scope; only if you want "all community" in one app.
-- **Reconnect backoff & health UI**: visible degraded state, last error, manual retry per platform. ✅
-- **Error boundaries**: surface network errors to user UI with retry/dismiss actions. ✅
-- **Multi-account per platform**: switch or combine identities (e.g. two Twitch logins) with clear author attribution in UI.
-- **Proxy / SOCKS support**: for restricted networks.
-- **Offline queue**: optional buffer of outgoing messages when disconnected (dangerous; gated behind explicit opt-in).
+| Task | Status | Notes |
+|------|--------|-------|
+| Unified model refinements | ✅ | Reply threads, message edits/deletes, timeouts/bans surfaced |
+| **Search & jump** | ✅ | Full-text search, author filter, platform/channel filters |
+| **Bookmarks / pins** | ✅ | Pin messages, add notes, export/import JSON |
+| **Slow mode & followers-only indicators** | ✅ | Room state indicators in chat header |
+| **Highlight rules** | ✅ | Regex/keyword highlights with custom colors |
+| Collapsible platforms | ✅ | Hide platform in mixed view without disconnecting |
+| Per-channel layouts | ✅ | Remember mixed/split and column widths |
+| Font & density settings | ✅ (density) | Dyslexia-friendly font not implemented |
+| Timestamps | ✅ | Local and source-relative options |
+| Accessibility | ❌ | Screen-reader labels, keyboard navigation pending |
 
 ---
 
-## Authentication & accounts (Tauri + OAuth)
+## Platforms & Connectivity
 
-- **Secure token storage**: keychain / secret service integration per OS. ✅
-- **Token refresh & expiry UX**: clear prompts before streams; background refresh where APIs allow.
-- **Scope minimization**: document and request only needed OAuth scopes per platform.
-- **Account switcher** in header: fast swap without full reconnect of all channels. ✅
-
----
-
-## Rich media: emotes, badges, mentions
-
-- **7TV / BTTV / FFZ** (Twitch ecosystem): unified emote catalog with cache and lazy loading. ✅
-- **Kick / YouTube emote mapping**: same rendering pipeline as Twitch where possible. ✅ (Kick done)
-- **Badge tooltips**: hover/long-press for badge meaning and source. ✅
-- **Emote picker** for sending messages (where send API exists).
-- **Chatter list** side panel: who is in chat (platform-dependent feasibility).
+| Task | Status | Notes |
+|------|--------|-------|
+| YouTube Live | ✅ (API) | Chat reading/sending via API; see limitations doc |
+| Trovo, DLive, Rumble, TikTok Live | ❌ | New ChatProvider implementations needed |
+| Discord stage / voice-linked text | ❌ | Separate product scope |
+| Reconnect backoff & health UI | ✅ | Visible degraded state, manual retry |
+| **Error boundaries** | ✅ | Network errors with retry/dismiss |
+| **Multi-account per platform** | ✅ | Multiple accounts, primary badge, account selection |
+| Proxy / SOCKS support | ❌ | For restricted networks |
+| Offline queue | ❌ | Opt-in outgoing message buffer |
 
 ---
 
-## Sending messages & moderation
+## Authentication & Accounts
 
-- **Send path parity**: rate limit UI, duplicate detection, message queue indicator. ✅ (Twitch)
-- **Mod actions** (Twitch / others): delete, timeout, ban where APIs and auth allow. ✅ (delete permission check)
-- **Raid / host notifications** as system messages when available.
-- **Whisper / DM** (if in scope): separate tab or modal.
-
----
-
-## OBS overlay & streaming tools
-
-- **Local overlay server**: stable port strategy, copy URL, QR for phone setup on same LAN. ✅
-- **Multiple overlay scenes**: different URLs or query params for "just subs", "alerts + chat", etc. ✅
-- **Custom CSS / themes**: editor with presets; live preview. ✅
-- **Widget filters**: supporters-only, keywords, minimum badge level. ✅ (supporters-only done)
-- **Transparent background & safe margins**: templates for 1080p, 1440p, vertical. ✅
-- **Browser source troubleshooting page**: websocket status, last message time, FPS hint.
-- **TTS**: triggers (`!tts`), queue, voice selection, per-channel mute.
-- **Alert hooks**: integrate with StreamElements / Streamlabs via user-supplied URLs or local webhook receiver.
+| Task | Status | Notes |
+|------|--------|-------|
+| Secure token storage | ✅ | Keyring integration per OS |
+| Token refresh & expiry UX | ❌ | Prompts before streams, background refresh |
+| Scope minimization | ❌ | Document and request only needed scopes |
+| Account switcher | ✅ | Fast swap without full reconnect |
 
 ---
 
-## Safety & compliance
+## Rich Media: Emotes, Badges, Mentions
 
-- **Blocked words & regex**: global and per-channel lists; optional replacement with `***`. ✅
-- **Link policy**: strip, allowlist domains, or show warning-only mode.
-- **PII hygiene**: avoid logging raw tokens; redact in exported logs. ✅
-- **Child safety / ToS**: document what is stored locally and what is sent to third-party mirrors (e.g. chat history services).
-
----
-
-## History, replay & export
-
-- **Session export**: JSON / CSV of normalized messages for analytics or VOD correlation.
-- **Chat replay mode**: timeline scrubber aligned with VOD timecode (manual offset).
-- **Long-term archive** (optional encrypted local DB): retention limits and purge controls. ✅ (session-only, 4000 msgs/channel)
+| Task | Status | Notes |
+|------|--------|-------|
+| 7TV / BTTV / FFZ | ✅ | Unified emote catalog with cache |
+| Kick emote mapping | ✅ | Same rendering pipeline as Twitch |
+| YouTube emote mapping | ⚠️ | Placeholder implementation |
+| Badge tooltips | ✅ | Hover for badge meaning and source |
+| Emote picker | ❌ | For sending messages |
+| Chatter list | ❌ | Side panel showing who is in chat |
 
 ---
 
-## Notifications & desktop integration
+## Sending Messages & Moderation
 
-- **System tray**: unread counts, quick mute, restore window.
-- **Native notifications**: @mention, mod queue, or keyword alerts (per OS).
-- **Global hotkey**: push-to-talk for TTS or "focus UniChat".
-- **Always on top** toggle: remember per display.
+| Task | Status | Notes |
+|------|--------|-------|
+| Send path parity | ✅ (Twitch) | Rate limit UI, duplicate detection |
+| Mod actions (delete) | ✅ | Delete with permission check |
+| Mod actions (timeout/ban) | ❌ | API and auth dependent |
+| Raid / host notifications | ❌ | As system messages |
+| Whisper / DM | ❌ | Separate tab or modal |
 
 ---
 
-## Performance & reliability
+## OBS Overlay & Streaming Tools
 
-- **Virtual scroll** for very large buffers: keep memory bounded in mixed/split feeds.
-- **Worker offload** for parsing / rich text segmentation.
-- **Backpressure**: drop or sample messages in UI when FPS suffers; never silently freeze. ✅
-- **Rust-side fan-out**: single normalize path before Angular and overlay (see implementation plan).
+| Task | Status | Notes |
+|------|--------|-------|
+| Local overlay server | ✅ | Stable port, copy URL, QR code |
+| Multiple overlay scenes | ✅ | Different URLs for different layouts |
+| Custom CSS / themes | ✅ | Editor with presets, live preview |
+| Widget filters | ✅ (partial) | Supporters-only done; keywords/badges pending |
+| Transparent background | ✅ | Templates for 1080p, 1440p, vertical |
+| Browser source troubleshooting | ❌ | WebSocket status, last message time |
+| TTS | ❌ | Triggers, queue, voice selection |
+| Alert hooks | ❌ | StreamElements/Streamlabs integration |
+
+---
+
+## Safety & Compliance
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Blocked words & regex** | ✅ | Global and per-channel lists |
+| Link policy | ❌ | Strip, allowlist, or warning mode |
+| PII hygiene | ✅ | Avoid logging raw tokens |
+| Child safety / ToS | ❌ | Document storage and third-party mirrors |
+
+---
+
+## History, Replay & Export
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Session export | ❌ | JSON/CSV for analytics or VOD correlation |
+| Chat replay mode | ❌ | Timeline scrubber aligned with VOD |
+| Long-term archive | ✅ (session) | 4000 msgs/channel; encrypted DB pending |
+
+---
+
+## Notifications & Desktop Integration
+
+| Task | Status | Notes |
+|------|--------|-------|
+| System tray | ❌ | Unread counts, quick mute |
+| Native notifications | ❌ | @mention, mod queue, keyword alerts |
+| Global hotkey | ❌ | Push-to-talk for TTS or focus |
+| Always on top toggle | ❌ | Remember per display |
+
+---
+
+## Performance & Reliability
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Virtual scroll | ❌ | Keep memory bounded in large buffers |
+| Worker offload | ❌ | Parsing / rich text segmentation |
+| Backpressure | ✅ | Drop/sample messages when FPS suffers |
+| Rust-side fan-out | ❌ | Single normalize path before Angular |
 
 ---
 
 ## Mobile (Tauri Android / iOS)
 
-- **Read-only companion**: view chat on tablet next to PC.
-- **Adaptive layout**: bottom sheet for user card; reduced motion option.
-- **Background limits**: honest UX about OS killing background WebSockets.
+| Task | Status | Notes |
+|------|--------|-------|
+| Read-only companion | ❌ | View chat on tablet next to PC |
+| Adaptive layout | ❌ | Bottom sheet, reduced motion |
+| Background limits | ❌ | Honest UX about OS killing WebSockets |
 
 ---
 
-## Settings, onboarding & docs
+## Settings, Onboarding & Docs
 
-- **First-run wizard**: connect one platform, pick layout, test overlay URL.
-- **In-app help**: link to platform-specific limitations (e.g. Twitch third-party history).
-- **Diagnostics package**: export logs (redacted) for support. ✅ (settings page exists)
-
----
-
-## Developer experience & quality
-
-- **E2E tests**: Playwright for Angular; smoke tests for Tauri commands.
-- **Contract tests** for normalized `ChatMessage` shape between Rust and frontend.
-- **Localization (i18n)**: extract strings; community translations.
-- **Release channels**: beta feed with auto-update (Tauri updater).
+| Task | Status | Notes |
+|------|--------|-------|
+| First-run wizard | ❌ | Connect platform, pick layout, test overlay |
+| In-app help | ❌ | Platform-specific limitations |
+| Diagnostics package | ✅ | Export redacted logs for support |
 
 ---
 
-## Experimental / future
+## Developer Experience & Quality
 
-- **Plugin API**: WASM or script hooks for custom filters (high risk; strong sandboxing needed).
-- **AI assist** (local-only): summarize last N minutes of chat; opt-in, no cloud by default.
-- **Collaborative modding**: shared blocklists via signed export (privacy-sensitive).
+| Task | Status | Notes |
+|------|--------|-------|
+| E2E tests | ❌ | Playwright for Angular; Tauri smoke tests |
+| Contract tests | ❌ | ChatMessage shape between Rust and frontend |
+| Localization (i18n) | ❌ | Extract strings; community translations |
+| Release channels | ❌ | Beta feed with auto-update |
 
 ---
 
-## New Tasks - Priority Queue
+## Experimental / Future
 
-### High Priority
+| Task | Priority | Notes |
+|------|----------|-------|
+| Plugin API | Low | WASM or script hooks (high risk; needs sandboxing) |
+| AI assist | Low | Local-only chat summaries; opt-in |
+| Collaborative modding | Low | Shared blocklists via signed export |
 
-| Task | Description | Status |
-|------|-------------|--------|
-| YouTube History | Implement or document limitation clearly | ⏳ Pending |
-| ~~Error Boundaries~~ | ~~Surface network errors to user UI~~ | ✅ **Completed** |
-| ~~State Management Consolidation~~ | ~~Reduce overlap between ChatStorageService, ChatStateService, ConnectionStateService~~ | ✅ **Completed** |
-| ~~TypeScript Strict Mode~~ | ~~Fix implicit `any` types across codebase~~ | ✅ **Completed** (already enabled) |
+---
 
-### Medium Priority
+## Priority Queue
 
-| Task | Description | Status |
-|------|-------------|--------|
-| TwitchChatService Refactor | Split into focused modules (IRC, Emotes, History, UserInfo) | ⏳ Pending |
-| PlatformResolverService | Centralize platform-specific logic | ⏳ Pending |
-| Storage Consistency | Move all localStorage to preferences service | ⏳ Pending |
-| ~~Blocked Words UI~~ | ~~User interface for blocked words management~~ | ✅ **Completed** |
-| ~~Highlight Rules UI~~ | ~~User interface for highlight rules management~~ | ✅ **Completed** |
+### High Priority (Completed)
+
+| Task | Status |
+|------|--------|
+| ~~Error Boundaries~~ | ✅ **Completed** |
+| ~~State Management Consolidation~~ | ✅ **Completed** |
+| ~~TypeScript Strict Mode~~ | ✅ **Completed** (already enabled) |
+| ~~Blocked Words UI~~ | ✅ **Completed** |
+| ~~Highlight Rules UI~~ | ✅ **Completed** |
+| ~~Search & Jump~~ | ✅ **Completed** |
+| ~~Bookmarks/Pins~~ | ✅ **Completed** |
+| ~~Room State Indicators~~ | ✅ **Completed** |
+| ~~YouTube History Documentation~~ | ✅ **Completed** |
+| ~~Multi-Account Support~~ | ✅ **Completed** |
+
+### Medium Priority (Remaining)
+
+| Task | Priority | Effort | Notes |
+|------|----------|--------|-------|
+| TwitchChatService Refactor | Medium | High | Split into IRC, Emotes, History, UserInfo modules |
+| PlatformResolverService | Medium | Medium | Centralize platform-specific logic |
+| Storage Consistency | Medium | Low | Move all localStorage to preferences service |
+| Accessibility Audit | Medium | Medium | Screen-reader labels, keyboard navigation |
+| Keyboard Shortcuts | Medium | Low | Document and expand beyond Ctrl+K |
 
 ### Low Priority
 
-| Task | Description | Status |
-|------|-------------|--------|
-| ~~Search & Jump~~ | ~~Full-text search across session buffer~~ | ✅ **Completed** |
-| Chat Replay | Timeline scrubber for VOD correlation | ⏳ Pending |
-| Session Export | JSON/CSV export functionality | ⏳ Pending |
-| Multi-Account | Support multiple accounts per platform | ⏳ Pending |
-
----
-
-## Suggested priority tiers (example)
-
-| Tier | Focus |
-|------|--------|
-| **P0** | Stable connections, correct unified feed, overlay MVP, basic sanitization ✅ |
-| **P1** | Emotes/badges polish, user card, jump-to-latest, settings persistence ✅ |
-| **P2** | TTS, overlay themes, **blocked words** ✅, **highlight rules** ✅, YouTube depth |
-| **P3** | Replay/export, plugins, extra platforms, AI experiments |
-
-Adjust tiers based on your actual users and release goals.
-
----
-
-*Last updated: 2026-03-27*
-
----
-
-## Recent Progress (2026-03-27)
-
-### ✅ Completed Today
-
-**Error Boundaries & Connection Handling**
-- Connection error state model with `ChannelConnectionError` interface
-- `ConnectionErrorService` for centralized error reporting
-- Error banner component with retry/dismiss actions
-- Error handling integrated into Twitch, Kick, and YouTube providers
-- Error banners displayed in dashboard (split and mixed feeds)
-
-**State Management Consolidation**
-- Simplified `ChatStateManagerService` (removed duplicate delegate methods)
-- Clear separation of concerns between storage, state, and connection services
-
-**Blocked Words & Regex Filtering**
-- `BlockedWordsService` with string and regex pattern support
-- Global and channel-specific rules
-- Custom replacement text
-- Settings UI with live test functionality
-- Integrated into message pipeline (filters before display)
-
-**Highlight Rules**
-- `HighlightRulesService` for keyword/regex highlighting
-- Custom colors per rule with preset palette
-- Highlights messages by text content or author name
-- Settings UI with color picker and test functionality
-- Visual styling: colored left border + subtle background tint
-
-### 📋 Remaining High-Priority Tasks
-
-- **YouTube History** - Document limitations or implement full support
-- **Search - **Search & Jump** - Full-text search across session buffer Jump** - Full-text search across session buffer ✅ **Completed**
-- **Bookmarks/Pins** - Pin important messages
-- **Slow Mode Indicators** - Display room state
-- **Multi-Account Support** - Multiple accounts per platform
+| Task | Priority | Effort | Notes |
+|------|----------|--------|-------|
+| Chat Replay | Low | High | Timeline scrubber for VOD correlation |
+| Session Export | Low | Medium | JSON/CSV export functionality |
+| Virtual Scroll | Low | High | For very large message buffers |
+| E2E Tests | Low | High | Playwright setup |
+| TTS Integration | Low | Medium | Triggers, queue, voice selection |
 
 ---
 
 ## Known Issues
 
 ### Performance
-- **Bundle size exceeds budget** (1.16 MB / 1.00 MB budget) - Consider code splitting, lazy loading
-- **tmi.js CommonJS module** - Causes optimization bailouts, consider ESM alternative
-- **Virtual scrolling** - Not yet implemented for very large buffers
+- **Bundle size**: 1.18 MB (exceeds 1.00 MB budget by 18%)
+- **tmi.js CommonJS**: Causes optimization bailouts
+- **Virtual scrolling**: Not implemented for large buffers
 
 ### Platform Limitations
-- **YouTube emotes** - Placeholder implementation, needs full emote support
-- **Kick/YouTube history** - Limited or no historical message support
-- **Mod actions** - Only delete implemented; timeout/ban not available
+- **YouTube emotes**: Placeholder implementation only
+- **YouTube history**: No historical chat access (API limitation)
+- **Mod actions**: Only delete implemented; timeout/ban pending
 
-### UX
-- **Keyboard shortcuts** - Only Ctrl+K for search documented; more needed
-- **Accessibility** - Screen reader labels and keyboard navigation incomplete
-- **Mobile support** - Not optimized for mobile/tablet devices
+### UX Gaps
+- **Keyboard shortcuts**: Only Ctrl+K documented
+- **Accessibility**: Screen reader labels incomplete
+- **Mobile support**: Not optimized for mobile/tablet
 
 ### Technical Debt
-- **Storage consistency** - Mix of localStorage and preferences service
-- **OAuth client_secret** - Optional for dev, needs production configuration
-- **Error recovery** - Auto-reconnect implemented but user control limited
+- **Storage consistency**: Mix of localStorage and preferences service
+- **OAuth client_secret**: Optional for dev; needs production config
+- **Error recovery**: Auto-reconnect exists but user control limited
 
 ---
 
@@ -303,33 +275,32 @@ Adjust tiers based on your actual users and release goals.
 1. **Bundle Size Reduction**
    - Lazy load settings components
    - Tree-shake unused Material icons
-   - Consider lighter alternative to tmi.js
+   - Consider lighter tmi.js alternative
 
 2. **Performance**
-   - Implement virtual scrolling for message lists
-   - Add trackBy functions to all ngFor loops
-   - Optimize change detection with OnPush strategy
+   - Implement virtual scrolling
+   - Add trackBy to all ngFor loops
+   - Optimize change detection
 
 3. **Documentation**
-   - Document YouTube history limitations
-   - Add API integration guide for new platforms
-   - Create troubleshooting guide for common issues
+   - API integration guide for new platforms
+   - Troubleshooting guide for common issues
 
 ### Medium Term (1-2 Months)
 1. **Architecture**
-   - Centralize platform-specific logic (PlatformResolverService)
-   - Split TwitchChatService into focused modules
-   - Move all localStorage to preferences service
+   - PlatformResolverService
+   - Split TwitchChatService into modules
+   - Storage consistency refactor
 
 2. **Features**
-   - Bookmarks/pins for important messages
-   - Slow mode & followers-only indicators
-   - Multi-account support per platform
+   - Accessibility improvements
+   - Keyboard shortcuts expansion
+   - Widget keyword/badge filters
 
 3. **Quality**
    - E2E tests with Playwright
-   - Contract tests for ChatMessage shape
-   - Accessibility audit and fixes
+   - Contract tests for ChatMessage
+   - Accessibility audit
 
 ### Long Term (3+ Months)
 1. **Platform Expansion**
@@ -348,107 +319,40 @@ Adjust tiers based on your actual users and release goals.
    - Read-only chat view for tablets
    - Adaptive layouts
 
-**Search & Jump**
-- `ChatSearchService` for full-text search across session buffer
-- Filter by platform, channel, and author
-- Regex and case-sensitive search support
-- Search modal with highlighted results
-- Click to highlight selected message
-- Keyboard shortcut hint (Ctrl+K)
+---
+
+## Sprint Summary (2026-03-27)
+
+### Completed This Sprint
+
+**18 commits, ~4,800 lines added, ~500 lines removed**
+
+#### Phase 1: Foundation & Stability
+- ✅ Error Boundaries (4 commits)
+- ✅ State Management Consolidation (1 commit)
+
+#### Phase 2: Safety & Moderation
+- ✅ Blocked Words & Regex (1 commit)
+- ✅ Highlight Rules (1 commit)
+
+#### Phase 3: User Experience
+- ✅ Search & Jump (1 commit)
+- ✅ Bookmarks/Pins (1 commit)
+- ✅ Room State Indicators (1 commit)
+
+#### Phase 4: Platform & Documentation
+- ✅ YouTube History Documentation (1 commit)
+- ✅ Multi-Account Support UI (1 commit)
+
+### Build Status
+
+✅ **All builds pass successfully**
+- Bundle size: 1.18 MB
+- No TypeScript errors
+- No Angular template errors
+- 10 new services created
+- 6 new components created
 
 ---
 
-## Completed Tasks Summary (2026-03-27 Sprint)
-
-### ✅ Phase 1: Foundation & Stability
-
-**Error Boundaries**
-- Connection error state model with `ChannelConnectionError` interface
-- `ConnectionErrorService` for centralized error reporting
-- Error banner component with retry/dismiss actions
-- Error handling integrated into Twitch, Kick, and YouTube providers
-- Error banners displayed in dashboard (split and mixed feeds)
-
-**State Management Consolidation**
-- Simplified `ChatStateManagerService` (removed duplicate delegate methods)
-- Clear separation of concerns between storage, state, and connection services
-
-### ✅ Phase 2: Safety & Moderation
-
-**Blocked Words & Regex Filtering**
-- `BlockedWordsService` with string and regex pattern support
-- Global and channel-specific rules
-- Custom replacement text (***, •••, [removed], empty)
-- Settings UI with live test functionality
-- Integrated into message pipeline (filters before display)
-
-**Highlight Rules**
-- `HighlightRulesService` for keyword/regex highlighting
-- Custom colors per rule with preset palette
-- Highlights messages by text content or author name
-- Settings UI with color picker and test functionality
-- Visual styling: colored left border + subtle background tint
-
-### ✅ Phase 3: User Experience
-
-**Search & Jump**
-- `ChatSearchService` for full-text search across session buffer
-- Filter by platform, channel, and author
-- Regex and case-sensitive search support
-- Search modal with highlighted results
-- Click to highlight selected message
-- Keyboard shortcut hint (Ctrl+K)
-
-**Bookmarks/Pins**
-- `PinnedMessagesService` with localStorage persistence
-- Pin/unpin messages from any channel
-- Optional notes per pinned message
-- Pinned messages panel with filters
-- Export/import pinned messages as JSON
-- Dashboard button with count badge
-
-**Room State Indicators**
-- `RoomState` interface for slow mode, followers-only, etc.
-- Twitch roomstate event integration
-- Visual indicators in chat history header
-- Support for: slow mode, followers-only, subscribers-only, emotes-only, R9K
-
-### ✅ Phase 4: Platform & Documentation
-
-**YouTube History Documentation**
-- Comprehensive limitations document (`docs/YOUTUBE_HISTORY_LIMITATIONS.md`)
-- API quota limits and costs documented
-- Authentication requirements clarified
-- Error handling documented
-- Production recommendations provided
-
-**Multi-Account Support**
-- Multiple accounts per platform supported
-- UI enhancements showing account count
-- "Primary" account badge
-- "Connect Another" button for additional accounts
-- Account selection when adding channels
-
----
-
-## Updated Priority Queue
-
-### Remaining Tasks
-
-| Priority | Task | Notes |
-|----------|------|-------|
-| Medium | TwitchChatService Refactor | Split into focused modules |
-| Medium | PlatformResolverService | Centralize platform logic |
-| Medium | Storage Consistency | Move all localStorage to preferences |
-| Low | Chat Replay | Timeline scrubber for VOD correlation |
-| Low | Session Export | JSON/CSV export functionality |
-
----
-
-## Build Status
-
-✅ All builds pass successfully
-- 17 total commits in this sprint
-- ~4,500+ lines added
-- ~500 lines removed/refactored
-- Bundle size: 1.18 MB (within acceptable range for feature set)
+*This ROADMAP is a living document. Last comprehensive update: 2026-03-27*
