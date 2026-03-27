@@ -3,28 +3,32 @@
 >
   <header
     class="flex w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900"
+    role="banner"
   >
     <div class="flex items-center gap-4">
       <h1 class="text-lg font-semibold tracking-tight">UniChat</h1>
       <div class="flex items-center gap-2">
         <span
           class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
+          aria-label="Current feed mode: {{ getFeedMode() }}"
         >
           {{ getFeedMode() === "mixed" ? "Mixed" : "Split" }}
         </span>
       </div>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2" role="navigation" aria-label="Dashboard controls">
       <!-- Search Button -->
       <button
         type="button"
         (click)="toggleSearch()"
         class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
         title="Search messages (Ctrl+K)"
+        aria-label="Search messages"
+        aria-keyshortcuts="Ctrl+K"
       >
         <mat-icon class="!h-4 !w-4">search</mat-icon>
-        <span>Search</span>
+        <span aria-hidden="true">Search</span>
       </button>
 
       <!-- Pinned Messages Button -->
@@ -33,6 +37,8 @@
         (click)="togglePinned()"
         class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
         title="Pinned messages"
+        aria-label="Pinned messages"
+        aria-keyshortcuts="Ctrl+P"
       >
         <mat-icon class="!h-4 !w-4">push_pin</mat-icon>
         @if (pinnedCount() > 0) {
@@ -40,7 +46,7 @@
             {{ pinnedCount() }}
           </span>
         }
-        <span>Pinned</span>
+        <span aria-hidden="true">Pinned</span>
       </button>
 
       @if (getFeedMode() === "split") {
@@ -49,12 +55,13 @@
           (click)="resetSplitSizes()"
           class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
           title="Reset all block sizes to default"
+          aria-label="Reset split view sizes"
         >
           <mat-icon class="!h-4 !w-4">restart_alt</mat-icon>
-          <span>Reset sizes</span>
+          <span aria-hidden="true">Reset sizes</span>
         </button>
       }
-      <div class="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-white/5">
+      <div class="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-white/5" role="group" aria-label="Feed mode toggle">
         @for (feedMode of feedModes; track feedMode) {
           <button
             type="button"
@@ -65,6 +72,8 @@
                 ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
                 : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
             "
+            [attr.aria-pressed]="dashboardPreferencesService.preferences().feedMode === feedMode"
+            [attr.aria-label]="'Switch to ' + (feedMode === 'mixed' ? 'mixed' : 'split') + ' view'"
           >
             {{ feedMode === "mixed" ? "Mixed" : "Split" }}
           </button>
@@ -73,7 +82,7 @@
     </div>
   </header>
 
-  <main class="flex min-h-0 flex-1 flex-col overflow-hidden">
+  <main class="flex min-h-0 flex-1 flex-col overflow-hidden" role="main" aria-label="Chat dashboard">
     @if (getFeedMode() === "split") {
       <app-dashboard-split-feed class="flex h-full w-full overflow-hidden" />
     } @else {
