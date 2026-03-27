@@ -56,10 +56,6 @@ export class YouTubeChatService extends BaseChatProviderService {
     this.nextPageTokenByChannel.delete(key);
   }
 
-  protected getMockMessages(): MockMessageTemplate[] {
-    return [];
-  }
-
   protected getActionStates() {
     const account = this.authorizationService.getAccount("youtube");
     const canReply = account?.authStatus === "authorized";

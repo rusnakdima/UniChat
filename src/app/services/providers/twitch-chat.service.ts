@@ -537,14 +537,6 @@ export class TwitchChatService extends BaseChatProviderService {
   }
 
   /**
-   * Fetch Twitch user info from Helix API
-   * @deprecated Use fetchUserInfo() instead - uses public CDN URLs
-   */
-  async fetchTwitchUserInfo(userId: string): Promise<TwitchUserInfo | null> {
-    return this.fetchUserInfo(userId);
-  }
-
-  /**
    * Fetch Twitch user viewer card from GraphQL API
    * This is the same API Twitch's frontend uses - no auth required for public data
    * @param channelLogin - The channel login name (e.g., "milanrodd")
@@ -630,24 +622,11 @@ export class TwitchChatService extends BaseChatProviderService {
   }
 
   /**
-   * Fetch global Twitch badges (legacy - not used)
-   * @deprecated Global badges are loaded from IRC CAP extension
-   */
-  async fetchGlobalBadges(): Promise<ChatBadgeIcon[]> {
-    return [];
-  }
-
-  /**
    * Fetch channel profile image from Twitch CDN (no auth required)
    */
   async fetchChannelProfileImage(channelLogin: string): Promise<string | null> {
     // Use public CDN - no auth required
     return `https://static-cdn.jtvnw.net/jtv_user_pictures/${encodeURIComponent(channelLogin.toLowerCase())}-profile_image-300x300.png`;
-  }
-
-  // Unused for Twitch because real-time messages come from IRC.
-  protected override getMockMessages() {
-    return [];
   }
 
   // Unused for Twitch because action states are computed per message and role.

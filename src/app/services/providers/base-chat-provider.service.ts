@@ -47,7 +47,10 @@ export abstract class BaseChatProviderService {
     return this.connectedChannels.has(channelId);
   }
 
-  protected abstract getMockMessages(): MockMessageTemplate[];
+  protected getMockMessages(): MockMessageTemplate[] {
+    // Default implementation returns empty array - override in subclasses if needed
+    return [];
+  }
 
   protected abstract getActionStates(): {
     reply: ReturnType<typeof createMessageActionState>;

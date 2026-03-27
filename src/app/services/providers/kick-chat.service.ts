@@ -48,26 +48,6 @@ export class KickChatService extends BaseChatProviderService {
     this.historyNoticeLoggedChannels.delete(normalizedChannel);
   }
 
-  protected getMockMessages(): MockMessageTemplate[] {
-    return [
-      {
-        author: "KickFan123",
-        text: "xQc is so funny LMAO",
-        badges: ["subscriber"],
-      },
-      {
-        author: "ChatMod",
-        text: "Keep it civil in chat please",
-        badges: ["mod"],
-      },
-      {
-        author: "Viewer420",
-        text: "OMEGALUL",
-        badges: [],
-      },
-    ];
-  }
-
   protected getActionStates() {
     const account = this.authorizationService.getAccount("kick");
     const canReply = account?.authStatus === "authorized";
