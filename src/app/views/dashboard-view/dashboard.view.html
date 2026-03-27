@@ -27,6 +27,22 @@
         <span>Search</span>
       </button>
 
+      <!-- Pinned Messages Button -->
+      <button
+        type="button"
+        (click)="togglePinned()"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+        title="Pinned messages"
+      >
+        <mat-icon class="!h-4 !w-4">push_pin</mat-icon>
+        @if (pinnedCount() > 0) {
+          <span class="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+            {{ pinnedCount() }}
+          </span>
+        }
+        <span>Pinned</span>
+      </button>
+
       @if (getFeedMode() === "split") {
         <button
           type="button"
@@ -75,6 +91,19 @@
         (click)="$event.stopPropagation()"
         (messageSelected)="onMessageSelected($event)"
         (closeSearch)="toggleSearch()"
+      />
+    </div>
+  }
+
+  <!-- Pinned Messages Panel Overlay -->
+  @if (showPinned()) {
+    <div
+      class="absolute inset-0 z-50 flex items-start justify-end bg-black/50 p-4"
+      (click)="togglePinned()"
+    >
+      <app-pinned-messages-panel
+        (click)="$event.stopPropagation()"
+        (closed)="togglePinned()"
       />
     </div>
   }

@@ -13,6 +13,8 @@ import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.servi
 import { ChatStateManagerService } from "@services/data/chat-state-manager.service";
 import { ChatSearchComponent } from "@components/chat-search/chat-search.component";
 import { ChatStateService } from "@services/data/chat-state.service";
+import { PinnedMessagesPanelComponent } from "@components/pinned-messages-panel/pinned-messages-panel.component";
+import { PinnedMessagesService } from "@services/ui/pinned-messages.service";
 
 @Component({
   selector: "app-dashboard-view",
@@ -22,6 +24,7 @@ import { ChatStateService } from "@services/data/chat-state.service";
     UserProfilePopoverComponent,
     MatIconModule,
     ChatSearchComponent,
+    PinnedMessagesPanelComponent,
   ],
   templateUrl: "./dashboard.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,12 +38,15 @@ export class DashboardView {
   private readonly feedData = inject(DashboardFeedDataService);
   private readonly chatStateManager = inject(ChatStateManagerService);
   private readonly chatStateService = inject(ChatStateService);
+  private readonly pinnedMessagesService = inject(PinnedMessagesService);
 
   // Reference to split feed component for resetting sizes
   readonly splitFeed = viewChild<DashboardSplitFeedComponent>(DashboardSplitFeedComponent);
 
   readonly feedModes: FeedMode[] = ["mixed", "split"];
   readonly showSearch = signal(false);
+  readonly showPinned = signal(false);
+  readonly pinnedCount = this.pinnedMessagesService.pinnedCount;
 
   constructor() {
     const featured = this.dashboardStateService.featuredWidget();
@@ -76,6 +82,10 @@ export class DashboardView {
 
   toggleSearch(): void {
     this.showSearch.update(show => !show);
+  }
+
+  togglePinned(): void {
+    this.showPinned.update(show => !show);
   }
 
   onMessageSelected(message: ChatMessage): void {

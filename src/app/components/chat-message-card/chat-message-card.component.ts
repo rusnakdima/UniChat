@@ -13,6 +13,7 @@ import { MessageTypeStylingService } from "@services/ui/message-type-styling.ser
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
+import { PinnedMessagesService } from "@services/ui/pinned-messages.service";
 import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@helpers/chat.helper";
 
 @Component({
@@ -35,6 +36,7 @@ export class ChatMessageCardComponent {
   readonly interactions = inject(DashboardChatInteractionService);
   readonly userProfilePopover = inject(UserProfilePopoverService);
   readonly messageTypeStyling = inject(MessageTypeStylingService);
+  readonly pinnedMessagesService = inject(PinnedMessagesService);
   private readonly twitchChat = inject(TwitchChatService);
   private readonly chatListService = inject(ChatListService);
   private readonly avatarCache = inject(AvatarCacheService);
@@ -247,5 +249,19 @@ export class ChatMessageCardComponent {
       return;
     }
     this.userProfilePopover.toggle(el, this.message());
+  }
+
+  /** Check if current message is pinned */
+  get isPinned(): boolean {
+    return this.pinnedMessagesService.isPinned(this.message().id);
+  }
+
+  /** Toggle pin state for current message */
+  togglePin(): void {
+    if (this.isPinned) {
+      this.pinnedMessagesService.unpinByMessageId(this.message().id);
+    } else {
+      this.pinnedMessagesService.pinMessage(this.message());
+    }
   }
 }
