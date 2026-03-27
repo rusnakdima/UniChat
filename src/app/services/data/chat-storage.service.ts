@@ -8,6 +8,31 @@ import { APP_CONFIG } from "@config/app.constants";
 
 const channelMessagesStorageKey = "unichat.channelMessages.v1";
 
+/**
+ * Chat Storage Service - PRIMARY SOURCE OF TRUTH
+ *
+ * Responsibility: Owns all chat message data and persistence.
+ * This is THE authoritative source for chat messages in the application.
+ *
+ * Source of Truth Hierarchy:
+ * 1. ChatStorageService - Primary message storage (owns the data) <-- THIS SERVICE
+ * 2. ChatStateService - Computed state (derived from storage)
+ * 3. ChatStateManagerService - Connection tracking (session state)
+ * 4. ConnectionStateService - Connection status per channel
+ *
+ * Key Features:
+ * - Signal-based reactive state management
+ * - LocalStorage persistence
+ * - Message deduplication and limiting
+ * - History load state tracking
+ * - Overlay message broadcasting
+ *
+ * All other services should read from this service, not duplicate its data.
+ *
+ * @see ChatStateService for computed message views
+ * @see ChatStateManagerService for session connection tracking
+ * @see ConnectionStateService for connection status
+ */
 @Injectable({
   providedIn: "root",
 })

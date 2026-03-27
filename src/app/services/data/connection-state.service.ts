@@ -9,6 +9,22 @@ import { getProviderCapabilities } from "@helpers/chat.helper";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 
+/**
+ * Connection State Service - Channel Connection Status
+ *
+ * Responsibility: Manages connection status (disconnected/connecting/connected) per channel.
+ * Tracks latency, viewer count, and platform capabilities for each connection.
+ *
+ * Source of Truth Hierarchy:
+ * 1. ChatStorageService - Primary message storage (owns the data)
+ * 2. ChatStateService - Computed state (derived from storage)
+ * 3. ChatStateManagerService - Connection tracking (session state)
+ * 4. ConnectionStateService - Connection status per channel <-- THIS SERVICE
+ *
+ * @see ChatStorageService for data persistence
+ * @see ChatStateService for computed message state
+ * @see ChatStateManagerService for session-level connection tracking
+ */
 @Injectable({
   providedIn: "root",
 })

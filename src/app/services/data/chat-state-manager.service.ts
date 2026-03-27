@@ -3,14 +3,22 @@ import { ChatMessage, PlatformType, ChatHistoryLoadState } from "@models/chat.mo
 import { ChatStorageService } from "@services/data/chat-storage.service";
 
 /**
- * Centralized state manager for chat messages and channel connections.
- * Follows TaskFlow's StorageService pattern - single source of truth.
+ * Chat State Manager - Session Connection Tracking
  *
- * Key features:
- * - Holds all message state in Angular Signals
- * - Persists across navigation (not reset on component re-render)
- * - Tracks connection state per channel globally
- * - Provides computed signals for derived state
+ * Responsibility: Tracks which channels have been connected in the current session.
+ * This is a lightweight wrapper for session-level connection state.
+ *
+ * Source of Truth Hierarchy:
+ * 1. ChatStorageService - Primary message storage (owns the data)
+ * 2. ChatStateService - Computed state (derived from storage)
+ * 3. ChatStateManagerService - Connection tracking (session state) <-- THIS SERVICE
+ * 4. ConnectionStateService - Connection status per channel
+ *
+ * Note: This service does NOT own message data. It only tracks connection state.
+ *
+ * @see ChatStorageService for data persistence
+ * @see ChatStateService for computed message state
+ * @see ConnectionStateService for connection status
  */
 @Injectable({
   providedIn: "root",

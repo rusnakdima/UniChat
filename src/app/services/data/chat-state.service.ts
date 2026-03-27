@@ -18,6 +18,22 @@ import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
 
+/**
+ * Chat State Service - Computed State Layer
+ *
+ * Responsibility: Provides computed signals and business logic for chat state.
+ * This is NOT the source of truth - it wraps ChatStorageService with computed values.
+ *
+ * Source of Truth Hierarchy:
+ * 1. ChatStorageService - Primary message storage (owns the data)
+ * 2. ChatStateService - Computed state (derived from storage)
+ * 3. ChatStateManagerService - Connection tracking (session state)
+ * 4. ConnectionStateService - Connection status per channel
+ *
+ * @see ChatStorageService for data persistence
+ * @see ChatStateManagerService for session connection tracking
+ * @see ConnectionStateService for connection status
+ */
 @Injectable({
   providedIn: "root",
 })
