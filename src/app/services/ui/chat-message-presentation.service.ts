@@ -1,15 +1,18 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { ChatMessage, PlatformType } from "@models/chat.model";
 import {
   getPlatformBadgeClasses,
   getPlatformBadgeClassesMixedFilter,
   getPlatformLabel,
 } from "@helpers/chat.helper";
+import { HighlightRulesService } from "@services/ui/highlight-rules.service";
 
 @Injectable({
   providedIn: "root",
 })
 export class ChatMessagePresentationService {
+  private readonly highlightRulesService = inject(HighlightRulesService);
+  
   readonly getPlatformBadgeClasses = getPlatformBadgeClasses;
   readonly getPlatformBadgeClassesMixedFilter = getPlatformBadgeClassesMixedFilter;
 
@@ -80,5 +83,24 @@ export class ChatMessagePresentationService {
 
     const index = Math.abs(hash) % colors.length;
     return colors[index];
+  }
+
+  /**
+   * Get highlight color for a message based on highlight rules
+   * Returns null if no highlight matches
+   */
+  getHighlightColor(message: ChatMessage): string | null {
+    return this.highlightRulesService.getHighlightColor(
+      message.text,
+      message.author,
+      message.sourceChannelId
+    );
+  }
+
+  /**
+   * Check if a message should be highlighted
+   */
+  isHighlighted(message: ChatMessage): boolean {
+    return this.getHighlightColor(message) !== null;
   }
 }

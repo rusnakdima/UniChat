@@ -1,6 +1,7 @@
 <article
   class="group flex gap-3 rounded-xl border bg-white p-3 transition hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10"
   [ngClass]="getMessageClasses()"
+  [style]="getMessageStyles()"
   [attr.data-message-type]="getMessageType()"
 >
   <div class="flex min-w-0 flex-1 flex-col gap-1.5">

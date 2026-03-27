@@ -55,19 +55,46 @@ export class ChatMessageCardComponent {
   /** Get combined ngClass object for message styling */
   getMessageClasses() {
     const typeConfig = this.getMessageTypeConfig();
+    const highlightColor = this.presentation.getHighlightColor(this.message());
+    
     return {
-      // Base highlighted state
+      // Base highlighted state (from user interaction)
       "border-emerald-500": this.highlighted(),
       "ring-2": this.highlighted(),
       "ring-emerald-400/70": this.highlighted(),
       "shadow-md": this.highlighted(),
+      // Highlight from rules
+      "border-l-4": highlightColor !== null,
       // Default border when not highlighted
-      "border-slate-200": !this.highlighted() && !typeConfig.cssClass,
-      "dark:border-white/10": !this.highlighted() && !typeConfig.cssClass,
+      "border-slate-200": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
+      "dark:border-white/10": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
       // Message type classes
       [typeConfig.cssClass]: !!typeConfig.cssClass,
       [typeConfig.animationClass]: !!typeConfig.animationClass,
     };
+  }
+
+  /** Get inline style for highlight color */
+  getMessageStyles(): { [key: string]: string } {
+    const highlightColor = this.presentation.getHighlightColor(this.message());
+    if (highlightColor) {
+      return {
+        "border-left-color": highlightColor,
+        "background-color": this.hexToRgba(highlightColor, 0.08),
+      };
+    }
+    return {};
+  }
+
+  private hexToRgba(hex: string, alpha: number): string {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+      const r = parseInt(result[1], 16);
+      const g = parseInt(result[2], 16);
+      const b = parseInt(result[3], 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    return hex;
   }
 
   /** Cache for user profile images by sourceUserId */
