@@ -12,13 +12,17 @@ import {
   WidgetFilter,
   WidgetStatus,
 } from "@models/chat.model";
-import {
-  PLATFORM_BADGE_CLASSES,
-  PLATFORM_BADGE_CLASSES_MIXED_DISABLED,
-  PLATFORM_BADGE_CLASSES_MIXED_ENABLED,
-  STATUS_CLASSES,
-  STATUS_LABELS,
-} from "@config/platform.styles";
+import { PlatformResolverService } from "@services/core/platform-resolver.service";
+
+// Create singleton instance for helper functions
+let platformResolver: PlatformResolverService | null = null;
+
+function getPlatformResolver(): PlatformResolverService {
+  if (!platformResolver) {
+    platformResolver = new PlatformResolverService();
+  }
+  return platformResolver;
+}
 
 export function sortMessagesByRecency(messages: ChatMessage[]): ChatMessage[] {
   return [...messages].sort(
@@ -85,32 +89,26 @@ export function createMessageActionState(
 }
 
 export function getPlatformLabel(platform: PlatformType): string {
-  if (platform === "youtube") {
-    return "YouTube";
-  }
-
-  return platform.charAt(0).toUpperCase() + platform.slice(1);
+  return getPlatformResolver().getDisplayName(platform);
 }
 
 export function getPlatformBadgeClasses(platform: PlatformType): string {
-  return PLATFORM_BADGE_CLASSES[platform];
+  return getPlatformResolver().getBadgeClasses(platform);
 }
 
 export function getPlatformBadgeClassesMixedFilter(
   platform: PlatformType,
   channelEnabled: boolean
 ): string {
-  return channelEnabled
-    ? PLATFORM_BADGE_CLASSES_MIXED_ENABLED[platform]
-    : PLATFORM_BADGE_CLASSES_MIXED_DISABLED[platform];
+  return getPlatformResolver().getMixedFilterBadgeClasses(platform, channelEnabled);
 }
 
 export function getStatusClasses(status: PlatformStatus | WidgetStatus): string {
-  return STATUS_CLASSES[status];
+  return getPlatformResolver().getStatusClasses(status);
 }
 
 export function getStatusLabel(status: PlatformStatus | WidgetStatus): string {
-  return STATUS_LABELS[status];
+  return getPlatformResolver().getStatusLabel(status);
 }
 
 export function getWidgetSummary(widget: WidgetConfig, messages: ChatMessage[]): string {
@@ -153,6 +151,10 @@ export function getProviderCapabilities(
   platform: PlatformType,
   isAuthorized: boolean
 ): PlatformCapabilities {
+  const resolver = getPlatformResolver();
+  const capabilities = resolver.getCapabilities(platform);
+  
+  // If not authorized, downgrade capabilities to listen-only
   if (!isAuthorized) {
     return {
       canListen: true,
@@ -160,20 +162,8 @@ export function getProviderCapabilities(
       canDelete: false,
     };
   }
-
-  if (platform === "youtube") {
-    return {
-      canListen: true,
-      canReply: true,
-      canDelete: false,
-    };
-  }
-
-  return {
-    canListen: true,
-    canReply: true,
-    canDelete: true,
-  };
+  
+  return capabilities;
 }
 
 export interface CreateMessageOptions {
