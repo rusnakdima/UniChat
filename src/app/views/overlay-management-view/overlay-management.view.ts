@@ -12,6 +12,7 @@ import {
   OverlayDirection,
 } from "@models/chat.model";
 import { invoke } from "@tauri-apps/api/core";
+import { LocalStorageService } from "@services/core/local-storage.service";
 
 function overlayFilterOverrideKey(widgetId: string): string {
   return `unichat-overlay-filter-override:${widgetId}`;
@@ -56,6 +57,7 @@ export class OverlayManagementView {
   private readonly route = inject(ActivatedRoute);
   private readonly dashboardState = inject(DashboardStateService);
   private readonly chatList = inject(ChatListService);
+  private readonly localStorageService = inject(LocalStorageService);
   readonly presentation = inject(ChatMessagePresentationService);
 
   readonly saveSuccess = signal<boolean>(false);
@@ -99,7 +101,7 @@ export class OverlayManagementView {
     const overrideFilter = this.readOverlayFilterOverride(w.id);
     this.filterModel.set(overrideFilter ?? w.filter);
 
-    this.customCssModel.set(localStorage.getItem(overlayCustomCssKey(w.id)) ?? "");
+    this.customCssModel.set(this.localStorageService.get(overlayCustomCssKey(w.id), ""));
 
     // Load channel selection from localStorage or widget config
     const storedChannelIds = this.readOverlayChannelIds(w.id);
@@ -117,7 +119,7 @@ export class OverlayManagementView {
   }
 
   private readOverlayFilterOverride(widgetId: string): WidgetFilter | null {
-    const raw = localStorage.getItem(overlayFilterOverrideKey(widgetId));
+    const raw = this.localStorageService.get<string>(overlayFilterOverrideKey(widgetId), "");
     if (raw === "all" || raw === "supporters") {
       return raw;
     }
@@ -125,7 +127,7 @@ export class OverlayManagementView {
   }
 
   private readOverlayChannelIds(widgetId: string): string[] | null {
-    const raw = localStorage.getItem(overlayChannelIdsKey(widgetId));
+    const raw = this.localStorageService.get<string>(overlayChannelIdsKey(widgetId), "");
     if (raw) {
       try {
         return JSON.parse(raw) as string[];
@@ -137,7 +139,7 @@ export class OverlayManagementView {
   }
 
   private readOverlayMaxMessages(widgetId: string): number | null {
-    const raw = localStorage.getItem(overlayMaxMessagesKey(widgetId));
+    const raw = this.localStorageService.get<string>(overlayMaxMessagesKey(widgetId), "");
     if (raw) {
       const parsed = parseInt(raw, 10);
       return isNaN(parsed) ? null : parsed;
@@ -146,7 +148,7 @@ export class OverlayManagementView {
   }
 
   private readOverlayTextSize(widgetId: string): number | null {
-    const raw = localStorage.getItem(overlayTextSizeKey(widgetId));
+    const raw = this.localStorageService.get<string>(overlayTextSizeKey(widgetId), "");
     if (raw) {
       const parsed = parseInt(raw, 10);
       return isNaN(parsed) ? null : parsed;
@@ -155,7 +157,7 @@ export class OverlayManagementView {
   }
 
   private readOverlayAnimationType(widgetId: string): OverlayAnimationType | null {
-    const raw = localStorage.getItem(overlayAnimationTypeKey(widgetId));
+    const raw = this.localStorageService.get<string>(overlayAnimationTypeKey(widgetId), "");
     if (raw === "none" || raw === "fade" || raw === "slide" || raw === "pop") {
       return raw;
     }
@@ -163,7 +165,7 @@ export class OverlayManagementView {
   }
 
   private readOverlayAnimationDirection(widgetId: string): OverlayDirection | null {
-    const raw = localStorage.getItem(overlayAnimationDirectionKey(widgetId));
+    const raw = this.localStorageService.get<string>(overlayAnimationDirectionKey(widgetId), "");
     if (raw === "top" || raw === "bottom" || raw === "left" || raw === "right") {
       return raw;
     }
@@ -171,7 +173,7 @@ export class OverlayManagementView {
   }
 
   private readOverlayTransparentBg(widgetId: string): boolean | null {
-    const raw = localStorage.getItem(overlayTransparentBgKey(widgetId));
+    const raw = this.localStorageService.get<string>(overlayTransparentBgKey(widgetId), "");
     if (raw === "true" || raw === "false") {
       return raw === "true";
     }
@@ -209,14 +211,14 @@ export class OverlayManagementView {
       return;
     }
 
-    localStorage.setItem(overlayFilterOverrideKey(w.id), this.filterModel());
-    localStorage.setItem(overlayCustomCssKey(w.id), this.customCssModel());
-    localStorage.setItem(overlayChannelIdsKey(w.id), JSON.stringify(this.channelIdsModel()));
-    localStorage.setItem(overlayMaxMessagesKey(w.id), this.maxMessagesModel().toString());
-    localStorage.setItem(overlayTextSizeKey(w.id), this.textSizeModel().toString());
-    localStorage.setItem(overlayAnimationTypeKey(w.id), this.animationTypeModel());
-    localStorage.setItem(overlayAnimationDirectionKey(w.id), this.animationDirectionModel());
-    localStorage.setItem(overlayTransparentBgKey(w.id), this.transparentBgModel().toString());
+    this.localStorageService.set(overlayFilterOverrideKey(w.id), this.filterModel());
+    this.localStorageService.set(overlayCustomCssKey(w.id), this.customCssModel());
+    this.localStorageService.set(overlayChannelIdsKey(w.id), JSON.stringify(this.channelIdsModel()));
+    this.localStorageService.set(overlayMaxMessagesKey(w.id), this.maxMessagesModel().toString());
+    this.localStorageService.set(overlayTextSizeKey(w.id), this.textSizeModel().toString());
+    this.localStorageService.set(overlayAnimationTypeKey(w.id), this.animationTypeModel());
+    this.localStorageService.set(overlayAnimationDirectionKey(w.id), this.animationDirectionModel());
+    this.localStorageService.set(overlayTransparentBgKey(w.id), this.transparentBgModel().toString());
 
     // Same-window updates (overlay view already listens for this).
     window.dispatchEvent(new Event("unichat-overlay-config-changed"));
