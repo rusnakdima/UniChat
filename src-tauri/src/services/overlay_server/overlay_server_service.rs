@@ -93,7 +93,7 @@ impl OverlayServerState {
         continue;
       }
 
-      let _ = sub.tx.send(Message::Text(text.clone().into()));
+      let _ = sub.tx.send(Message::Text(text.clone()));
     }
   }
 }
@@ -266,7 +266,7 @@ async fn handle_overlay_subscriber(ws: WebSocket, widget_id: String, state: Over
   let widget_id_for_removal = widget_id.clone();
 
   let mut subscribed = false;
-  while let Some(Ok(msg)) = ws_receiver.next().await.map(|r| r) {
+  while let Some(Ok(msg)) = ws_receiver.next().await {
     match msg {
       Message::Text(text) => {
         if let Ok(incoming) = serde_json::from_str::<OverlayWsIncomingModel>(&text) {
@@ -312,7 +312,7 @@ async fn handle_subscribe_message(
 async fn handle_overlay_source(ws: WebSocket, state: OverlayServerState) {
   let (_mut_ws_sender, mut ws_receiver) = ws.split();
   // Source connections currently only send; they don't receive.
-  while let Some(Ok(msg)) = ws_receiver.next().await.map(|r| r) {
+  while let Some(Ok(msg)) = ws_receiver.next().await {
     match msg {
       Message::Text(text) => {
         if let Ok(incoming) = serde_json::from_str::<OverlayWsIncomingModel>(&text) {

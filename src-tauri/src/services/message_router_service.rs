@@ -22,23 +22,26 @@ pub trait OverlayServerBroadcast: Send + Sync {
 pub struct MessageRouterService {
   /// Broadcast channel for app feed consumers (Angular via Tauri events)
   app_feed_tx: broadcast::Sender<Arc<ChatMessageModel>>,
-  
+
   /// Handle to overlay server for broadcasting to OBS
   overlay_server: Option<Arc<dyn OverlayServerBroadcast>>,
-  
+
   /// Widget ID for overlay routing (can be updated dynamically)
   current_widget_id: Arc<RwLock<String>>,
 }
 
 impl MessageRouterService {
   /// Create a new MessageRouterService
-  /// 
+  ///
   /// # Arguments
   /// * `app_feed_buffer` - Number of messages to buffer for app feed subscribers
   /// * `overlay_server` - Optional overlay server handle for OBS routing
-  pub fn new(app_feed_buffer: usize, overlay_server: Option<Arc<dyn OverlayServerBroadcast>>) -> Self {
+  pub fn new(
+    app_feed_buffer: usize,
+    overlay_server: Option<Arc<dyn OverlayServerBroadcast>>,
+  ) -> Self {
     let (app_feed_tx, _) = broadcast::channel(app_feed_buffer);
-    
+
     Self {
       app_feed_tx,
       overlay_server,
@@ -65,30 +68,32 @@ impl MessageRouterService {
   /// Route a chat message to all destinations (app feed + overlay)
   ///
   /// This is the canonical routing path - all messages should flow through here.
-  /// 
+  ///
   /// # Arguments
   /// * `message` - The normalized chat message to route
-  /// 
+  ///
   /// # Returns
   /// * `Ok(())` if routing succeeded
   /// * `Err(String)` if routing failed
   pub async fn route_chat_message(&self, message: ChatMessageModel) -> Result<(), String> {
     let message_arc = Arc::new(message.clone());
-    
+
     // 1. Broadcast to app feed (Angular consumers)
     let _ = self.app_feed_tx.send(message_arc);
-    
+
     // 2. Broadcast to overlay server (OBS browser sources)
     if let Some(ref overlay) = self.overlay_server {
       let widget_id = self.get_widget_id().await;
-      
+
       // Convert to overlay format
       let overlay_message = OverlayMessageModel {
         id: message.id,
         platform: match message.platform {
           crate::models::provider_contract_model::PlatformTypeModel::Twitch => "twitch".to_string(),
           crate::models::provider_contract_model::PlatformTypeModel::Kick => "kick".to_string(),
-          crate::models::provider_contract_model::PlatformTypeModel::Youtube => "youtube".to_string(),
+          crate::models::provider_contract_model::PlatformTypeModel::Youtube => {
+            "youtube".to_string()
+          }
         },
         author: message.author,
         text: message.text,
@@ -98,11 +103,13 @@ impl MessageRouterService {
         author_avatar_url: message.author_avatar_url,
         emotes: message.emotes,
       };
-      
+
       // Broadcast to overlay subscribers
-      overlay.broadcast_overlay_message(widget_id, overlay_message).await;
+      overlay
+        .broadcast_overlay_message(widget_id, overlay_message)
+        .await;
     }
-    
+
     Ok(())
   }
 
@@ -117,13 +124,15 @@ impl MessageRouterService {
   pub async fn route_to_overlay_only(&self, message: ChatMessageModel) -> Result<(), String> {
     if let Some(ref overlay) = self.overlay_server {
       let widget_id = self.get_widget_id().await;
-      
+
       let overlay_message = OverlayMessageModel {
         id: message.id,
         platform: match message.platform {
           crate::models::provider_contract_model::PlatformTypeModel::Twitch => "twitch".to_string(),
           crate::models::provider_contract_model::PlatformTypeModel::Kick => "kick".to_string(),
-          crate::models::provider_contract_model::PlatformTypeModel::Youtube => "youtube".to_string(),
+          crate::models::provider_contract_model::PlatformTypeModel::Youtube => {
+            "youtube".to_string()
+          }
         },
         author: message.author,
         text: message.text,
@@ -133,8 +142,10 @@ impl MessageRouterService {
         author_avatar_url: message.author_avatar_url,
         emotes: message.emotes,
       };
-      
-      overlay.broadcast_overlay_message(widget_id, overlay_message).await;
+
+      overlay
+        .broadcast_overlay_message(widget_id, overlay_message)
+        .await;
       Ok(())
     } else {
       Err("Overlay server not initialized".to_string())

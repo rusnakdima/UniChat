@@ -112,7 +112,7 @@ impl ChatMessageModel {
 
   /// Check if message has emotes
   pub fn has_emotes(&self) -> bool {
-    self.emotes.as_ref().map_or(false, |e| !e.is_empty())
+    self.emotes.as_ref().is_some_and(|e| !e.is_empty())
   }
 
   /// Get emote count
@@ -122,16 +122,14 @@ impl ChatMessageModel {
 
   /// Check if message has a specific badge
   pub fn has_badge(&self, badge: &str) -> bool {
-    self.badges.iter().any(|b| b.to_lowercase() == badge.to_lowercase())
+    self
+      .badges
+      .iter()
+      .any(|b| b.to_lowercase() == badge.to_lowercase())
   }
 
   /// Check if message is from a specific platform
   pub fn is_from_platform(&self, platform: PlatformTypeModel) -> bool {
-    match (&self.platform, &platform) {
-      (PlatformTypeModel::Twitch, PlatformTypeModel::Twitch) => true,
-      (PlatformTypeModel::Kick, PlatformTypeModel::Kick) => true,
-      (PlatformTypeModel::Youtube, PlatformTypeModel::Youtube) => true,
-      _ => false,
-    }
+    std::mem::discriminant(&self.platform) == std::mem::discriminant(&platform)
   }
 }

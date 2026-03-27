@@ -10,7 +10,7 @@ use crate::models::provider_contract_model::PlatformTypeModel;
 /// 1. Converting raw platform messages to unified ChatMessageModel
 /// 2. Converting ChatMessageModel to overlay-optimized payload
 /// 3. Platform-specific formatting helpers
-
+///
 /// Format a raw message into the unified ChatMessageModel
 ///
 /// This is the canonical path for all platform connectors to create
@@ -84,13 +84,17 @@ pub fn format_for_overlay_payload(message: &ChatMessageModel) -> OverlayMessageM
 ///
 /// # Returns
 /// A unique ID in format: "{platform}_{channel_id}_{timestamp}"
-pub fn generate_message_id(platform: &PlatformTypeModel, channel_id: &str, timestamp: &str) -> String {
+pub fn generate_message_id(
+  platform: &PlatformTypeModel,
+  channel_id: &str,
+  timestamp: &str,
+) -> String {
   let platform_str = match platform {
     PlatformTypeModel::Twitch => "twitch",
     PlatformTypeModel::Kick => "kick",
     PlatformTypeModel::Youtube => "youtube",
   };
-  
+
   format!("{}_{}_{}", platform_str, channel_id, timestamp)
 }
 
@@ -111,7 +115,16 @@ pub fn generate_message_id_now(platform: &PlatformTypeModel, channel_id: &str) -
 pub fn parse_supporter_status(platform: &PlatformTypeModel, badges: &[String]) -> bool {
   let supporter_badges = match platform {
     PlatformTypeModel::Twitch => {
-      vec!["subscriber", "founder", "vip", "moderator", "broadcaster", "admin", "global_mod", "staff"]
+      vec![
+        "subscriber",
+        "founder",
+        "vip",
+        "moderator",
+        "broadcaster",
+        "admin",
+        "global_mod",
+        "staff",
+      ]
     }
     PlatformTypeModel::Kick => {
       vec!["subscriber", "vip", "moderator", "broadcaster"]
@@ -120,7 +133,7 @@ pub fn parse_supporter_status(platform: &PlatformTypeModel, badges: &[String]) -
       vec!["member", "moderator", "owner", "verified"]
     }
   };
-  
+
   badges.iter().any(|badge| {
     let badge_lower = badge.to_lowercase();
     supporter_badges.iter().any(|s| badge_lower.contains(s))
@@ -165,7 +178,7 @@ pub fn format_timestamp_display(timestamp: &str, format: &str) -> String {
 /// A ChatMessageModel marked as a system message
 pub fn create_system_message(text: String, channel_id: &str) -> ChatMessageModel {
   let now = Utc::now().to_rfc3339();
-  
+
   ChatMessageModel::new(
     format!("system_{}", now),
     PlatformTypeModel::Twitch, // Default, can be overridden
@@ -188,7 +201,7 @@ pub fn create_system_message(text: String, channel_id: &str) -> ChatMessageModel
 /// A ChatMessageModel with test data
 pub fn create_test_message(platform: PlatformTypeModel, channel_id: &str) -> ChatMessageModel {
   let now = Utc::now().to_rfc3339();
-  
+
   let (author, text, badges) = match platform {
     PlatformTypeModel::Twitch => (
       "TwitchUser123".to_string(),
@@ -206,7 +219,7 @@ pub fn create_test_message(platform: PlatformTypeModel, channel_id: &str) -> Cha
       vec!["member".to_string()],
     ),
   };
-  
+
   ChatMessageModel::new(
     generate_message_id_now(&platform, channel_id),
     platform,

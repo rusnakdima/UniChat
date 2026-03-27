@@ -6,13 +6,11 @@ use tokio::sync::RwLock;
 use crate::models::chat_message_model::ChatMessageModel;
 
 // Lazy regex compilation
-static URL_REGEX: once_cell::sync::Lazy<Regex> = once_cell::sync::Lazy::new(|| {
-  Regex::new(r"(https?://[^\s]+)|(www\.[^\s]+)").unwrap()
-});
+static URL_REGEX: once_cell::sync::Lazy<Regex> =
+  once_cell::sync::Lazy::new(|| Regex::new(r"(https?://[^\s]+)|(www\.[^\s]+)").unwrap());
 
-static WORD_REGEX: once_cell::sync::Lazy<Regex> = once_cell::sync::Lazy::new(|| {
-  Regex::new(r"(?i)\b\w+\b").unwrap()
-});
+static WORD_REGEX: once_cell::sync::Lazy<Regex> =
+  once_cell::sync::Lazy::new(|| Regex::new(r"(?i)\b\w+\b").unwrap());
 
 /// MessageFilterService - Safety filters for chat messages
 ///
@@ -27,10 +25,10 @@ static WORD_REGEX: once_cell::sync::Lazy<Regex> = once_cell::sync::Lazy::new(|| 
 pub struct MessageFilterService {
   /// Set of blocked words (case-insensitive)
   blocked_words: Arc<RwLock<HashSet<String>>>,
-  
+
   /// Whether to strip URLs from messages
   strip_urls_enabled: Arc<RwLock<bool>>,
-  
+
   /// Maximum message length (0 = unlimited)
   max_length: Arc<RwLock<usize>>,
 }
@@ -57,31 +55,31 @@ impl MessageFilterService {
   /// Apply all filters to a message text
   ///
   /// This is the canonical sanitization path - all messages should flow through here.
-  /// 
+  ///
   /// # Arguments
   /// * `text` - Raw message text from platform
-  /// 
+  ///
   /// # Returns
   /// Filtered and sanitized text safe for overlay display
   pub async fn sanitize_message(&self, text: &str) -> String {
     let mut result = text.to_string();
-    
+
     // 1. Apply blocked words
     result = self.apply_blocked_words(&result).await;
-    
+
     // 2. Strip URLs if enabled
     let should_strip_urls = *self.strip_urls_enabled.read().await;
     if should_strip_urls {
       result = strip_urls(&result);
     }
-    
+
     // 3. Escape HTML for safety
     result = escape_html(&result);
-    
+
     // 4. Cap length
     let max_len = *self.max_length.read().await;
     result = cap_string(&result, max_len);
-    
+
     result
   }
 
@@ -89,19 +87,19 @@ impl MessageFilterService {
   ///
   /// # Arguments
   /// * `text` - Message text to filter
-  /// 
+  ///
   /// # Returns
   /// Text with blocked words replaced with asterisks
   pub async fn apply_blocked_words(&self, text: &str) -> String {
     let blocked = self.blocked_words.read().await;
     let mut result = text.to_string();
-    
+
     for word in blocked.iter() {
       if contains_word(&result, word) {
         result = replace_word(&result, word, "*");
       }
     }
-    
+
     result
   }
 
@@ -109,7 +107,7 @@ impl MessageFilterService {
   ///
   /// # Arguments
   /// * `text` - Message text
-  /// 
+  ///
   /// # Returns
   /// Text with URLs removed
   pub fn strip_urls_from_message(&self, text: &str) -> String {
@@ -179,7 +177,7 @@ impl MessageFilterService {
   ///
   /// # Arguments
   /// * `message` - Message to sanitize
-  /// 
+  ///
   /// # Returns
   /// New message with sanitized text
   pub async fn sanitize_chat_message(&self, message: &ChatMessageModel) -> ChatMessageModel {
@@ -228,23 +226,25 @@ fn cap_string(s: &str, max_len: usize) -> String {
 fn contains_word(text: &str, word: &str) -> bool {
   let word_lower = word.to_lowercase();
   WORD_REGEX.is_match(text) && {
-    WORD_REGEX.find_iter(text).any(|m: regex::Match| {
-      m.as_str().to_lowercase() == word_lower
-    })
+    WORD_REGEX
+      .find_iter(text)
+      .any(|m: regex::Match| m.as_str().to_lowercase() == word_lower)
   }
 }
 
 /// Replace all occurrences of a word with replacement (case-insensitive)
-fn replace_word(text: &str, word: &str, replacement: &str) -> String {
+fn replace_word(text: &str, word: &str, _replacement: &str) -> String {
   let word_lower = word.to_lowercase();
-  let replacement_stars: String = std::iter::repeat('*').take(word.len()).collect();
-  
-  WORD_REGEX.replace_all(text, |caps: &regex::Captures| {
-    let matched = caps.get(0).unwrap().as_str();
-    if matched.to_lowercase() == word_lower {
-      replacement_stars.clone()
-    } else {
-      matched.to_string()
-    }
-  }).to_string()
+  let replacement_stars = "*".repeat(word.len());
+
+  WORD_REGEX
+    .replace_all(text, |caps: &regex::Captures| {
+      let matched = caps.get(0).unwrap().as_str();
+      if matched.to_lowercase() == word_lower {
+        replacement_stars.clone()
+      } else {
+        matched.to_string()
+      }
+    })
+    .to_string()
 }
