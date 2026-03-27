@@ -7,20 +7,27 @@ struct TwitchTokenBody {
   access_token: String,
 }
 
-fn twitch_client_credentials() -> Result<(String, String), String> {
+fn twitch_client_credentials() -> Result<(String, Option<String>), String> {
   let cfg = getOAuthProviderConfig(&PlatformTypeModel::Twitch)?;
   Ok((cfg.client_id, cfg.client_secret))
 }
 
-async fn twitch_app_access_token(client_id: &str, client_secret: &str) -> Result<String, String> {
+async fn twitch_app_access_token(client_id: &str, client_secret: Option<&str>) -> Result<String, String> {
   let client = reqwest::Client::new();
+  
+  let form = if let Some(secret) = client_secret {
+    vec![
+      ("client_id", client_id),
+      ("client_secret", secret),
+      ("grant_type", "client_credentials"),
+    ]
+  } else {
+    return Err("client_secret required for Twitch app access token".to_string());
+  };
+  
   let response = client
     .post("https://id.twitch.tv/oauth2/token")
-    .form(&[
-      ("client_id", client_id),
-      ("client_secret", client_secret),
-      ("grant_type", "client_credentials"),
-    ])
+    .form(&form)
     .send()
     .await
     .map_err(|e| e.to_string())?;
@@ -38,7 +45,7 @@ async fn twitch_app_access_token(client_id: &str, client_secret: &str) -> Result
 #[tauri::command]
 pub async fn twitchFetchGlobalBadges() -> Result<String, String> {
   let (client_id, client_secret) = twitch_client_credentials()?;
-  let token = twitch_app_access_token(&client_id, &client_secret).await?;
+  let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
   let client = reqwest::Client::new();
   let response = client
     .get("https://api.twitch.tv/helix/chat/badges/global")
@@ -62,7 +69,7 @@ pub async fn twitchFetchChannelBadges(broadcasterId: String) -> Result<String, S
     return Err("broadcasterId required".to_string());
   }
   let (client_id, client_secret) = twitch_client_credentials()?;
-  let token = twitch_app_access_token(&client_id, &client_secret).await?;
+  let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
   let client = reqwest::Client::new();
   let response = client
     .get("https://api.twitch.tv/helix/chat/badges")

@@ -28,7 +28,6 @@ pub struct OverlayFullConfigModel {
   pub animation_direction: String,
   pub max_messages: u32,
   pub transparent_bg: bool,
-  pub opacity: f64,
   pub timestamp: u64,
 }
 
@@ -72,7 +71,6 @@ pub async fn openOverlayWindow(
   port: u16,
   widget_id: String,
   transparent_bg: bool,
-  _opacity: f64,
 ) -> Result<(), String> {
   use tauri::{WebviewUrl, WebviewWindowBuilder};
 
@@ -109,9 +107,6 @@ pub async fn openOverlayWindow(
   .build()
   .map_err(|e| e.to_string())?;
 
-  // Note: Opacity is applied via CSS on the frontend for better cross-platform compatibility
-  // The window's background opacity is controlled by the Angular component
-
   Ok(())
 }
 
@@ -141,7 +136,6 @@ pub async fn emitOverlayConfigChanged(
   animation_direction: String,
   max_messages: u32,
   transparent_bg: bool,
-  opacity: f64,
 ) -> Result<(), String> {
   // Store full config in backend for overlay windows to fetch
   let config = OverlayFullConfigModel {
@@ -154,7 +148,6 @@ pub async fn emitOverlayConfigChanged(
     animation_direction,
     max_messages,
     transparent_bg,
-    opacity,
     timestamp,
   };
 

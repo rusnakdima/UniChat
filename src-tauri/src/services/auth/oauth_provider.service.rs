@@ -139,13 +139,17 @@ impl OAuthProviderService {
     if let Some(savedToken) = token {
       let config = getOAuthProviderConfig(&platform)?;
       if let Some(revokeUrl) = config.revoke_url {
+        let mut form: Vec<(&str, &str)> = vec![
+          ("client_id", &config.client_id),
+          ("token", &savedToken.access_token),
+        ];
+        if let Some(ref secret) = config.client_secret {
+          form.push(("client_secret", secret));
+        }
         let _ = self
           .http
           .post(revokeUrl)
-          .form(&[
-            ("client_id", config.client_id),
-            ("token", savedToken.access_token),
-          ])
+          .form(&form)
           .send()
           .await;
       }
@@ -167,17 +171,19 @@ impl OAuthProviderService {
     verifier: &str,
     config: &crate::helpers::oauth_config_helper::OAuthProviderConfig,
   ) -> Result<OAuthTokenModel, String> {
-    let mut form = vec![
+    let mut form: Vec<(&str, String)> = vec![
       ("client_id", config.client_id.clone()),
-      ("client_secret", config.client_secret.clone()),
       ("code", code.to_string()),
       ("grant_type", "authorization_code".to_string()),
       ("redirect_uri", config.redirect_uri.clone()),
-      ("code_verifier", verifier.to_string()),
     ];
 
-    if matches!(platform, PlatformTypeModel::Youtube) {
-      form.retain(|(k, _)| *k != "code_verifier");
+    if let Some(ref secret) = config.client_secret {
+      form.push(("client_secret", secret.clone()));
+    }
+
+    if !matches!(platform, PlatformTypeModel::Youtube) {
+      form.push(("code_verifier", verifier.to_string()));
     }
 
     let response = self
