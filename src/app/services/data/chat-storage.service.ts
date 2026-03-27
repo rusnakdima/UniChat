@@ -5,6 +5,7 @@ import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.s
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 import { invoke } from "@tauri-apps/api/core";
 import { APP_CONFIG } from "@config/app.constants";
+import { BlockedWordsService } from "@services/ui/blocked-words.service";
 
 const channelMessagesStorageKey = "unichat.channelMessages.v1";
 
@@ -42,6 +43,7 @@ export class ChatStorageService {
   private readonly historyLoadState = signal<Record<string, ChatHistoryLoadState>>({});
   private readonly overlayBridge = inject(OverlaySourceBridgeService);
   private readonly messageTypeDetector = inject(MessageTypeDetectorService);
+  private readonly blockedWordsService = inject(BlockedWordsService);
 
   readonly channelMessages = this.channelMessagesSignal.asReadonly();
   readonly loadedChannelsSet = this.loadedChannels.asReadonly();
@@ -102,6 +104,15 @@ export class ChatStorageService {
   }
 
   addMessage(channelId: string, message: ChatMessage): void {
+    // Apply blocked words filtering
+    const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
+      message.text,
+      channelId
+    );
+    if (wasFiltered) {
+      message.text = filtered;
+    }
+
     // Detect and assign message type before adding
     const { type, reason } = this.messageTypeDetector.detectMessageType(message);
     message.messageType = type;
@@ -168,8 +179,15 @@ export class ChatStorageService {
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
-    // Detect and assign message types for all messages in chronological order
+    // Apply blocked words filtering and detect message types
     for (const message of sortedMessages) {
+      const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
+        message.text,
+        channelId
+      );
+      if (wasFiltered) {
+        message.text = filtered;
+      }
       const { type, reason } = this.messageTypeDetector.detectMessageType(message);
       message.messageType = type;
       message.messageTypeReason = reason;
@@ -212,8 +230,15 @@ export class ChatStorageService {
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
-    // Detect and assign message types for all messages in chronological order
+    // Apply blocked words filtering and detect message types
     for (const message of sortedMessages) {
+      const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
+        message.text,
+        channelId
+      );
+      if (wasFiltered) {
+        message.text = filtered;
+      }
       const { type, reason } = this.messageTypeDetector.detectMessageType(message);
       message.messageType = type;
       message.messageTypeReason = reason;
