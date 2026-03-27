@@ -1,0 +1,157 @@
+<section
+  class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
+>
+  <h2 class="text-lg font-semibold">Session Export</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+    Export chat messages to JSON or CSV format for analytics or VOD correlation
+  </p>
+
+  <!-- Export Options -->
+  <div class="mt-4 space-y-4">
+    <!-- Format Selection -->
+    <div class="flex gap-4">
+      <label class="flex items-center gap-2 text-sm">
+        <input
+          type="radio"
+          [(ngModel)]="format"
+          [value]="'json'"
+          class="text-emerald-600 focus:ring-emerald-500"
+        />
+        <span>JSON</span>
+      </label>
+      <label class="flex items-center gap-2 text-sm">
+        <input
+          type="radio"
+          [(ngModel)]="format"
+          [value]="'csv'"
+          class="text-emerald-600 focus:ring-emerald-500"
+        />
+        <span>CSV</span>
+      </label>
+    </div>
+
+    <!-- Include Metadata -->
+    <label class="flex items-center gap-2 text-sm">
+      <input
+        type="checkbox"
+        [(ngModel)]="includeMetadata"
+        class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-white/20 dark:bg-black/20"
+      />
+      <span>Include metadata (message IDs, user IDs, etc.)</span>
+    </label>
+
+    <!-- Platform Filter -->
+    <div>
+      <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Platforms</p>
+      <div class="mt-2 flex flex-wrap gap-2">
+        @for (platform of platforms; track platform) {
+          <button
+            type="button"
+            (click)="togglePlatform(platform)"
+            class="rounded-full border px-3 py-1 text-xs font-medium transition"
+            [class]="
+              selectedPlatforms().includes(platform)
+                ? 'border-emerald-500 bg-emerald-500 text-white'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-black/20 dark:text-slate-300'
+            "
+          >
+            {{ platform }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Channel Filter -->
+    <div>
+      <div class="mb-2 flex items-center justify-between">
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Channels</p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="selectAllChannels()"
+            class="text-xs text-emerald-600 hover:underline dark:text-emerald-400"
+          >
+            Select all
+          </button>
+          <button
+            type="button"
+            (click)="clearChannels()"
+            class="text-xs text-slate-500 hover:underline dark:text-slate-400"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @for (channel of channels(); track channel.id) {
+          <button
+            type="button"
+            (click)="toggleChannel(channel.channelId)"
+            class="rounded-full border px-3 py-1 text-xs font-medium transition"
+            [class]="
+              selectedChannels().includes(channel.channelId)
+                ? 'border-emerald-500 bg-emerald-500 text-white'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-black/20 dark:text-slate-300'
+            "
+          >
+            {{ channel.channelName }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Time Range -->
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Start Time (optional)
+        </label>
+        <input
+          type="datetime-local"
+          [(ngModel)]="startTime"
+          class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+        />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500 dark:text-slate-400">
+          End Time (optional)
+        </label>
+        <input
+          type="datetime-local"
+          [(ngModel)]="endTime"
+          class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+        />
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-black/20">
+      <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Export Preview</p>
+      <div class="mt-2 flex items-center gap-4 text-sm">
+        <span class="text-slate-600 dark:text-slate-400">
+          <span class="font-semibold text-slate-900 dark:text-white">{{ preview().count }}</span> messages
+        </span>
+        @for (count of preview().platforms | keyvalue; track count.key) {
+          @if (count.value > 0) {
+            <span class="text-slate-600 dark:text-slate-400">
+              <span class="font-semibold text-slate-900 dark:text-white">{{ count.value }}</span> {{ count.key }}
+            </span>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Export Button -->
+    <button
+      type="button"
+      (click)="export()"
+      [disabled]="preview().count === 0"
+      class="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <span class="flex items-center justify-center gap-2">
+        <mat-icon class="!h-4 !w-4">download</mat-icon>
+        Export {{ format() | uppercase }} ({{ preview().count }} messages)
+      </span>
+    </button>
+  </div>
+</section>
