@@ -14,6 +14,7 @@ pub enum AuthStatusModel {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthAccountModel {
+  pub id: String,
   pub platform: PlatformTypeModel,
   pub username: String,
   pub user_id: String,
@@ -31,4 +32,5 @@ pub struct AuthCommandResultModel {
   pub message: String,
   pub auth_url: Option<String>,
   pub account: Option<AuthAccountModel>,
+  pub accounts: Option<Vec<AuthAccountModel>>,
 }

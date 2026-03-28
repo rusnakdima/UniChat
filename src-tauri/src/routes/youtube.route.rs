@@ -9,10 +9,18 @@ pub struct YouTubeLiveResponse {
 pub struct YouTubeLiveItem {
   #[serde(rename = "id")]
   pub id: Option<String>,
+  #[serde(rename = "liveStreamingDetails")]
+  pub live_streaming_details: Option<YouTubeLiveStreamingDetails>,
   #[serde(rename = "snippet")]
   pub snippet: Option<YouTubeChatSnippet>,
   #[serde(rename = "authorDetails")]
   pub author_details: Option<YouTubeAuthorDetails>,
+}
+
+#[derive(Deserialize)]
+pub struct YouTubeLiveStreamingDetails {
+  #[serde(rename = "activeLiveChatId")]
+  pub active_live_chat_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -70,8 +78,8 @@ pub async fn youtubeFetchLiveChatId(
     body
       .items
       .and_then(|items| items.into_iter().next())
-      .and_then(|item| item.snippet)
-      .and_then(|snippet| snippet.type_field)
+      .and_then(|item| item.live_streaming_details)
+      .and_then(|details| details.active_live_chat_id)
       .unwrap_or_default(),
   )
 }
@@ -233,7 +241,7 @@ pub async fn youtubeFetchChatMessages(
   }
 
   let mut url = format!(
-        "https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet,authorDetails&maxResults=2000&liveChatId={}",
+        "https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet,authorDetails&maxResults=200&liveChatId={}",
         live_chat_id
     );
 
@@ -267,24 +275,7 @@ async fn youtube_fetch_live_chat_id_internal(
     return Err(format!("YouTube API HTTP {}", response.status()));
   }
 
-  #[derive(Deserialize)]
-  struct LiveResponse {
-    items: Option<Vec<LiveItem>>,
-  }
-
-  #[derive(Deserialize)]
-  struct LiveItem {
-    #[serde(rename = "liveStreamingDetails")]
-    live_streaming_details: Option<LiveDetails>,
-  }
-
-  #[derive(Deserialize)]
-  struct LiveDetails {
-    #[serde(rename = "activeLiveChatId")]
-    active_live_chat_id: Option<String>,
-  }
-
-  let body: LiveResponse = response.json().await.map_err(|e| e.to_string())?;
+  let body: YouTubeLiveResponse = response.json().await.map_err(|e| e.to_string())?;
   Ok(
     body
       .items

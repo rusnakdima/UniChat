@@ -89,9 +89,12 @@ fn twitch_client_credentials() -> Result<(String, Option<String>), String> {
   Ok((cfg.client_id, cfg.client_secret))
 }
 
-async fn twitch_app_access_token(client_id: &str, client_secret: Option<&str>) -> Result<String, String> {
+async fn twitch_app_access_token(
+  client_id: &str,
+  client_secret: Option<&str>,
+) -> Result<String, String> {
   let client = reqwest::Client::new();
-  
+
   let form = if let Some(secret) = client_secret {
     vec![
       ("client_id", client_id),
@@ -101,7 +104,7 @@ async fn twitch_app_access_token(client_id: &str, client_secret: Option<&str>) -
   } else {
     return Err("client_secret required for Twitch app access token".to_string());
   };
-  
+
   let response = client
     .post("https://id.twitch.tv/oauth2/token")
     .form(&form)

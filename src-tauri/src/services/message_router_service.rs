@@ -101,6 +101,7 @@ impl MessageRouterService {
         is_supporter: message.is_supporter,
         source_channel_id: message.source_channel_id,
         author_avatar_url: message.author_avatar_url,
+        channel_image_url: None, // Will be fetched by frontend based on source_channel_id
         emotes: message.emotes,
       };
 
@@ -140,6 +141,7 @@ impl MessageRouterService {
         is_supporter: message.is_supporter,
         source_channel_id: message.source_channel_id,
         author_avatar_url: message.author_avatar_url,
+        channel_image_url: None, // Will be fetched by frontend based on source_channel_id
         emotes: message.emotes,
       };
 

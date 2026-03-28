@@ -15,6 +15,7 @@ pub async fn authStart(
     message: "Authorization URL prepared.".to_string(),
     auth_url: Some(authUrl),
     account: None,
+    accounts: None,
   })
 }
 
@@ -33,6 +34,7 @@ pub async fn authComplete(
     message: "Authorization completed and account saved.".to_string(),
     auth_url: None,
     account: Some(account),
+    accounts: None,
   })
 }
 
@@ -50,6 +52,7 @@ pub async fn authAwaitCallback(
     message: "Authorization callback received and account saved.".to_string(),
     auth_url: None,
     account: Some(account),
+    accounts: None,
   })
 }
 
@@ -58,12 +61,13 @@ pub async fn authStatus(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
-  let account = state.oauthProviderService.getAuthStatus(platform)?;
+  let accounts = state.oauthProviderService.getAuthStatus(platform)?;
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization status loaded.".to_string(),
     auth_url: None,
-    account,
+    account: None,
+    accounts: Some(accounts),
   })
 }
 
@@ -71,12 +75,17 @@ pub async fn authStatus(
 pub async fn authDisconnect(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
+  accountId: String,
 ) -> Result<AuthCommandResultModel, String> {
-  state.oauthProviderService.disconnect(platform).await?;
+  state
+    .oauthProviderService
+    .disconnect(platform, accountId)
+    .await?;
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization disconnected.".to_string(),
     auth_url: None,
     account: None,
+    accounts: None,
   })
 }

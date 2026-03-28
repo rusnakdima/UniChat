@@ -71,6 +71,7 @@ pub fn format_for_overlay_payload(message: &ChatMessageModel) -> OverlayMessageM
     is_supporter: message.is_supporter,
     source_channel_id: message.source_channel_id.clone(),
     author_avatar_url: message.author_avatar_url.clone(),
+    channel_image_url: None, // Will be fetched by frontend based on source_channel_id
     emotes: message.emotes.clone(),
   }
 }

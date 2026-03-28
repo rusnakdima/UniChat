@@ -43,6 +43,7 @@ pub struct OverlayMessageModel {
   pub is_supporter: bool,
   pub source_channel_id: String,
   pub author_avatar_url: Option<String>,
+  pub channel_image_url: Option<String>, // Channel profile image for multi-channel overlays
   pub emotes: Option<Vec<ChatMessageEmoteModel>>,
 }
 

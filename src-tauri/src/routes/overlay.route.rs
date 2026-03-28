@@ -176,6 +176,48 @@ pub async fn getOverlayConfig(widget_id: String) -> Result<Option<OverlayFullCon
   Ok(configs.get(&widget_id).cloned())
 }
 
+/// Initialize overlay config from client-side storage (called on app startup)
+#[tauri::command]
+pub async fn initOverlayConfigFromStorage(
+  widget_id: String,
+  filter: String,
+  custom_css: String,
+  channel_ids: Vec<String>,
+  text_size: u32,
+  animation_type: String,
+  animation_direction: String,
+  max_messages: u32,
+  transparent_bg: bool,
+) -> Result<(), String> {
+  // Only initialize if config doesn't already exist
+  let configs = OVERLAY_CONFIGS.read().await;
+  if configs.get(&widget_id).is_some() {
+    return Ok(()); // Already initialized
+  }
+  drop(configs);
+
+  // Store initial config
+  let config = OverlayFullConfigModel {
+    widget_id: widget_id.clone(),
+    filter,
+    custom_css,
+    channel_ids,
+    text_size,
+    animation_type,
+    animation_direction,
+    max_messages,
+    transparent_bg,
+    timestamp: 0, // Initial config, no timestamp
+  };
+
+  {
+    let mut configs = OVERLAY_CONFIGS.write().await;
+    configs.insert(widget_id, config);
+  }
+
+  Ok(())
+}
+
 /// Send a message to overlay storage for a widget
 #[tauri::command]
 pub async fn sendOverlayMessage(
