@@ -47,9 +47,3 @@ Thumbs.db
 
 # Markdown (except root documentation)
 *.md
-!ROADMAP.md
-!KNOWN_ISSUES.md
-!COMMIT_PLAN.md
-!README.md
-!LICENSE.md
-!TASKS.md
