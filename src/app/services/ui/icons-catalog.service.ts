@@ -35,8 +35,9 @@ export class IconsCatalogService {
   private channelLoaded = new Set<string>();
   private channelLoadPromises = new Map<string, Promise<void>>();
 
-  private static readonly fetchedAtStaleMs = 1000 * 60 * 60 * 24 * 7; // 7 days
-  private static readonly errorBackoffMs = 1000 * 60 * 15; // 15 minutes
+  /** TTL for emote cache: 24 hours (matches IconsStorageService) */
+  private static readonly fetchedAtStaleMs = 24 * 60 * 60 * 1000; // 24 hours
+  private static readonly errorBackoffMs = 15 * 60 * 1000; // 15 minutes
 
   private emptyPayloadWithBackoff(): IconsPayloadWithMeta {
     // We intentionally set fetchedAtMs so `isStale()` becomes true after `errorBackoffMs`,
@@ -60,7 +61,7 @@ export class IconsCatalogService {
       return;
     }
 
-    const stored = this.storage.getGlobal();
+    const stored = this.storage.getGlobal(IconsCatalogService.fetchedAtStaleMs);
     if (stored && !this.isStale(stored.fetchedAtMs)) {
       this.globalEmotes = stored.emotes;
       this.globalBadges = stored.badges;
@@ -111,7 +112,7 @@ export class IconsCatalogService {
       return;
     }
 
-    const stored = this.storage.getChannel(rid);
+    const stored = this.storage.getChannel(rid, IconsCatalogService.fetchedAtStaleMs);
     if (stored && !this.isStale(stored.fetchedAtMs)) {
       this.channelEmotesByRoom.set(rid, stored.emotes);
       this.channelBadgesByRoom.set(rid, stored.badges);
@@ -188,5 +189,28 @@ export class IconsCatalogService {
 
   private isStale(fetchedAtMs: number): boolean {
     return Date.now() - fetchedAtMs > IconsCatalogService.fetchedAtStaleMs;
+  }
+
+  /**
+   * Clear emote cache and force refresh on next load
+   */
+  clearCache(): void {
+    this.storage.clearAll();
+    this.globalEmotes = {};
+    this.globalBadges = {};
+    this.globalLoaded = false;
+    this.globalLoadPromise = null;
+    this.channelEmotesByRoom.clear();
+    this.channelBadgesByRoom.clear();
+    this.channelLoaded.clear();
+    this.channelLoadPromises.clear();
+  }
+
+  /**
+   * Check if cache is stale
+   */
+  isCacheStale(): boolean {
+    const global = this.storage.getGlobal(IconsCatalogService.fetchedAtStaleMs);
+    return !global || this.isStale(global.fetchedAtMs);
   }
 }

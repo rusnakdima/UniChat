@@ -18,6 +18,7 @@ import { ChatAccount, PlatformType } from "@models/chat.model";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
+import { IconsCatalogService } from "@services/ui/icons-catalog.service";
 
 /* helpers */
 import {
@@ -36,6 +37,7 @@ export class SettingsModal {
   readonly authorizationService = inject(AuthorizationService);
   readonly chatListService = inject(ChatListService);
   readonly presentation = inject(ChatMessagePresentationService);
+  readonly iconsCatalog = inject(IconsCatalogService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
   readonly isOpen = input<boolean>(false);
@@ -176,5 +178,18 @@ export class SettingsModal {
     return this.selectedPlatform === "youtube"
       ? "YouTube live video ID or watch/live URL"
       : "Channel name...";
+  }
+
+  /** Refresh emote cache */
+  refreshEmoteCache(): void {
+    this.iconsCatalog.clearCache();
+    // Force reload
+    void this.iconsCatalog.ensureGlobalLoaded();
+    // Reload all active channels
+    this.chatListService.channels().forEach((channel) => {
+      if (channel.platform === "twitch" && channel.roomId) {
+        void this.iconsCatalog.ensureChannelLoaded(channel.roomId);
+      }
+    });
   }
 }
