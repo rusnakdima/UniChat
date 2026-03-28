@@ -15,10 +15,11 @@ use crate::routes::auth_provider_route::{
   authAwaitCallback, authComplete, authDisconnect, authStart, authStatus,
 };
 use crate::routes::icons_route::{twitchFetchChannelIcons, twitchFetchGlobalIcons};
-use crate::routes::kick_route::kickFetchChatroomId;
+use crate::routes::kick_route::{kickFetchChatroomId, kickFetchRecentMessages, kickFetchUserInfo};
 use crate::routes::overlay_route::{
-  emitOverlayConfigChanged, getOverlayConfig, getOverlayMessages, getOverlayUrl, openOverlayWindow,
-  sendOverlayMessage, startOverlayServer, stopOverlayServer,
+  emitOverlayConfigChanged, getOverlayConfig, getOverlayMessages, getOverlayUrl,
+  initOverlayConfigFromStorage, openOverlayWindow, sendOverlayMessage, startOverlayServer,
+  stopOverlayServer,
 };
 use crate::routes::provider_route::{
   connectPlatform, deleteMessage, disconnectPlatform, listenPlatformMessages,
@@ -95,7 +96,11 @@ pub fn run() {
       youtubeDeleteMessage,
       youtubeGetLiveVideoId,
       youtubeFetchChatMessages,
-      kickFetchChatroomId
+      kickFetchChatroomId,
+      kickFetchRecentMessages,
+      kickFetchUserInfo,
+      initOverlayConfigFromStorage,
+      sendOverlayMessage,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
