@@ -377,4 +377,105 @@ export class ChatStorageService {
     }
     return messages.slice(0, APP_CONFIG.MAX_MESSAGES_PER_CHANNEL);
   }
+
+  /**
+   * Prune old messages across all channels to prevent memory growth
+   * Called periodically to maintain healthy memory usage
+   */
+  pruneOldMessages(): void {
+    const now = Date.now();
+    const maxAge = APP_CONFIG.OLD_MESSAGE_AGE_MS;
+    const maxPerChannel = APP_CONFIG.MAX_MESSAGES_PER_CHANNEL;
+    const maxTotal = APP_CONFIG.MAX_MESSAGES_TOTAL;
+
+    this.channelMessagesSignal.update((store) => {
+      const newStore: Record<string, ChatMessage[]> = {};
+      let totalMessages = 0;
+
+      // First pass: remove old messages and limit per channel
+      for (const [channelId, messages] of Object.entries(store)) {
+        const filtered = messages.filter((msg) => {
+          const msgTime = new Date(msg.timestamp).getTime();
+          return now - msgTime < maxAge;
+        });
+
+        // Keep only the most recent messages
+        const limited = filtered.slice(0, maxPerChannel);
+
+        if (limited.length > 0) {
+          newStore[channelId] = limited;
+          totalMessages += limited.length;
+        }
+      }
+
+      // Second pass: if still over total limit, remove from oldest channels
+      if (totalMessages > maxTotal) {
+        const channelsByOldest = Object.entries(newStore).sort((a, b) => {
+          const aTime = a[1][0] ? new Date(a[1][0].timestamp).getTime() : 0;
+          const bTime = b[1][0] ? new Date(b[1][0].timestamp).getTime() : 0;
+          return aTime - bTime;
+        });
+
+        let removed = 0;
+        for (const [channelId, messages] of channelsByOldest) {
+          if (totalMessages - removed <= maxTotal) break;
+
+          const toRemove = Math.min(messages.length, Math.ceil((totalMessages - maxTotal) * 0.2));
+          newStore[channelId] = messages.slice(toRemove);
+          removed += toRemove;
+        }
+      }
+
+      return newStore;
+    });
+
+    this.persistChannelMessages();
+  }
+
+  /**
+   * Clear messages for a specific channel (memory cleanup)
+   */
+  clearChannel(channelId: string): void {
+    this.channelMessagesSignal.update((store) => {
+      const newStore = { ...store };
+      delete newStore[channelId];
+      return newStore;
+    });
+    this.loadedChannels.update((set) => {
+      const newSet = new Set(set);
+      newSet.delete(channelId);
+      return newSet;
+    });
+    this.persistChannelMessages();
+  }
+
+  /**
+   * Clear all messages (full memory reset)
+   */
+  clearAllMessages(): void {
+    this.channelMessagesSignal.set({});
+    this.loadedChannels.set(new Set());
+    this.historyLoadState.set({});
+    this.persistChannelMessages();
+  }
+
+  /**
+   * Get memory usage stats
+   */
+  getMemoryStats(): { totalMessages: number; channels: number; byChannel: Record<string, number> } {
+    const store = this.channelMessagesSignal();
+    const byChannel: Record<string, number> = {};
+    let total = 0;
+
+    for (const [channelId, messages] of Object.entries(store)) {
+      byChannel[channelId] = messages.length;
+      total += messages.length;
+    }
+
+    return {
+      totalMessages: total,
+      channels: Object.keys(store).length,
+      byChannel,
+    };
+  }
 }

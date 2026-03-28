@@ -4,6 +4,7 @@ import { RouterOutlet } from "@angular/router";
 
 /* services */
 import { ThemeService } from "@services/core/theme.service";
+import { MemoryManagementService } from "@services/core/memory-management.service";
 
 /* components */
 import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal";
@@ -14,8 +15,10 @@ import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-mo
 })
 export class App {
   private readonly themeService = inject(ThemeService);
+  private readonly memoryService = inject(MemoryManagementService);
 
   constructor() {
     this.themeService.hydrateTheme();
+    this.memoryService.startAutoPrune();
   }
 }
