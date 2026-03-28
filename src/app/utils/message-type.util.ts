@@ -1,5 +1,5 @@
+/* models */
 import { ChatMessage, MessageType } from "@models/chat.model";
-
 /**
  * Time threshold for "returning" user detection (5 minutes)
  */

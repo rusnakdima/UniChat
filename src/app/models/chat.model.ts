@@ -38,6 +38,14 @@ export interface PlatformCapabilities {
   canDelete: boolean;
 }
 
+export type ModerationRole = "viewer" | "owner" | "moderator";
+
+export interface ChannelAccountCapabilities extends PlatformCapabilities {
+  canModerate: boolean;
+  moderationRole: ModerationRole;
+  verified: boolean;
+}
+
 export interface PlatformSession {
   platform: PlatformType;
   label: string;
@@ -124,7 +132,7 @@ export interface WidgetConfig {
   themeHint: string;
   port: number;
   channelIds?: string[]; // Channels to include in overlay (empty/undefined = all channels)
-  
+
   // Overlay appearance settings
   customCss?: string; // Custom CSS styles
   textSize?: number; // Font size in pixels
@@ -164,6 +172,7 @@ export interface ChatChannel {
   channelImageUrl?: string;
   isAuthorized: boolean;
   accountId?: string;
+  accountCapabilities?: ChannelAccountCapabilities;
   isVisible: boolean;
   addedAt: string;
 }

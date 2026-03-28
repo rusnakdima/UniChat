@@ -50,6 +50,39 @@ input[type="checkbox"].peer:checked + .checkmark::after {
   @apply absolute h-2.5 w-2.5 bg-white rounded-sm top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
 }
 
+/* ===== Chat Emote Styling ===== */
+
+/* Base emote styling - maintains consistent height */
+.chat-emote {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+/* Dynamic width emotes - for non-square emotes (Kick, custom, etc.) */
+.chat-emote.chat-emote-dynamic {
+  width: auto;
+  max-width: 60px; /* Prevent overly wide emotes */
+  height: 24px;
+}
+
+/* Overlay emote styling - same dynamic approach */
+.overlay-emote {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.overlay-emote.overlay-emote-dynamic {
+  width: auto;
+  max-width: 60px;
+  height: 24px;
+}
+
 input[type="checkbox"].peer:focus + .checkmark::before {
   @apply ring-2 ring-blue-500/30;
 }

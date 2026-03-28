@@ -1,4 +1,7 @@
+/* models */
 import {
+  ChannelAccountCapabilities,
+  ChatAccount,
   ChatChannel,
   ChatMessage,
   DensityMode,
@@ -12,8 +15,9 @@ import {
   WidgetFilter,
   WidgetStatus,
 } from "@models/chat.model";
-import { PlatformResolverService } from "@services/core/platform-resolver.service";
 
+/* services */
+import { PlatformResolverService } from "@services/core/platform-resolver.service";
 // Create singleton instance for helper functions
 let platformResolver: PlatformResolverService | null = null;
 
@@ -153,7 +157,7 @@ export function getProviderCapabilities(
 ): PlatformCapabilities {
   const resolver = getPlatformResolver();
   const capabilities = resolver.getCapabilities(platform);
-  
+
   // If not authorized, downgrade capabilities to listen-only
   if (!isAuthorized) {
     return {
@@ -162,8 +166,24 @@ export function getProviderCapabilities(
       canDelete: false,
     };
   }
-  
+
   return capabilities;
+}
+
+export function getChannelAccountCapabilities(
+  channel: Pick<ChatChannel, "platform" | "accountCapabilities">,
+  account?: Pick<ChatAccount, "authStatus">
+): ChannelAccountCapabilities {
+  const base = getProviderCapabilities(channel.platform, account?.authStatus === "authorized");
+  const moderation = channel.accountCapabilities;
+
+  return {
+    ...base,
+    canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
+    canModerate: moderation?.verified === true && moderation.canModerate,
+    moderationRole: moderation?.moderationRole ?? "viewer",
+    verified: moderation?.verified ?? false,
+  };
 }
 
 export interface CreateMessageOptions {
@@ -238,7 +258,7 @@ function getProviderEventName(platform: PlatformType): string {
 export const YOUTUBE_DATA_API_KEY_STORAGE_KEY = "unichat-youtube-api-key";
 
 /**
- * Canonical id for a YouTube row in channel list: @handle (no @), UC… id, or v: + video id from URLs.
+ * Canonical id for a YouTube row in channel list: explicit 11-char video id.
  */
 export function normalizeYouTubeProviderInput(raw: string): string {
   const trimmed = raw.trim();
@@ -248,37 +268,27 @@ export function normalizeYouTubeProviderInput(raw: string): string {
 
   const studioMatch = trimmed.match(/studio\.youtube\.com\/video\/([a-zA-Z0-9_-]{11})/i);
   if (studioMatch?.[1]) {
-    return `v:${studioMatch[1]}`;
+    return studioMatch[1];
   }
 
   const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/i);
   if (watchMatch?.[1] && /youtube\.com/i.test(trimmed)) {
-    return `v:${watchMatch[1]}`;
+    return watchMatch[1];
   }
 
   const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?|#|\/|$)/i);
   if (shortMatch?.[1]) {
-    return `v:${shortMatch[1]}`;
+    return shortMatch[1];
   }
 
-  const channelMatch = trimmed.match(/youtube\.com\/channel\/(UC[\w-]{22})/i);
-  if (channelMatch?.[1]) {
-    return channelMatch[1];
+  const liveMatch = trimmed.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})(?:\?|#|\/|$)/i);
+  if (liveMatch?.[1]) {
+    return liveMatch[1];
   }
 
-  const handleMatch = trimmed.match(/youtube\.com\/@([\w.-]+)/i);
-  if (handleMatch?.[1]) {
-    return handleMatch[1].toLowerCase();
-  }
-
-  const atHandle = trimmed.startsWith("@") ? trimmed.slice(1).trim() : trimmed;
-  if (atHandle !== trimmed) {
-    return atHandle.toLowerCase();
-  }
-
-  if (/^UC[\w-]{22}$/i.test(trimmed)) {
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
     return trimmed;
   }
 
-  return trimmed.replace(/^@/, "").toLowerCase();
+  return "";
 }

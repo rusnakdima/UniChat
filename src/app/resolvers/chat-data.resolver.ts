@@ -1,8 +1,10 @@
+/* sys lib */
 import { inject } from "@angular/core";
-import { ChatStateManagerService } from "@services/data/chat-state-manager.service";
-import { ChatListService } from "@services/data/chat-list.service";
-import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
 
+/* services */
+import { ChatListService } from "@services/data/chat-list.service";
+import { ChatStateManagerService } from "@services/data/chat-state-manager.service";
+import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
 /**
  * Resolver for dashboard route that prevents unnecessary refetching.
  * Follows TaskFlow's storage-first pattern:

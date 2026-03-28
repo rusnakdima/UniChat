@@ -1,9 +1,11 @@
+/* sys lib */
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from "@angular/core";
 import { Router, NavigationEnd, RouterOutlet } from "@angular/router";
 import { filter } from "rxjs";
+
+/* components */
 import { AppSidebarComponent } from "@components/app-sidebar/app-sidebar.component";
 import { SharedHeaderComponent } from "@components/shared-header/shared-header.component";
-
 @Component({
   selector: "app-layout",
   standalone: true,
