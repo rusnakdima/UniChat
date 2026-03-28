@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::models::auth_account_model::AuthAccountModel;
 use crate::models::auth_oauth_model::OAuthTokenModel;
-use crate::models::provider_contract_model::PlatformTypeModel;
+use crate::models::provider_contract_model::{PlatformKey, PlatformTypeModel};
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -53,7 +53,7 @@ impl TokenVaultService {
   }
 
   /// Save token with cache invalidation (atomic operation)
-  pub fn saveToken(
+  pub fn save_token(
     &self,
     account: &AuthAccountModel,
     token: &OAuthTokenModel,
@@ -86,7 +86,7 @@ impl TokenVaultService {
   }
 
   /// Read token with cache-first strategy (thread-safe)
-  pub fn readToken(
+  pub fn read_token(
     &self,
     platform: &PlatformTypeModel,
     account_id: &str,
@@ -120,7 +120,7 @@ impl TokenVaultService {
   }
 
   /// Delete token with cache invalidation (atomic operation)
-  pub fn deleteToken(&self, platform: &PlatformTypeModel, account_id: &str) -> Result<(), String> {
+  pub fn delete_token(&self, platform: &PlatformTypeModel, account_id: &str) -> Result<(), String> {
     let entry = Entry::new(
       &self.service_name,
       &format!("oauth-{}-{}", platform.asKey(), account_id),
@@ -139,7 +139,7 @@ impl TokenVaultService {
     }
   }
 
-  pub fn readAccounts(
+  pub fn read_accounts(
     &self,
     platform: &PlatformTypeModel,
   ) -> Result<Vec<AuthAccountModel>, String> {
@@ -194,7 +194,7 @@ impl TokenVaultService {
     Ok(accounts)
   }
 
-  pub fn upsertAccount(&self, account: &AuthAccountModel) -> Result<(), String> {
+  pub fn upsert_account(&self, account: &AuthAccountModel) -> Result<(), String> {
     let mut account_ids = self.read_account_index(&account.platform)?;
     if !account_ids.iter().any(|id| id == &account.id) {
       account_ids.push(account.id.clone());
@@ -203,7 +203,7 @@ impl TokenVaultService {
     Ok(())
   }
 
-  pub fn removeAccount(
+  pub fn remove_account(
     &self,
     platform: &PlatformTypeModel,
     account_id: &str,
@@ -245,19 +245,5 @@ impl TokenVaultService {
     entry
       .set_password(&serialized)
       .map_err(|e| format!("token index save failed: {e}"))
-  }
-}
-
-trait PlatformKey {
-  fn asKey(&self) -> &'static str;
-}
-
-impl PlatformKey for PlatformTypeModel {
-  fn asKey(&self) -> &'static str {
-    match self {
-      PlatformTypeModel::Twitch => "twitch",
-      PlatformTypeModel::Kick => "kick",
-      PlatformTypeModel::Youtube => "youtube",
-    }
   }
 }

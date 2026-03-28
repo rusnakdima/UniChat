@@ -5,7 +5,7 @@ use chrono::Utc;
 use rand::{distributions::Alphanumeric, Rng};
 
 use crate::models::auth_oauth_model::OAuthPendingSessionModel;
-use crate::models::provider_contract_model::PlatformTypeModel;
+use crate::models::provider_contract_model::{PlatformKey, PlatformTypeModel};
 
 pub struct OAuthStateService {
   sessions: Mutex<HashMap<String, OAuthPendingSessionModel>>,
@@ -24,7 +24,7 @@ impl OAuthStateService {
     }
   }
 
-  pub fn createSession(
+  pub fn create_session(
     &self,
     platform: &PlatformTypeModel,
   ) -> Result<OAuthPendingSessionModel, String> {
@@ -43,7 +43,7 @@ impl OAuthStateService {
     Ok(session)
   }
 
-  pub fn consumeSession(&self, state: &str) -> Result<OAuthPendingSessionModel, String> {
+  pub fn consume_session(&self, state: &str) -> Result<OAuthPendingSessionModel, String> {
     let mut guard = self
       .sessions
       .lock()
@@ -60,18 +60,4 @@ fn randomString(len: usize) -> String {
     .take(len)
     .map(char::from)
     .collect()
-}
-
-trait PlatformKey {
-  fn asKey(&self) -> &'static str;
-}
-
-impl PlatformKey for PlatformTypeModel {
-  fn asKey(&self) -> &'static str {
-    match self {
-      PlatformTypeModel::Twitch => "twitch",
-      PlatformTypeModel::Kick => "kick",
-      PlatformTypeModel::Youtube => "youtube",
-    }
-  }
 }

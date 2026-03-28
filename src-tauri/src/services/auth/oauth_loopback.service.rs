@@ -22,9 +22,9 @@ impl OAuthLoopbackService {
     }
   }
 
-  pub fn startListener(
+  pub fn start_listener(
     &self,
-    platformKey: &str,
+    platform_key: &str,
     host: &str,
     port: u16,
     callbackPath: &str,
@@ -38,7 +38,7 @@ impl OAuthLoopbackService {
         .pendingCallbacks
         .lock()
         .map_err(|_| "callback map lock poisoned".to_string())?;
-      guard.insert(platformKey.to_string(), receiver);
+      guard.insert(platform_key.to_string(), receiver);
     }
 
     let expectedPath = callbackPath.to_string();
@@ -83,19 +83,23 @@ impl OAuthLoopbackService {
     Ok(())
   }
 
-  pub fn waitForCallback(&self, platformKey: &str, timeoutSeconds: u64) -> Result<String, String> {
+  pub fn wait_for_callback(
+    &self,
+    platform_key: &str,
+    timeout_seconds: u64,
+  ) -> Result<String, String> {
     let receiver = {
       let mut guard = self
         .pendingCallbacks
         .lock()
         .map_err(|_| "callback map lock poisoned".to_string())?;
       guard
-        .remove(platformKey)
+        .remove(platform_key)
         .ok_or_else(|| "callback listener is not started".to_string())?
     };
 
     receiver
-      .recv_timeout(Duration::from_secs(timeoutSeconds))
+      .recv_timeout(Duration::from_secs(timeout_seconds))
       .map_err(|_| "authorization callback timeout".to_string())
   }
 }
