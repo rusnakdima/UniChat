@@ -7,7 +7,6 @@ import { ChannelAccountCapabilities, ChatChannel, PlatformType } from "@models/c
 /* helpers */
 import { normalizeYouTubeProviderInput } from "@helpers/chat.helper";
 const storageKey = "unichat-chat-channels";
-const legacyMockIds = new Set(["ch-twitch-1", "ch-twitch-2", "ch-kick-1", "ch-youtube-1"]);
 
 @Injectable({
   providedIn: "root",
@@ -164,7 +163,6 @@ export class ChatListService {
     try {
       const parsed = JSON.parse(stored) as ChatChannel[];
       return parsed
-        .filter((channel) => !legacyMockIds.has(channel.id))
         .map((channel) =>
           channel.platform === "youtube"
             ? {

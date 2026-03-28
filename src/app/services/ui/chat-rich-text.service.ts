@@ -6,6 +6,9 @@ import { ChatMessage, ChatMessageEmote } from "@models/chat.model";
 
 /* services */
 import { normalizeChatLinkHref } from "@services/ui/link-preview.service";
+
+/* utils */
+import { LRUMemoCache } from "@utils/memoization.util";
 export interface ChatTextSegment {
   type: "text" | "emote" | "link";
   value: string;
@@ -20,20 +23,31 @@ const URL_IN_TEXT = /https?:\/\/[^\s<>"'()[\]]+|www\.[^\s<>"'()[\]]+/gi;
   providedIn: "root",
 })
 export class ChatRichTextService {
+  /** LRU cache for segment building (max 500 entries) */
+  private readonly segmentCache = new LRUMemoCache<string, ChatTextSegment[]>(500);
+
+  /**
+   * Build text segments with memoization for performance
+   * Caches results based on message ID and text content
+   */
   buildSegments(message: ChatMessage): ChatTextSegment[] {
-    const text = message.text ?? "";
-    const emoteChunks = this.buildEmoteSegments(message);
-    const out: ChatTextSegment[] = [];
+    const cacheKey = `${message.id}-${message.text}-${message.rawPayload.emotes?.length ?? 0}`;
 
-    for (const chunk of emoteChunks) {
-      if (chunk.type === "emote") {
-        out.push(chunk);
-        continue;
+    return this.segmentCache.get(cacheKey, () => {
+      const text = message.text ?? "";
+      const emoteChunks = this.buildEmoteSegments(message);
+      const out: ChatTextSegment[] = [];
+
+      for (const chunk of emoteChunks) {
+        if (chunk.type === "emote") {
+          out.push(chunk);
+          continue;
+        }
+        out.push(...this.splitTextWithLinks(chunk.value));
       }
-      out.push(...this.splitTextWithLinks(chunk.value));
-    }
 
-    return out.length ? out : [{ type: "text", value: text }];
+      return out.length ? out : [{ type: "text", value: text }];
+    });
   }
 
   private buildEmoteSegments(message: ChatMessage): ChatTextSegment[] {

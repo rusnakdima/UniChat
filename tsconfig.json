@@ -24,7 +24,8 @@
       "@models/*": ["src/app/models/*"],
       "@services/*": ["src/app/services/*"],
       "@views/*": ["src/app/views/*"],
-      "@resolvers/*": ["src/app/resolvers/*"]
+      "@resolvers/*": ["src/app/resolvers/*"],
+      "@utils/*": ["src/app/utils/*"]
     }
   },
   "angularCompilerOptions": {
