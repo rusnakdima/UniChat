@@ -1,5 +1,5 @@
+/* sys lib */
 import { Injectable } from "@angular/core";
-
 /**
  * Centralized service for generating emote and badge URLs
  * Consolidates URL generation logic from multiple provider services

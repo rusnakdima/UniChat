@@ -1,7 +1,11 @@
+/* sys lib */
 import { Injectable, inject, computed, signal } from "@angular/core";
-import { ChatMessage, PlatformType } from "@models/chat.model";
-import { ChatStorageService } from "@services/data/chat-storage.service";
 
+/* models */
+import { ChatMessage, PlatformType } from "@models/chat.model";
+
+/* services */
+import { ChatStorageService } from "@services/data/chat-storage.service";
 export interface SearchOptions {
   query: string;
   platform?: PlatformType;

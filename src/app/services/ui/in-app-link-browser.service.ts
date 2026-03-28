@@ -1,5 +1,5 @@
+/* sys lib */
 import { Injectable } from "@angular/core";
-
 /**
  * Opens arbitrary http(s) URLs in a **separate Tauri webview window** with a top-level navigation.
  * This is not an iframe: the remote site’s normal page loads inside UniChat, which is what users

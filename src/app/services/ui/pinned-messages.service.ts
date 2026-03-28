@@ -1,12 +1,16 @@
+/* sys lib */
 import { Injectable, signal, computed, inject } from "@angular/core";
-import { LocalStorageService } from "@services/core/local-storage.service";
+
+/* models */
 import { ChatMessage } from "@models/chat.model";
 
+/* services */
+import { LocalStorageService } from "@services/core/local-storage.service";
 export interface PinnedMessage {
   id: string;
   messageId: string;
   channelId: string;
-  platform: ChatMessage['platform'];
+  platform: ChatMessage["platform"];
   author: string;
   text: string;
   timestamp: string;
@@ -52,7 +56,7 @@ export class PinnedMessagesService {
    */
   pinMessage(message: ChatMessage, note?: string): PinnedMessage {
     // Check if already pinned
-    const existing = this.pinnedSignal().find(pm => pm.messageId === message.id);
+    const existing = this.pinnedSignal().find((pm) => pm.messageId === message.id);
     if (existing) {
       return existing;
     }
@@ -69,7 +73,7 @@ export class PinnedMessagesService {
       note,
     };
 
-    this.pinnedSignal.update(pins => [...pins, pinned]);
+    this.pinnedSignal.update((pins) => [...pins, pinned]);
     this.persistPinnedMessages();
     return pinned;
   }
@@ -78,7 +82,7 @@ export class PinnedMessagesService {
    * Unpin a message by its pinned ID
    */
   unpinMessage(pinnedId: string): void {
-    this.pinnedSignal.update(pins => pins.filter(pin => pin.id !== pinnedId));
+    this.pinnedSignal.update((pins) => pins.filter((pin) => pin.id !== pinnedId));
     this.persistPinnedMessages();
   }
 
@@ -86,7 +90,7 @@ export class PinnedMessagesService {
    * Unpin a message by its original message ID
    */
   unpinByMessageId(messageId: string): void {
-    this.pinnedSignal.update(pins => pins.filter(pin => pin.messageId !== messageId));
+    this.pinnedSignal.update((pins) => pins.filter((pin) => pin.messageId !== messageId));
     this.persistPinnedMessages();
   }
 
@@ -94,22 +98,22 @@ export class PinnedMessagesService {
    * Check if a message is pinned
    */
   isPinned(messageId: string): boolean {
-    return this.pinnedSignal().some(pin => pin.messageId === messageId);
+    return this.pinnedSignal().some((pin) => pin.messageId === messageId);
   }
 
   /**
    * Get pinned message by original message ID
    */
   getPinnedByMessageId(messageId: string): PinnedMessage | undefined {
-    return this.pinnedSignal().find(pin => pin.messageId === messageId);
+    return this.pinnedSignal().find((pin) => pin.messageId === messageId);
   }
 
   /**
    * Update pin note
    */
   updateNote(pinnedId: string, note: string): void {
-    this.pinnedSignal.update(pins =>
-      pins.map(pin => pin.id === pinnedId ? { ...pin, note } : pin)
+    this.pinnedSignal.update((pins) =>
+      pins.map((pin) => (pin.id === pinnedId ? { ...pin, note } : pin))
     );
     this.persistPinnedMessages();
   }
@@ -118,14 +122,14 @@ export class PinnedMessagesService {
    * Get pinned messages for a specific channel
    */
   getPinnedForChannel(channelId: string): PinnedMessage[] {
-    return this.pinnedSignal().filter(pin => pin.channelId === channelId);
+    return this.pinnedSignal().filter((pin) => pin.channelId === channelId);
   }
 
   /**
    * Get pinned messages for a specific platform
    */
-  getPinnedForPlatform(platform: ChatMessage['platform']): PinnedMessage[] {
-    return this.pinnedSignal().filter(pin => pin.platform === platform);
+  getPinnedForPlatform(platform: ChatMessage["platform"]): PinnedMessage[] {
+    return this.pinnedSignal().filter((pin) => pin.platform === platform);
   }
 
   /**
@@ -152,16 +156,17 @@ export class PinnedMessagesService {
       if (!Array.isArray(parsed)) {
         return false;
       }
-      
+
       // Validate structure
-      const valid = parsed.every(pin =>
-        typeof pin.id === 'string' &&
-        typeof pin.messageId === 'string' &&
-        typeof pin.channelId === 'string' &&
-        typeof pin.author === 'string' &&
-        typeof pin.text === 'string' &&
-        typeof pin.timestamp === 'string' &&
-        typeof pin.pinnedAt === 'string'
+      const valid = parsed.every(
+        (pin) =>
+          typeof pin.id === "string" &&
+          typeof pin.messageId === "string" &&
+          typeof pin.channelId === "string" &&
+          typeof pin.author === "string" &&
+          typeof pin.text === "string" &&
+          typeof pin.timestamp === "string" &&
+          typeof pin.pinnedAt === "string"
       );
 
       if (!valid) {

@@ -1,9 +1,13 @@
+/* sys lib */
 import { Injectable, inject, signal } from "@angular/core";
+
+/* models */
 import { ChatMessage } from "@models/chat.model";
+
+/* services */
 import { ChatStateService } from "@services/data/chat-state.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 import { SplitFeedUiService } from "@services/ui/split-feed-ui.service";
-
 @Injectable({
   providedIn: "root",
 })
@@ -52,7 +56,7 @@ export class DashboardChatInteractionService {
     if (!id || !draft.trim()) {
       return;
     }
-    this.chatStateService.submitReply(id, draft.trim());
+    void this.chatStateService.submitReply(id, draft.trim());
     this.cancelReplyContext();
   }
 

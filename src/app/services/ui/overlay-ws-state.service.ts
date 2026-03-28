@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable, signal } from "@angular/core";
-import { WidgetFilter, PlatformType, ChatMessageEmote } from "@models/chat.model";
 
+/* models */
+import { WidgetFilter, PlatformType, ChatMessageEmote } from "@models/chat.model";
 export interface OverlayChatMessage {
   id: string;
   platform: PlatformType;
@@ -10,6 +12,7 @@ export interface OverlayChatMessage {
   isSupporter: boolean;
   sourceChannelId?: string;
   authorAvatarUrl?: string;
+  channelImageUrl?: string; // Channel profile image for multi-channel overlays
   emotes?: ChatMessageEmote[];
 }
 
@@ -24,6 +27,7 @@ interface OverlayWsOverlayMessageEnvelope {
     isSupporter: boolean;
     sourceChannelId?: string;
     authorAvatarUrl?: string;
+    channelImageUrl?: string;
     emotes?: ChatMessageEmote[];
   };
 }
@@ -106,6 +110,7 @@ export class OverlayWsStateService {
         isSupporter: !!parsed.message.isSupporter,
         sourceChannelId: parsed.message.sourceChannelId,
         authorAvatarUrl: parsed.message.authorAvatarUrl,
+        channelImageUrl: parsed.message.channelImageUrl,
         emotes: parsed.message.emotes,
       };
 

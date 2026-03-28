@@ -1,7 +1,9 @@
+/* sys lib */
 import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
-import { ChatMessage, PlatformType } from "@models/chat.model";
 
+/* models */
+import { ChatMessage, PlatformType } from "@models/chat.model";
 type OverlaySourcePayload = {
   type: "chatMessage";
   message: {

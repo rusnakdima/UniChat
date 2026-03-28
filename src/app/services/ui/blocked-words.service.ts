@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable, signal, computed, inject } from "@angular/core";
-import { LocalStorageService } from "@services/core/local-storage.service";
 
+/* services */
+import { LocalStorageService } from "@services/core/local-storage.service";
 export interface BlockedWordRule {
   id: string;
   pattern: string;
@@ -30,14 +32,10 @@ export class BlockedWordsService {
   private readonly rulesSignal = signal<BlockedWordRule[]>([]);
 
   readonly rules = this.rulesSignal.asReadonly();
-  
-  readonly activeRules = computed(() => 
-    this.rulesSignal().filter(rule => rule.isActive)
-  );
 
-  readonly globalRules = computed(() =>
-    this.activeRules().filter(rule => rule.isGlobal)
-  );
+  readonly activeRules = computed(() => this.rulesSignal().filter((rule) => rule.isActive));
+
+  readonly globalRules = computed(() => this.activeRules().filter((rule) => rule.isGlobal));
 
   constructor() {
     this.loadRules();
@@ -61,7 +59,7 @@ export class BlockedWordsService {
       id: this.generateId(),
       createdAt: new Date().toISOString(),
     };
-    this.rulesSignal.update(rules => [...rules, newRule]);
+    this.rulesSignal.update((rules) => [...rules, newRule]);
     this.persistRules();
     return newRule;
   }
@@ -70,10 +68,8 @@ export class BlockedWordsService {
    * Update an existing rule
    */
   updateRule(ruleId: string, updates: Partial<BlockedWordRule>): void {
-    this.rulesSignal.update(rules =>
-      rules.map(rule =>
-        rule.id === ruleId ? { ...rule, ...updates } : rule
-      )
+    this.rulesSignal.update((rules) =>
+      rules.map((rule) => (rule.id === ruleId ? { ...rule, ...updates } : rule))
     );
     this.persistRules();
   }
@@ -82,7 +78,7 @@ export class BlockedWordsService {
    * Delete a rule
    */
   deleteRule(ruleId: string): void {
-    this.rulesSignal.update(rules => rules.filter(rule => rule.id !== ruleId));
+    this.rulesSignal.update((rules) => rules.filter((rule) => rule.id !== ruleId));
     this.persistRules();
   }
 
@@ -90,10 +86,8 @@ export class BlockedWordsService {
    * Toggle rule active state
    */
   toggleRule(ruleId: string): void {
-    this.rulesSignal.update(rules =>
-      rules.map(rule =>
-        rule.id === ruleId ? { ...rule, isActive: !rule.isActive } : rule
-      )
+    this.rulesSignal.update((rules) =>
+      rules.map((rule) => (rule.id === ruleId ? { ...rule, isActive: !rule.isActive } : rule))
     );
     this.persistRules();
   }
@@ -104,7 +98,7 @@ export class BlockedWordsService {
    */
   filterMessage(text: string, channelId: string): { filtered: string; wasFiltered: boolean } {
     const applicableRules = this.activeRules().filter(
-      rule => rule.isGlobal || rule.channelIds?.includes(channelId)
+      (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
     );
 
     let filtered = text;
@@ -152,7 +146,7 @@ export class BlockedWordsService {
    */
   getRulesForChannel(channelId: string): BlockedWordRule[] {
     return this.activeRules().filter(
-      rule => rule.isGlobal || rule.channelIds?.includes(channelId)
+      (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
     );
   }
 

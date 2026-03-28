@@ -1,7 +1,11 @@
+/* sys lib */
 import { Injectable } from "@angular/core";
-import { ChatMessage, ChatMessageEmote } from "@models/chat.model";
-import { normalizeChatLinkHref } from "@services/ui/link-preview.service";
 
+/* models */
+import { ChatMessage, ChatMessageEmote } from "@models/chat.model";
+
+/* services */
+import { normalizeChatLinkHref } from "@services/ui/link-preview.service";
 export interface ChatTextSegment {
   type: "text" | "emote" | "link";
   value: string;

@@ -1,7 +1,11 @@
+/* sys lib */
 import { Injectable, inject } from "@angular/core";
-import { ChatMessage } from "@models/chat.model";
-import { ChatStorageService } from "@services/data/chat-storage.service";
 
+/* models */
+import { ChatMessage } from "@models/chat.model";
+
+/* services */
+import { ChatStorageService } from "@services/data/chat-storage.service";
 export interface ExportOptions {
   format: "json" | "csv";
   includeMetadata?: boolean;
@@ -28,7 +32,7 @@ export class SessionExportService {
    */
   export(options: ExportOptions): void {
     const messages = this.getFilteredMessages(options);
-    
+
     let content: string;
     let mimeType: string;
     let extension: string;
@@ -55,28 +59,28 @@ export class SessionExportService {
     // Filter by channels
     if (options.channels && options.channels.length > 0) {
       const channelSet = new Set(options.channels);
-      messages = messages.filter(m => channelSet.has(m.sourceChannelId));
+      messages = messages.filter((m) => channelSet.has(m.sourceChannelId));
     }
 
     // Filter by platforms
     if (options.platforms && options.platforms.length > 0) {
       const platformSet = new Set(options.platforms);
-      messages = messages.filter(m => platformSet.has(m.platform));
+      messages = messages.filter((m) => platformSet.has(m.platform));
     }
 
     // Filter by time range
     if (options.startTime) {
       const start = new Date(options.startTime).getTime();
-      messages = messages.filter(m => new Date(m.timestamp).getTime() >= start);
+      messages = messages.filter((m) => new Date(m.timestamp).getTime() >= start);
     }
     if (options.endTime) {
       const end = new Date(options.endTime).getTime();
-      messages = messages.filter(m => new Date(m.timestamp).getTime() <= end);
+      messages = messages.filter((m) => new Date(m.timestamp).getTime() <= end);
     }
 
     // Sort chronologically (oldest first) for export
-    return messages.sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    return messages.sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
   }
 
@@ -92,7 +96,7 @@ export class SessionExportService {
       };
       return JSON.stringify(exportData, null, 2);
     }
-    
+
     return JSON.stringify(messages, null, 2);
   }
 
@@ -100,20 +104,19 @@ export class SessionExportService {
    * Export messages to CSV format
    */
   private exportToCsv(messages: ChatMessage[], includeMetadata: boolean): string {
-    const headers = [
-      "Timestamp",
-      "Platform",
-      "Channel",
-      "Author",
-      "Message",
-      "Badges",
-    ];
+    const headers = ["Timestamp", "Platform", "Channel", "Author", "Message", "Badges"];
 
     if (includeMetadata) {
-      headers.push("Message ID", "Source User ID", "Source Channel ID", "Is Supporter", "Is Deleted");
+      headers.push(
+        "Message ID",
+        "Source User ID",
+        "Source Channel ID",
+        "Is Supporter",
+        "Is Deleted"
+      );
     }
 
-    const rows = messages.map(m => {
+    const rows = messages.map((m) => {
       const row = [
         this.escapeCsv(m.timestamp),
         this.escapeCsv(m.platform),
@@ -177,7 +180,7 @@ export class SessionExportService {
    */
   getExportPreview(options: ExportOptions): { count: number; platforms: Record<string, number> } {
     const messages = this.getFilteredMessages(options);
-    
+
     const platforms: Record<string, number> = {
       twitch: 0,
       kick: 0,

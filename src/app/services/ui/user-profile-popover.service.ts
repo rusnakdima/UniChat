@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable, signal } from "@angular/core";
-import { ChatMessage, UserProfileState } from "@models/chat.model";
 
+/* models */
+import { ChatMessage, UserProfileState } from "@models/chat.model";
 export interface UserProfilePopoverOpenState {
   anchor: HTMLElement;
   message: ChatMessage;

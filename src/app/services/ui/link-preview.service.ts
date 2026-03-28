@@ -1,6 +1,8 @@
+/* sys lib */
 import { inject, Injectable, signal } from "@angular/core";
-import { InAppLinkBrowserService } from "@services/ui/in-app-link-browser.service";
 
+/* services */
+import { InAppLinkBrowserService } from "@services/ui/in-app-link-browser.service";
 export interface LinkPreviewState {
   /** Raw matched text in the message (may omit scheme). */
   displayUrl: string;

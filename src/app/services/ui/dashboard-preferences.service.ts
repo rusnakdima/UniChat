@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable, signal } from "@angular/core";
-import { DashboardPreferences, DensityMode, FeedMode, PlatformType } from "@models/chat.model";
 
+/* models */
+import { DashboardPreferences, DensityMode, FeedMode, PlatformType } from "@models/chat.model";
 const storageKey = "unichat-dashboard-preferences";
 
 const defaultPreferences: DashboardPreferences = {

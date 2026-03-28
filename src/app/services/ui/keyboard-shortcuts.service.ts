@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable, inject, signal, computed } from "@angular/core";
-import { ChatSearchComponent } from "@components/chat-search/chat-search.component";
 
+/* components */
+import { ChatSearchComponent } from "@components/chat-search/chat-search.component";
 export interface KeyboardShortcut {
   keys: string;
   description: string;
@@ -13,15 +15,15 @@ export const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
   { keys: "Ctrl+P", description: "Open pinned messages", category: "navigation" },
   { keys: "Ctrl+M", description: "Toggle mixed/split view", category: "navigation" },
   { keys: "Escape", description: "Close modal/panel", category: "navigation" },
-  
+
   // Actions
   { keys: "Ctrl+Enter", description: "Send message", category: "actions" },
   { keys: "Ctrl+R", description: "Reply to selected message", category: "actions" },
   { keys: "Delete", description: "Delete selected message", category: "actions" },
-  
+
   // Overlay
   { keys: "Ctrl+O", description: "Open overlay settings", category: "overlay" },
-  
+
   // General
   { keys: "Ctrl+?", description: "Show keyboard shortcuts", category: "general" },
   { keys: "F1", description: "Show keyboard shortcuts", category: "general" },
@@ -38,15 +40,15 @@ export const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
 })
 export class KeyboardShortcutsService {
   private readonly shortcutsSignal = signal<KeyboardShortcut[]>(DEFAULT_SHORTCUTS);
-  
+
   readonly shortcuts = this.shortcutsSignal.asReadonly();
   readonly shortcutsByCategory = computed(() => {
     const shortcuts = this.shortcutsSignal();
     return {
-      navigation: shortcuts.filter(s => s.category === "navigation"),
-      actions: shortcuts.filter(s => s.category === "actions"),
-      overlay: shortcuts.filter(s => s.category === "overlay"),
-      general: shortcuts.filter(s => s.category === "general"),
+      navigation: shortcuts.filter((s) => s.category === "navigation"),
+      actions: shortcuts.filter((s) => s.category === "actions"),
+      overlay: shortcuts.filter((s) => s.category === "overlay"),
+      general: shortcuts.filter((s) => s.category === "general"),
     };
   });
 
@@ -57,7 +59,7 @@ export class KeyboardShortcutsService {
    */
   register(keys: string, handler: (event: KeyboardEvent) => void): () => void {
     const normalizedKeys = this.normalizeKeys(keys);
-    
+
     const keydownHandler = (event: KeyboardEvent) => {
       if (this.matchesShortcut(event, normalizedKeys)) {
         event.preventDefault();
@@ -67,7 +69,7 @@ export class KeyboardShortcutsService {
     };
 
     window.addEventListener("keydown", keydownHandler);
-    
+
     // Return cleanup function
     return () => {
       window.removeEventListener("keydown", keydownHandler);
@@ -87,18 +89,18 @@ export class KeyboardShortcutsService {
    */
   private eventToKeys(event: KeyboardEvent): string {
     const keys: string[] = [];
-    
+
     if (event.ctrlKey) keys.push("Ctrl");
     if (event.altKey) keys.push("Alt");
     if (event.shiftKey) keys.push("Shift");
     if (event.metaKey) keys.push("Meta");
-    
+
     // Get the actual key (uppercase for letters)
     const key = event.key.toUpperCase();
     if (!["CONTROL", "ALT", "SHIFT", "META"].includes(key)) {
       keys.push(key);
     }
-    
+
     return keys.join("+");
   }
 
@@ -108,7 +110,7 @@ export class KeyboardShortcutsService {
   private normalizeKeys(keys: string): string {
     return keys
       .split("+")
-      .map(k => k.trim().toUpperCase())
+      .map((k) => k.trim().toUpperCase())
       .sort((a, b) => {
         // Modifiers first, then other keys
         const modifiers = ["CTRL", "ALT", "SHIFT", "META"];
@@ -125,7 +127,7 @@ export class KeyboardShortcutsService {
    * Add custom shortcut to the list
    */
   addShortcut(shortcut: KeyboardShortcut): void {
-    this.shortcutsSignal.update(shortcuts => [...shortcuts, shortcut]);
+    this.shortcutsSignal.update((shortcuts) => [...shortcuts, shortcut]);
   }
 
   /**
@@ -133,8 +135,8 @@ export class KeyboardShortcutsService {
    */
   removeShortcut(keys: string): void {
     const normalizedKeys = this.normalizeKeys(keys);
-    this.shortcutsSignal.update(shortcuts => 
-      shortcuts.filter(s => this.normalizeKeys(s.keys) !== normalizedKeys)
+    this.shortcutsSignal.update((shortcuts) =>
+      shortcuts.filter((s) => this.normalizeKeys(s.keys) !== normalizedKeys)
     );
   }
 }

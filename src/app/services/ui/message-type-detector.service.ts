@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable } from "@angular/core";
-import { ChatMessage, MessageType } from "@models/chat.model";
 
+/* models */
+import { ChatMessage, MessageType } from "@models/chat.model";
 /**
  * Detects message types based on user activity patterns
  * - "returning": User hasn't sent a message in a while (5+ minutes)

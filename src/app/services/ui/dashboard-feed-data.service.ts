@@ -1,15 +1,21 @@
+/* sys lib */
 import { Injectable, computed, inject } from "@angular/core";
+
+/* models */
 import { ChatChannel, ChatMessage, PlatformType } from "@models/chat.model";
-import {
-  buildSplitFeed,
-  groupChannelsByPlatform,
-  sortMessagesChronological,
-} from "@helpers/chat.helper";
+
+/* services */
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStateService } from "@services/data/chat-state.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 
+/* helpers */
+import {
+  buildSplitFeed,
+  groupChannelsByPlatform,
+  sortMessagesChronological,
+} from "@helpers/chat.helper";
 @Injectable({
   providedIn: "root",
 })

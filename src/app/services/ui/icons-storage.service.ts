@@ -1,5 +1,5 @@
+/* sys lib */
 import { Injectable } from "@angular/core";
-
 export interface IconsEmoteIcon {
   id: string;
   url: string;

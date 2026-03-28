@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable, signal, computed, inject } from "@angular/core";
-import { LocalStorageService } from "@services/core/local-storage.service";
 
+/* services */
+import { LocalStorageService } from "@services/core/local-storage.service";
 export interface HighlightRule {
   id: string;
   pattern: string;
@@ -30,14 +32,10 @@ export class HighlightRulesService {
   private readonly rulesSignal = signal<HighlightRule[]>([]);
 
   readonly rules = this.rulesSignal.asReadonly();
-  
-  readonly activeRules = computed(() => 
-    this.rulesSignal().filter(rule => rule.isActive)
-  );
 
-  readonly globalRules = computed(() =>
-    this.activeRules().filter(rule => rule.isGlobal)
-  );
+  readonly activeRules = computed(() => this.rulesSignal().filter((rule) => rule.isActive));
+
+  readonly globalRules = computed(() => this.activeRules().filter((rule) => rule.isGlobal));
 
   constructor() {
     this.loadRules();
@@ -61,7 +59,7 @@ export class HighlightRulesService {
       id: this.generateId(),
       createdAt: new Date().toISOString(),
     };
-    this.rulesSignal.update(rules => [...rules, newRule]);
+    this.rulesSignal.update((rules) => [...rules, newRule]);
     this.persistRules();
     return newRule;
   }
@@ -70,10 +68,8 @@ export class HighlightRulesService {
    * Update an existing rule
    */
   updateRule(ruleId: string, updates: Partial<HighlightRule>): void {
-    this.rulesSignal.update(rules =>
-      rules.map(rule =>
-        rule.id === ruleId ? { ...rule, ...updates } : rule
-      )
+    this.rulesSignal.update((rules) =>
+      rules.map((rule) => (rule.id === ruleId ? { ...rule, ...updates } : rule))
     );
     this.persistRules();
   }
@@ -82,7 +78,7 @@ export class HighlightRulesService {
    * Delete a rule
    */
   deleteRule(ruleId: string): void {
-    this.rulesSignal.update(rules => rules.filter(rule => rule.id !== ruleId));
+    this.rulesSignal.update((rules) => rules.filter((rule) => rule.id !== ruleId));
     this.persistRules();
   }
 
@@ -90,10 +86,8 @@ export class HighlightRulesService {
    * Toggle rule active state
    */
   toggleRule(ruleId: string): void {
-    this.rulesSignal.update(rules =>
-      rules.map(rule =>
-        rule.id === ruleId ? { ...rule, isActive: !rule.isActive } : rule
-      )
+    this.rulesSignal.update((rules) =>
+      rules.map((rule) => (rule.id === ruleId ? { ...rule, isActive: !rule.isActive } : rule))
     );
     this.persistRules();
   }
@@ -104,7 +98,7 @@ export class HighlightRulesService {
    */
   getHighlightColor(text: string, author: string, channelId: string): string | null {
     const applicableRules = this.activeRules().filter(
-      rule => rule.isGlobal || rule.channelIds?.includes(channelId)
+      (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
     );
 
     const lowerText = text.toLowerCase();
@@ -148,7 +142,7 @@ export class HighlightRulesService {
    */
   getRulesForChannel(channelId: string): HighlightRule[] {
     return this.activeRules().filter(
-      rule => rule.isGlobal || rule.channelIds?.includes(channelId)
+      (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
     );
   }
 

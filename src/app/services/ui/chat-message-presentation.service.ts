@@ -1,18 +1,24 @@
+/* sys lib */
 import { Injectable, inject } from "@angular/core";
+
+/* models */
 import { ChatMessage, PlatformType } from "@models/chat.model";
+
+/* services */
+import { HighlightRulesService } from "@services/ui/highlight-rules.service";
+
+/* helpers */
 import {
   getPlatformBadgeClasses,
   getPlatformBadgeClassesMixedFilter,
   getPlatformLabel,
 } from "@helpers/chat.helper";
-import { HighlightRulesService } from "@services/ui/highlight-rules.service";
-
 @Injectable({
   providedIn: "root",
 })
 export class ChatMessagePresentationService {
   private readonly highlightRulesService = inject(HighlightRulesService);
-  
+
   readonly getPlatformBadgeClasses = getPlatformBadgeClasses;
   readonly getPlatformBadgeClassesMixedFilter = getPlatformBadgeClassesMixedFilter;
 

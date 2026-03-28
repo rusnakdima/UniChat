@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable, signal } from "@angular/core";
-import { ChatChannel, PlatformType } from "@models/chat.model";
 
+/* models */
+import { ChatChannel, PlatformType } from "@models/chat.model";
 @Injectable({
   providedIn: "root",
 })

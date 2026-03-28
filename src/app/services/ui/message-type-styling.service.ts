@@ -1,6 +1,8 @@
+/* sys lib */
 import { Injectable } from "@angular/core";
-import { MessageType } from "@models/chat.model";
 
+/* models */
+import { MessageType } from "@models/chat.model";
 /**
  * Provides styling configuration for different message types
  */
