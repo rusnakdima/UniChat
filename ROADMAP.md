@@ -112,12 +112,21 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 ### Performance Targets
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Cold start time | ~2s | <1s | ⚠️ In Progress |
-| Memory usage (idle) | ~150MB | <100MB | ⚠️ In Progress |
-| Memory usage (load) | ~400MB | <250MB | ⚠️ In Progress |
-| Message latency | ~50ms | <20ms | ⚠️ In Progress |
-| CPU usage (idle) | ~2% | <1% | ⚠️ In Progress |
+| Cold start time | ~2s | <1s | ⚠️ In Progress - LazyServiceLoader implemented |
+| Memory usage (idle) | ~150MB | <100MB | ⚠️ In Progress - MemoryOptimizationService added |
+| Memory usage (load) | ~400MB | <250MB | ⚠️ In Progress - Message batching, ring buffers |
+| Message latency | ~50ms | <20ms | ⚠️ In Progress - MessageBatchingService for high-throughput |
+| CPU usage (idle) | ~2% | <1% | ⚠️ In Progress - Optimized polling intervals |
 | Bundle size | 1.27MB | <3MB | ✅ Achieved |
+
+### Performance Optimizations Implemented (v0.1.0)
+- ✅ **PerformanceMonitorService** - Track and monitor all performance metrics
+- ✅ **MessageBatchingService** - Batch messages for 1000+ msg/min scenarios
+- ✅ **MemoryOptimizationService** - Configurable pruning, ring buffers, compact message storage
+- ✅ **LazyServiceLoader** - Lazy load non-critical services
+- ✅ **Web Workers** - Offload message parsing to background thread
+- ✅ **IndexedDB** - Chat history caching with automatic cleanup
+- ✅ **Memoization** - LRU cache for expensive computations
 
 ### Quality Targets
 | Metric | Current | Target | Status |
