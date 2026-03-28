@@ -228,7 +228,7 @@ export class YouTubeChatService extends BaseChatProviderService {
 
         // Use rate limit backoff if available, otherwise default
         const state = this.rateLimitState.get(storageKey);
-        const delayMs = state?.consecutive429s > 0 ? state.backoffMs : 5000;
+        const delayMs = state && state.consecutive429s > 0 ? state.backoffMs : 5000;
 
         await this.delay(delayMs, signal).catch(() => undefined);
       }

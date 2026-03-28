@@ -187,8 +187,8 @@ export class SettingsModal {
     void this.iconsCatalog.ensureGlobalLoaded();
     // Reload all active channels
     this.chatListService.channels().forEach((channel) => {
-      if (channel.platform === "twitch" && channel.roomId) {
-        void this.iconsCatalog.ensureChannelLoaded(channel.roomId);
+      if (channel.platform === "twitch") {
+        void this.iconsCatalog.ensureChannelLoaded(channel.channelId);
       }
     });
   }
