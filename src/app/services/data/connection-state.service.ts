@@ -1,16 +1,22 @@
+/* sys lib */
 import { Injectable, computed, inject, signal } from "@angular/core";
+
+/* models */
 import {
   ChannelConnection,
+  ChannelConnectionError,
   PlatformCapabilities,
   PlatformStatus,
   PlatformType,
-  ChannelConnectionError,
   RoomState,
 } from "@models/chat.model";
-import { getProviderCapabilities } from "@helpers/chat.helper";
+
+/* services */
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 
+/* helpers */
+import { getChannelAccountCapabilities } from "@helpers/chat.helper";
 /**
  * Connection State Service - Channel Connection Status
  *
@@ -136,8 +142,8 @@ export class ConnectionStateService {
       return;
     }
 
-    const isAuthorized = this.authorizationService.isAuthorized(channel.platform);
-    const capabilities = getProviderCapabilities(channel.platform, isAuthorized);
+    const account = this.authorizationService.getAccountById(channel.accountId);
+    const capabilities = getChannelAccountCapabilities(channel, account);
 
     this.updateConnection(channelId, {
       status: "connecting",
@@ -174,8 +180,8 @@ export class ConnectionStateService {
         return;
       }
 
-      const isAuthorized = this.authorizationService.isAuthorized(channel.platform);
-      const capabilities = getProviderCapabilities(channel.platform, isAuthorized);
+      const account = this.authorizationService.getAccountById(channel.accountId);
+      const capabilities = getChannelAccountCapabilities(channel, account);
 
       this.updateConnection(channelId, {
         status: "connected",

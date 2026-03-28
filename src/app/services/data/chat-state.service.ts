@@ -1,4 +1,7 @@
-import { Injectable, computed, inject, signal } from "@angular/core";
+/* sys lib */
+import { Injectable, computed, effect, inject, signal, untracked } from "@angular/core";
+
+/* models */
 import {
   ChatChannel,
   ChatMessage,
@@ -6,18 +9,19 @@ import {
   MessageActionKind,
   PlatformType,
 } from "@models/chat.model";
+
+/* services */
+import { ChatListService } from "@services/data/chat-list.service";
+import { ChatStorageService } from "@services/data/chat-storage.service";
+import { AuthorizationService } from "@services/features/authorization.service";
+import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
+
+/* helpers */
 import {
   buildSplitFeed,
   createMessageActionState,
-  getProviderCapabilities,
-  sortMessagesByRecency,
+  getChannelAccountCapabilities,
 } from "@helpers/chat.helper";
-import { ChatListService } from "@services/data/chat-list.service";
-import { ConnectionStateService } from "@services/data/connection-state.service";
-import { AuthorizationService } from "@services/features/authorization.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
-import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
-
 /**
  * Chat State Service - Computed State Layer
  *
@@ -39,7 +43,6 @@ import { ChatProviderCoordinatorService } from "@services/providers/chat-provide
 })
 export class ChatStateService {
   private readonly chatListService = inject(ChatListService);
-  private readonly connectionStateService = inject(ConnectionStateService);
   private readonly authorizationService = inject(AuthorizationService);
   private readonly chatStorageService = inject(ChatStorageService);
   private readonly providerCoordinator = inject(ChatProviderCoordinatorService);
@@ -52,6 +55,14 @@ export class ChatStateService {
 
   readonly splitFeed = computed(() => buildSplitFeed(this.messages()));
 
+  constructor() {
+    effect(() => {
+      this.chatListService.channels();
+      this.authorizationService.accounts();
+      untracked(() => this.refreshMessageCapabilities());
+    });
+  }
+
   getMessagesByChannel(channelId: string): ChatMessage[] {
     return this.chatStorageService.getMessagesByChannel(channelId);
   }
@@ -60,7 +71,7 @@ export class ChatStateService {
     return this.chatStorageService.getMessagesByPlatform(platform);
   }
 
-  submitReply(messageId: string, text: string): void {
+  async submitReply(messageId: string, text: string): Promise<void> {
     const message = this.messages().find((msg) => msg.id === messageId);
 
     if (!message || !text.trim()) {
@@ -73,6 +84,20 @@ export class ChatStateService {
         reason: message.actions.reply.reason ?? "Reply is unavailable.",
       });
 
+      return;
+    }
+
+    const sent = await this.providerCoordinator.sendReply(
+      message.sourceChannelId,
+      message.platform,
+      message.sourceMessageId,
+      text.trim()
+    );
+    if (!sent) {
+      this.updateMessageAction(messageId, "reply", {
+        status: "failed",
+        reason: "Provider reply failed for this channel.",
+      });
       return;
     }
 
@@ -104,6 +129,7 @@ export class ChatStateService {
     };
 
     this.chatStorageService.addMessage(message.sourceChannelId, replyMessage);
+    this.refreshMessageCapabilities();
   }
 
   async sendOutgoingChatMessage(
@@ -185,11 +211,18 @@ export class ChatStateService {
     const channel = channels.find((ch) => ch.channelId === message.sourceChannelId);
     const platform = channel?.platform ?? message.platform;
 
-    await this.providerCoordinator.deleteMessage(
+    const deleted = await this.providerCoordinator.deleteMessage(
       message.sourceChannelId,
       platform,
       message.sourceMessageId
     );
+    if (!deleted) {
+      this.updateMessageAction(messageId, "delete", {
+        status: "failed",
+        reason: "Provider delete failed for this channel.",
+      });
+      return;
+    }
 
     this.chatStorageService.updateMessage(message.sourceChannelId, messageId, {
       text: "Message removed from view.",
@@ -216,11 +249,8 @@ export class ChatStateService {
         continue;
       }
 
-      const account = channel.accountId
-        ? this.authorizationService.accounts().find((item) => item.id === channel.accountId)
-        : undefined;
-      const isAuthorized = channel.isAuthorized && !!account;
-      const capabilities = getProviderCapabilities(channel.platform, isAuthorized);
+      const account = this.authorizationService.getAccountById(channel.accountId);
+      const capabilities = getChannelAccountCapabilities(channel, account);
 
       this.chatStorageService.updateMessage(message.sourceChannelId, message.id, {
         actions: {

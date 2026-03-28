@@ -1,12 +1,20 @@
+/* sys lib */
 import { computed, inject, Injectable, signal } from "@angular/core";
-import { ChatMessage, PlatformType, ChatHistoryLoadState, MessageType } from "@models/chat.model";
-import { sortMessagesByRecency, groupByPlatform } from "@helpers/chat.helper";
-import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
-import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 import { invoke } from "@tauri-apps/api/core";
-import { APP_CONFIG } from "@config/app.constants";
-import { BlockedWordsService } from "@services/ui/blocked-words.service";
 
+/* models */
+import { ChatMessage, PlatformType, ChatHistoryLoadState, MessageType } from "@models/chat.model";
+
+/* services */
+import { BlockedWordsService } from "@services/ui/blocked-words.service";
+import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
+import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
+
+/* helpers */
+import { sortMessagesByRecency, groupByPlatform } from "@helpers/chat.helper";
+
+/* config */
+import { APP_CONFIG } from "@config/app.constants";
 const channelMessagesStorageKey = "unichat.channelMessages.v1";
 
 /**

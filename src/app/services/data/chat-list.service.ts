@@ -1,7 +1,11 @@
+/* sys lib */
 import { Injectable, signal } from "@angular/core";
-import { normalizeYouTubeProviderInput } from "@helpers/chat.helper";
-import { ChatChannel, PlatformType } from "@models/chat.model";
 
+/* models */
+import { ChannelAccountCapabilities, ChatChannel, PlatformType } from "@models/chat.model";
+
+/* helpers */
+import { normalizeYouTubeProviderInput } from "@helpers/chat.helper";
 const storageKey = "unichat-chat-channels";
 const legacyMockIds = new Set(["ch-twitch-1", "ch-twitch-2", "ch-kick-1", "ch-youtube-1"]);
 
@@ -32,7 +36,8 @@ export class ChatListService {
     platform: PlatformType,
     channelName: string,
     channelId?: string,
-    accountId?: string
+    accountId?: string,
+    accountUsername?: string
   ): void {
     const normalizedChannelName = channelName.trim();
     if (!normalizedChannelName) {
@@ -41,6 +46,9 @@ export class ChatListService {
 
     const providerChannelId =
       channelId?.trim() || this.resolveProviderChannelId(platform, normalizedChannelName);
+    if (!providerChannelId) {
+      return;
+    }
 
     const exists = this.channelsSignal().some(
       (channel) =>
@@ -59,6 +67,9 @@ export class ChatListService {
       channelName: normalizedChannelName,
       isAuthorized: !!accountId,
       accountId,
+      accountCapabilities: accountId
+        ? this.createInitialAccountCapabilities(platform, normalizedChannelName, accountUsername)
+        : undefined,
       isVisible: true,
       addedAt: new Date().toISOString(),
     };
@@ -91,7 +102,52 @@ export class ChatListService {
   updateChannelName(channelId: string, newName: string): void {
     this.channelsSignal.update((channels) => {
       const next = channels.map((ch) =>
-        ch.id === channelId ? { ...ch, channelName: newName } : ch
+        ch.id === channelId
+          ? {
+              ...ch,
+              channelName: newName,
+              channelId: this.resolveProviderChannelId(ch.platform, newName),
+              accountCapabilities: ch.accountId
+                ? this.createInitialAccountCapabilities(ch.platform, newName)
+                : ch.accountCapabilities,
+            }
+          : ch
+      );
+      this.saveChannels(next);
+      return next;
+    });
+  }
+
+  updateChannelAccount(channelId: string, accountId?: string, accountUsername?: string): void {
+    this.channelsSignal.update((channels) => {
+      const next = channels.map((channel) =>
+        channel.id === channelId
+          ? {
+              ...channel,
+              accountId,
+              isAuthorized: !!accountId,
+              accountCapabilities: accountId
+                ? this.createInitialAccountCapabilities(
+                    channel.platform,
+                    channel.channelName,
+                    accountUsername
+                  )
+                : undefined,
+            }
+          : channel
+      );
+      this.saveChannels(next);
+      return next;
+    });
+  }
+
+  updateChannelCapabilities(
+    channelId: string,
+    accountCapabilities: ChannelAccountCapabilities | undefined
+  ): void {
+    this.channelsSignal.update((channels) => {
+      const next = channels.map((channel) =>
+        channel.id === channelId ? { ...channel, accountCapabilities } : channel
       );
       this.saveChannels(next);
       return next;
@@ -107,7 +163,17 @@ export class ChatListService {
 
     try {
       const parsed = JSON.parse(stored) as ChatChannel[];
-      return parsed.filter((channel) => !legacyMockIds.has(channel.id));
+      return parsed
+        .filter((channel) => !legacyMockIds.has(channel.id))
+        .map((channel) =>
+          channel.platform === "youtube"
+            ? {
+                ...channel,
+                channelId: normalizeYouTubeProviderInput(channel.channelId || channel.channelName),
+              }
+            : channel
+        )
+        .filter((channel) => !!channel.channelId);
     } catch {
       return [];
     }
@@ -125,5 +191,25 @@ export class ChatListService {
       case "youtube":
         return normalizeYouTubeProviderInput(channelName);
     }
+  }
+
+  private createInitialAccountCapabilities(
+    platform: PlatformType,
+    channelName: string,
+    accountUsername?: string
+  ): ChannelAccountCapabilities {
+    const normalizedChannel = channelName.trim().toLowerCase();
+    const normalizedAccount = accountUsername?.trim().toLowerCase();
+    const isVerifiedOwner =
+      platform === "twitch" && !!normalizedAccount && normalizedAccount === normalizedChannel;
+
+    return {
+      canListen: true,
+      canReply: true,
+      canDelete: isVerifiedOwner,
+      canModerate: isVerifiedOwner,
+      moderationRole: isVerifiedOwner ? "owner" : "viewer",
+      verified: isVerifiedOwner,
+    };
   }
 }

@@ -1,5 +1,5 @@
+/* sys lib */
 import { Injectable, signal } from "@angular/core";
-
 /**
  * Chat State Manager - Session Connection Tracking
  *
