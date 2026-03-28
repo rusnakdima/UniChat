@@ -30,6 +30,19 @@
               />
             }
 
+            <!-- Channel Profile Image (only for Twitch multi-chat with multiple channels) -->
+            @if (
+              hasMultipleChannels() && message.platform === "twitch" && getChannelImageUrl(message)
+            ) {
+              <img
+                [src]="getChannelImageUrl(message)!"
+                [alt]="message.author"
+                [title]="platformLabel(message.platform) + ' channel'"
+                class="h-6 w-6 shrink-0 rounded-full object-cover"
+                loading="lazy"
+              />
+            }
+
             <!-- User Avatar - Always show letter avatar like dashboard -->
             <div
               class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
@@ -57,7 +70,10 @@
                       [src]="segment.emote.url"
                       [alt]="segment.emote.code"
                       [title]="segment.emote.code"
-                      class="mx-0.5 inline h-6 w-6 align-middle"
+                      class="mx-0.5 inline align-middle overlay-emote"
+                      [class.overlay-emote-dynamic]="
+                        !segment.emote.url.includes('static-cdn.jtvnw.net')
+                      "
                       loading="lazy"
                       (error)="
                         segment.emote!.url = '';

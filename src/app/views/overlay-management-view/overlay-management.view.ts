@@ -1,19 +1,23 @@
+/* sys lib */
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 import { ActivatedRoute } from "@angular/router";
-import { DashboardStateService } from "@services/features/dashboard-state.service";
-import { ChatListService } from "@services/data/chat-list.service";
-import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
+import { invoke } from "@tauri-apps/api/core";
+
+/* models */
 import {
   WidgetConfig,
   WidgetFilter,
   OverlayAnimationType,
   OverlayDirection,
 } from "@models/chat.model";
-import { invoke } from "@tauri-apps/api/core";
-import { LocalStorageService } from "@services/core/local-storage.service";
 
+/* services */
+import { LocalStorageService } from "@services/core/local-storage.service";
+import { ChatListService } from "@services/data/chat-list.service";
+import { DashboardStateService } from "@services/features/dashboard-state.service";
+import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 function overlayFilterOverrideKey(widgetId: string): string {
   return `unichat-overlay-filter-override:${widgetId}`;
 }
@@ -114,8 +118,29 @@ export class OverlayManagementView {
     this.animationDirectionModel.set(this.readOverlayAnimationDirection(w.id) ?? "top");
     this.transparentBgModel.set(this.readOverlayTransparentBg(w.id) ?? false);
 
+    // Initialize backend config from localStorage (for overlay window to use)
+    void this.initBackendConfigFromStorage(w.id);
+
     // Ensure overlay server is started so OBS can load the URL immediately.
     void invoke("startOverlayServer", { port: w.port }).catch(() => {});
+  }
+
+  private async initBackendConfigFromStorage(widgetId: string): Promise<void> {
+    try {
+      await invoke("initOverlayConfigFromStorage", {
+        widgetId,
+        filter: this.filterModel(),
+        customCss: this.customCssModel(),
+        channelIds: this.channelIdsModel(),
+        textSize: this.textSizeModel(),
+        animationType: this.animationTypeModel(),
+        animationDirection: this.animationDirectionModel(),
+        maxMessages: this.maxMessagesModel(),
+        transparentBg: this.transparentBgModel(),
+      });
+    } catch (error) {
+      console.warn("[OverlayManagement] Failed to init backend config:", error);
+    }
   }
 
   private readOverlayFilterOverride(widgetId: string): WidgetFilter | null {
@@ -213,12 +238,21 @@ export class OverlayManagementView {
 
     this.localStorageService.set(overlayFilterOverrideKey(w.id), this.filterModel());
     this.localStorageService.set(overlayCustomCssKey(w.id), this.customCssModel());
-    this.localStorageService.set(overlayChannelIdsKey(w.id), JSON.stringify(this.channelIdsModel()));
+    this.localStorageService.set(
+      overlayChannelIdsKey(w.id),
+      JSON.stringify(this.channelIdsModel())
+    );
     this.localStorageService.set(overlayMaxMessagesKey(w.id), this.maxMessagesModel().toString());
     this.localStorageService.set(overlayTextSizeKey(w.id), this.textSizeModel().toString());
     this.localStorageService.set(overlayAnimationTypeKey(w.id), this.animationTypeModel());
-    this.localStorageService.set(overlayAnimationDirectionKey(w.id), this.animationDirectionModel());
-    this.localStorageService.set(overlayTransparentBgKey(w.id), this.transparentBgModel().toString());
+    this.localStorageService.set(
+      overlayAnimationDirectionKey(w.id),
+      this.animationDirectionModel()
+    );
+    this.localStorageService.set(
+      overlayTransparentBgKey(w.id),
+      this.transparentBgModel().toString()
+    );
 
     // Same-window updates (overlay view already listens for this).
     window.dispatchEvent(new Event("unichat-overlay-config-changed"));

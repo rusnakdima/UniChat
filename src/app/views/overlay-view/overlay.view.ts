@@ -1,3 +1,5 @@
+/* sys lib */
+import { NgStyle } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,12 +12,9 @@ import {
 } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { NgStyle } from "@angular/common";
-import {
-  getDensityTextClasses,
-  getPlatformBadgeClasses,
-  getPlatformLabel,
-} from "@helpers/chat.helper";
+import { invoke } from "@tauri-apps/api/core";
+
+/* models */
 import {
   DensityMode,
   PlatformType,
@@ -25,14 +24,26 @@ import {
   OverlayDirection,
   ChatMessage,
 } from "@models/chat.model";
+
+/* services */
+import { AvatarCacheService } from "@services/core/avatar-cache.service";
+import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
-import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
+import { KickChatService } from "@services/providers/kick-chat.service";
+import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChatRichTextService, ChatTextSegment } from "@services/ui/chat-rich-text.service";
-import { invoke } from "@tauri-apps/api/core";
+import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
 
+/* helpers */
+import {
+  getDensityTextClasses,
+  getPlatformBadgeClasses,
+  getPlatformLabel,
+} from "@helpers/chat.helper";
 @Component({
   selector: "app-overlay-view",
+  standalone: true,
   imports: [NgStyle, MatIconModule, MatTooltipModule],
   templateUrl: "./overlay.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +54,10 @@ export class OverlayView implements OnDestroy {
   readonly presentation = inject(ChatMessagePresentationService);
   readonly richText = inject(ChatRichTextService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly twitchChat = inject(TwitchChatService);
+  private readonly kickChat = inject(KickChatService);
+  private readonly chatList = inject(ChatListService);
+  private readonly avatarCache = inject(AvatarCacheService);
   private configPollInterval: ReturnType<typeof setInterval> | null = null;
   private lastKnownConfig: Map<string, string> = new Map();
 
@@ -76,17 +91,7 @@ export class OverlayView implements OnDestroy {
     this.widgetId = widget.id;
     this.widget = widget;
 
-    this.loadAndApplyConfig();
-
-    // Always use widget port, not window.location.port (which is Angular dev server)
-    // Convert composite keys to plain channel names for backend WebSocket
-    const plainChannelIds = this.getPlainChannelIds(this.currentChannelIds);
-    this.overlayWs.connect({
-      port: widget.port,
-      widgetId: widget.id,
-      filter: this.currentFilter,
-      channelIds: plainChannelIds,
-    });
+    void this.initializeOverlayRuntime(widget);
 
     // Same-tab updates (management page saves in the same window).
     window.addEventListener("unichat-overlay-config-changed", () => this.onOverlayConfigChanged());
@@ -111,6 +116,32 @@ export class OverlayView implements OnDestroy {
   private widget: WidgetConfig | null = null;
   private currentFilter: WidgetFilter = "all";
   private currentChannelIds: string[] | undefined = undefined;
+
+  private async initializeOverlayRuntime(widget: WidgetConfig): Promise<void> {
+    await this.ensureOverlayServerStarted(widget.port);
+
+    // Load config from backend FIRST (not localStorage) before WebSocket connect
+    // This ensures overlay window uses the same config as main window
+    await this.loadAndApplyConfigFromBackend();
+
+    const plainChannelIds = this.getPlainChannelIds(this.currentChannelIds);
+    this.overlayWs.connect({
+      port: widget.port,
+      widgetId: widget.id,
+      filter: this.currentFilter,
+      channelIds: plainChannelIds,
+    });
+  }
+
+  private async ensureOverlayServerStarted(port: number): Promise<void> {
+    try {
+      await invoke("startOverlayServer", { port });
+    } catch (error) {
+      // In browser-only contexts (for example OBS), Tauri invoke may be unavailable.
+      // The overlay server should already be serving this page there, so continue.
+      console.warn("[OverlayView] Unable to ensure overlay server is started:", error);
+    }
+  }
 
   /**
    * Extract plain channel names from composite keys (platform:channelName) for backend API.
@@ -147,17 +178,48 @@ export class OverlayView implements OnDestroy {
     this.transparentBg.set(transparentBg);
   }
 
+  private async loadAndApplyConfigFromBackend(): Promise<void> {
+    const widget = this.widget;
+    if (!widget) return;
+
+    try {
+      // Try to fetch config from backend first (cross-window shared storage)
+      const config = await invoke<WidgetConfig>("getOverlayConfig", { widgetId: widget.id });
+
+      if (config) {
+        // Use backend config if available
+        this.currentFilter = (config.filter as WidgetFilter) ?? widget.filter;
+        this.currentChannelIds = config.channelIds ?? widget.channelIds;
+        this.customCssText.set(config.customCss ?? "");
+        this.textSize.set(config.textSize ?? 16);
+        this.animationType.set((config.animationType as OverlayAnimationType) ?? "fade");
+        this.animationDirection.set((config.animationDirection as OverlayDirection) ?? "top");
+        this.maxMessages.set(config.maxMessages ?? 6);
+        this.transparentBg.set(config.transparentBg ?? false);
+      } else {
+        // Fallback to localStorage if no backend config
+        this.loadAndApplyConfig();
+      }
+    } catch (error) {
+      console.warn("[OverlayView] Failed to fetch backend config, using localStorage:", error);
+      // Fallback to localStorage
+      this.loadAndApplyConfig();
+    }
+  }
+
   private onOverlayConfigChanged(): void {
-    this.loadAndApplyConfig();
-    // Convert composite keys to plain channel names for backend WebSocket
-    const plainChannelIds = this.getPlainChannelIds(this.currentChannelIds);
-    this.overlayWs.connect({
-      port: this.widget!.port,
-      widgetId: this.widget!.id,
-      filter: this.currentFilter,
-      channelIds: plainChannelIds,
+    // Reload config from backend (not localStorage) when config changes
+    this.loadAndApplyConfigFromBackend().then(() => {
+      // Reconnect WebSocket with new filter/channels (convert to plain channel names)
+      const plainChannelIds = this.getPlainChannelIds(this.currentChannelIds);
+      this.overlayWs.connect({
+        port: this.widget!.port,
+        widgetId: this.widget!.id,
+        filter: this.currentFilter,
+        channelIds: plainChannelIds,
+      });
+      this.cdr.markForCheck();
     });
-    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
@@ -273,6 +335,79 @@ export class OverlayView implements OnDestroy {
     return (this.currentChannelIds?.length ?? 0) > 1;
   }
 
+  /**
+   * Get channel profile image URL for overlay messages
+   * Currently supports Twitch multi-chat channels
+   */
+  getChannelImageUrl(message: OverlayChatMessage): string | null {
+    if (!message.sourceChannelId) {
+      return null;
+    }
+
+    if (message.channelImageUrl) {
+      return message.channelImageUrl;
+    }
+
+    const cacheKey = `${message.platform}:${message.sourceChannelId}`;
+
+    // Check cache first
+    const cached = this.avatarCache.getChannelAvatar(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const channel = this.chatList
+      .getChannels(message.platform)
+      .find((ch) => ch.channelId === message.sourceChannelId);
+
+    if (!channel) {
+      if (message.platform === "youtube") {
+        return `https://i.ytimg.com/vi/${encodeURIComponent(message.sourceChannelId)}/default.jpg`;
+      }
+      return null;
+    }
+
+    if (message.platform === "twitch") {
+      void this.fetchTwitchChannelImage(channel.channelName, cacheKey);
+    } else if (message.platform === "kick") {
+      void this.fetchKickChannelImage(channel.channelName, cacheKey);
+    } else if (message.platform === "youtube") {
+      const fallback = `https://i.ytimg.com/vi/${encodeURIComponent(channel.channelId)}/default.jpg`;
+      this.avatarCache.setChannelAvatar(cacheKey, fallback);
+      return fallback;
+    }
+
+    return cached ?? null;
+  }
+
+  /**
+   * Fetch Twitch channel image and cache it
+   */
+  private async fetchTwitchChannelImage(channelName: string, cacheKey: string): Promise<void> {
+    try {
+      const imageUrl = await this.twitchChat.fetchUserProfileImage(channelName);
+      if (imageUrl) {
+        this.avatarCache.setChannelAvatar(cacheKey, imageUrl);
+        // Trigger change detection to update UI
+        this.cdr.markForCheck();
+      }
+    } catch {
+      // Ignore errors - channel images are optional
+    }
+  }
+
+  private async fetchKickChannelImage(channelName: string, cacheKey: string): Promise<void> {
+    try {
+      const info = await this.kickChat.fetchUserInfo(channelName);
+      if (info?.profile_pic_url) {
+        this.avatarCache.setChannelAvatar(cacheKey, info.profile_pic_url);
+        this.cdr.markForCheck();
+      }
+    } catch {
+      // Ignore errors - channel images are optional
+    }
+  }
+
   messageTimeLabel(message: OverlayChatMessage): string {
     return new Date(message.timestamp).toLocaleTimeString([], {
       hour: "2-digit",
@@ -287,7 +422,7 @@ export class OverlayView implements OnDestroy {
     // Convert composite keys (platform:channelName) to plain channel names for filtering
     // because messages have sourceChannelId as plain channel name
     const plainChannelIds = this.getPlainChannelIds(this.currentChannelIds);
-    
+
     // If channelIds is explicitly set to empty array, hide all messages
     // If channelIds is undefined/null, show all messages (no filter)
     if (this.currentChannelIds !== undefined && this.currentChannelIds !== null) {
@@ -301,7 +436,7 @@ export class OverlayView implements OnDestroy {
       });
       return filtered.slice(0, this.maxMessages());
     }
-    
+
     // No channel filter = show all messages
     return messages.slice(0, this.maxMessages());
   }
@@ -314,12 +449,12 @@ export class OverlayView implements OnDestroy {
   orderedMessages(): OverlayChatMessage[] {
     const messages = this.overlayMessages();
     const direction = this.animationDirection();
-    
+
     // For "bottom" or "right" direction, reverse the order (newest at top)
     if (direction === "bottom" || direction === "right") {
       return [...messages].reverse();
     }
-    
+
     // For "top" or "left" direction, keep normal order (newest at bottom)
     return messages;
   }
