@@ -124,6 +124,7 @@ lazy_static! {
 
 /// Emit overlay configuration changed event to all windows and store in backend.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn emitOverlayConfigChanged(
   app: tauri::AppHandle,
   widget_id: String,
@@ -178,6 +179,7 @@ pub async fn getOverlayConfig(widget_id: String) -> Result<Option<OverlayFullCon
 
 /// Initialize overlay config from client-side storage (called on app startup)
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn initOverlayConfigFromStorage(
   widget_id: String,
   filter: String,

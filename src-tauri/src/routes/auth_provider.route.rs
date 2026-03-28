@@ -9,7 +9,7 @@ pub async fn authStart(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
-  let authUrl = state.oauthProviderService.startAuth(platform)?;
+  let authUrl = state.oauthProviderService.start_auth(platform)?;
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization URL prepared.".to_string(),
@@ -27,7 +27,7 @@ pub async fn authComplete(
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
     .oauthProviderService
-    .completeAuth(platform, callbackUrl)
+    .complete_auth(platform, callbackUrl)
     .await?;
   Ok(AuthCommandResultModel {
     success: true,
@@ -45,7 +45,7 @@ pub async fn authAwaitCallback(
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
     .oauthProviderService
-    .awaitLoopbackAndComplete(platform)
+    .await_loopback_and_complete(platform)
     .await?;
   Ok(AuthCommandResultModel {
     success: true,
@@ -61,7 +61,7 @@ pub async fn authStatus(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
-  let accounts = state.oauthProviderService.getAuthStatus(platform)?;
+  let accounts = state.oauthProviderService.get_auth_status(platform)?;
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization status loaded.".to_string(),

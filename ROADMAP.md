@@ -186,16 +186,6 @@ npm run lint:all              # Check all linting
 - 4 Angular frontend modules
 - 1 GitHub Actions workflow
 
-See [CHANGELOG.md](docs/CHANGELOG.md) for detailed changes.
-
----
-
-## 📞 Contact & Support
-
-- **Issues**: [GitHub Issues](https://github.com/rusnakdima/UniChat/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/rusnakdima/UniChat/discussions)
-- **Email**: rusnakdima03@gmail.com
-
 ---
 
 *This roadmap is a living document and will be updated quarterly based on community feedback and project priorities.*
