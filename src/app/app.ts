@@ -1,8 +1,12 @@
+/* sys lib */
 import { Component, inject } from "@angular/core";
 import { RouterOutlet } from "@angular/router";
-import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal";
+
+/* services */
 import { ThemeService } from "@services/core/theme.service";
 
+/* components */
+import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal";
 @Component({
   selector: "app-root",
   imports: [RouterOutlet, LinkPreviewModal],

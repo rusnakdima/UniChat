@@ -1,3 +1,4 @@
+/* sys lib */
 import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
@@ -5,8 +6,8 @@ import {
 } from "@angular/core";
 import { provideRouter } from "@angular/router";
 
+/* app */
 import { routes } from "@app/app.routes";
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
