@@ -39,6 +39,16 @@ export class YouTubeChatService extends BaseChatProviderService {
   private readonly nextPageTokenByChannel = new Map<string, string>();
   private readonly errorService = inject(ConnectionErrorService);
 
+  /** Rate limit state per channel */
+  private readonly rateLimitState = new Map<
+    string,
+    {
+      consecutive429s: number;
+      backoffMs: number;
+      lastRetryAt: number;
+    }
+  >();
+
   override connect(channelId: string): void {
     const key = channelId.trim();
     if (!key || this.connectedChannels.has(key)) {
@@ -106,6 +116,14 @@ export class YouTubeChatService extends BaseChatProviderService {
     signal: AbortSignal
   ): Promise<void> {
     let consecutiveErrors = 0;
+
+    // Initialize rate limit state
+    this.rateLimitState.set(storageKey, {
+      consecutive429s: 0,
+      backoffMs: 2000,
+      lastRetryAt: 0,
+    });
+
     while (this.connectedChannels.has(storageKey) && !signal.aborted) {
       try {
         const stored = this.nextPageTokenByChannel.get(storageKey);
@@ -118,6 +136,14 @@ export class YouTubeChatService extends BaseChatProviderService {
 
         this.nextPageTokenByChannel.set(storageKey, response.nextPageToken ?? "");
         consecutiveErrors = 0; // Reset error counter on success
+
+        // Reset rate limit state on success
+        const state = this.rateLimitState.get(storageKey);
+        if (state && state.consecutive429s > 0) {
+          state.consecutive429s = 0;
+          state.backoffMs = 2000;
+          this.rateLimitState.set(storageKey, state);
+        }
 
         for (const item of response.items ?? []) {
           const sourceMessageId = item.id;
@@ -166,9 +192,28 @@ export class YouTubeChatService extends BaseChatProviderService {
 
         const waitMillis = Number(response.pollingIntervalMillis ?? 2000);
         await this.delay(Math.max(500, waitMillis), signal);
-      } catch (error) {
-        console.error("[YouTubeChat] Error fetching messages:", error);
+      } catch (error: unknown) {
         consecutiveErrors++;
+
+        // Check for rate limit (429)
+        const isRateLimited = this.isRateLimitError(error);
+        if (isRateLimited) {
+          const state = this.rateLimitState.get(storageKey);
+          if (state) {
+            state.consecutive429s++;
+            // Exponential backoff: 2s, 4s, 8s, 16s, 32s (cap at 32s)
+            state.backoffMs = Math.min(32000, state.backoffMs * 2);
+            state.lastRetryAt = Date.now();
+            this.rateLimitState.set(storageKey, state);
+
+            console.warn(
+              `[YouTubeChat] Rate limited (${state.consecutive429s}). Backing off for ${state.backoffMs}ms`
+            );
+
+            // Report rate limit error
+            this.errorService.reportRateLimited(storageKey, "youtube");
+          }
+        }
 
         // Report error after consecutive failures
         if (consecutiveErrors >= 2) {
@@ -180,9 +225,27 @@ export class YouTubeChatService extends BaseChatProviderService {
         }
 
         this.nextPageTokenByChannel.delete(storageKey);
-        await this.delay(5000, signal).catch(() => undefined);
+
+        // Use rate limit backoff if available, otherwise default
+        const state = this.rateLimitState.get(storageKey);
+        const delayMs = state?.consecutive429s > 0 ? state.backoffMs : 5000;
+
+        await this.delay(delayMs, signal).catch(() => undefined);
       }
     }
+
+    // Clean up rate limit state
+    this.rateLimitState.delete(storageKey);
+  }
+
+  /**
+   * Check if error is a rate limit (429) error
+   */
+  private isRateLimitError(error: unknown): boolean {
+    const errorMsg = String(error);
+    return (
+      errorMsg.includes("429") || errorMsg.includes("rate limit") || errorMsg.includes("quota")
+    );
   }
 
   private async delay(ms: number, signal: AbortSignal): Promise<void> {
