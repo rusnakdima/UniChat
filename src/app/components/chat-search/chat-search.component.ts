@@ -1,3 +1,5 @@
+/* sys lib */
+import { DatePipe } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,18 +9,21 @@ import {
   output,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { MatIconModule } from "@angular/material/icon";
 import { MatButtonModule } from "@angular/material/button";
-import { MatInputModule } from "@angular/material/input";
 import { MatCheckboxModule } from "@angular/material/checkbox";
+import { MatIconModule } from "@angular/material/icon";
+import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { DatePipe } from "@angular/common";
-import { ChatSearchService, SearchResult } from "@services/ui/chat-search.service";
-import { ChatMessage } from "@models/chat.model";
-import { ChatListService } from "@services/data/chat-list.service";
 
+/* models */
+import { ChatMessage } from "@models/chat.model";
+
+/* services */
+import { ChatListService } from "@services/data/chat-list.service";
+import { ChatSearchService, SearchResult } from "@services/ui/chat-search.service";
 @Component({
   selector: "app-chat-search",
+  standalone: true,
   imports: [
     FormsModule,
     MatIconModule,
@@ -75,7 +80,7 @@ export class ChatSearchComponent {
       query,
       isRegex: this.isRegex(),
       caseSensitive: this.caseSensitive(),
-      platform: this.searchPlatform() !== "all" ? this.searchPlatform() as any : undefined,
+      platform: this.searchPlatform() !== "all" ? (this.searchPlatform() as any) : undefined,
       channelId: this.searchChannel() !== "all" ? this.searchChannel() : undefined,
       author: this.searchAuthor().trim() || undefined,
       limit: 50,

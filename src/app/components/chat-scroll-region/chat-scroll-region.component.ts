@@ -1,3 +1,4 @@
+/* sys lib */
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -16,10 +17,11 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatIconModule } from "@angular/material/icon";
-import { ChatMessage } from "@models/chat.model";
 import { fromEvent } from "rxjs";
 import { throttleTime } from "rxjs/operators";
 
+/* models */
+import { ChatMessage } from "@models/chat.model";
 @Component({
   selector: "app-chat-scroll-region",
   standalone: true,
@@ -31,8 +33,8 @@ import { throttleTime } from "rxjs/operators";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChatScrollRegionComponent {
-  private static readonly nearBottomPx = 64;
-  private static readonly topThresholdPx = 200; // Consider user at "top" when within this distance
+  private static readonly nearBottomPx = 100; // More generous threshold
+  private static readonly topThresholdPx = 200;
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
@@ -43,7 +45,7 @@ export class ChatScrollRegionComponent {
   private readonly viewport = viewChild<ElementRef<HTMLElement>>("viewport");
 
   private readonly pinnedToBottom = signal(true);
-  private readonly atTop = signal(false); // User is at top reading old messages
+  private readonly atTop = signal(false);
   readonly pendingNewCount = signal(0);
   private snapshotLength = 0;
   private prevMessageLen = 0;
@@ -63,21 +65,30 @@ export class ChatScrollRegionComponent {
     effect(() => {
       this.scrollToken();
       untracked(() => {
-        this.pinnedToBottom.set(true);
-        this.pendingNewCount.set(0);
-        this.snapshotLength = this.messages().length;
-        this.prevMessageLen = this.messages().length;
-        runInInjectionContext(this.injector, () => {
-          afterNextRender(() => {
-            queueMicrotask(() => {
-              requestAnimationFrame(() => {
-                if (this.pinnedToBottom()) {
-                  this.scrollToBottom();
-                }
+        // When scroll token changes (channel switch), reset to bottom
+        // BUT only if user is currently at bottom - respect their scroll position if scrolled up
+        const node = this.viewport()?.nativeElement;
+        const distance = node ? node.scrollHeight - node.scrollTop - node.clientHeight : 0;
+        const nearBottom = distance <= ChatScrollRegionComponent.nearBottomPx;
+
+        if (nearBottom) {
+          // User is at bottom - scroll to new bottom
+          this.pinnedToBottom.set(true);
+          this.pendingNewCount.set(0);
+          runInInjectionContext(this.injector, () => {
+            afterNextRender(() => {
+              queueMicrotask(() => {
+                requestAnimationFrame(() => this.scrollToBottom());
               });
             });
           });
-        });
+        } else {
+          // User is scrolled up - keep their position, just update snapshot
+          this.snapshotLength = this.messages().length;
+          this.pendingNewCount.set(0);
+        }
+
+        this.prevMessageLen = this.messages().length;
       });
     });
 
@@ -87,22 +98,29 @@ export class ChatScrollRegionComponent {
         const grew = len > this.prevMessageLen;
         this.prevMessageLen = len;
 
-        if (this.pinnedToBottom()) {
-          // Only auto-scroll if we're already at bottom
+        // CRITICAL: Only auto-scroll when pinnedToBottom is true
+        // When user scrolls up, pinnedToBottom becomes false and STAYS false
+        // until they manually scroll back to bottom or click "Latest" button
+        if (this.pinnedToBottom() && grew) {
+          console.log("[ChatScroll] Auto-scrolling because: pinnedToBottom=true, grew=true");
+          // We're at bottom and new messages arrived - auto-scroll
           this.pendingNewCount.set(0);
           this.snapshotLength = len;
-          if (grew) {
-            runInInjectionContext(this.injector, () => {
-              afterNextRender(() => {
-                requestAnimationFrame(() => this.scrollToBottom());
-              });
+
+          runInInjectionContext(this.injector, () => {
+            afterNextRender(() => {
+              requestAnimationFrame(() => this.scrollToBottom());
             });
-          }
+          });
           return;
         }
 
-        // User scrolled up - don't auto-scroll, just count pending messages
+        // User scrolled up OR messages were prepended (history) - don't auto-scroll
+        // Just count pending messages
         if (grew) {
+          console.log(
+            `[ChatScroll] NOT auto-scrolling: pinnedToBottom=${this.pinnedToBottom()}, counting ${len - this.snapshotLength} pending messages`
+          );
           this.pendingNewCount.set(Math.max(0, len - this.snapshotLength));
         }
       });
@@ -116,21 +134,23 @@ export class ChatScrollRegionComponent {
     }
     const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
     const nearBottom = distance <= ChatScrollRegionComponent.nearBottomPx;
-    const atTop = node.scrollTop < ChatScrollRegionComponent.topThresholdPx;
-    const msgs = this.messages();
 
-    if (nearBottom && !this.pinnedToBottom()) {
+    // User scrolled UP (away from bottom) - disable auto-scroll
+    if (!nearBottom) {
+      if (this.pinnedToBottom()) {
+        // First time scrolling up - mark as not pinned
+        this.pinnedToBottom.set(false);
+        this.snapshotLength = this.messages().length;
+        console.log("[ChatScroll] User scrolled up, disabled auto-scroll");
+      }
+      // Keep pinnedToBottom=false while scrolled up
+    }
+    // User scrolled DOWN to bottom - re-enable auto-scroll
+    else if (nearBottom && !this.pinnedToBottom()) {
       this.pinnedToBottom.set(true);
-      this.snapshotLength = msgs.length;
+      this.snapshotLength = this.messages().length;
       this.pendingNewCount.set(0);
-      this.atTop.set(false);
-    } else if (!nearBottom && this.pinnedToBottom()) {
-      this.pinnedToBottom.set(false);
-      this.snapshotLength = msgs.length;
-      this.atTop.set(atTop);
-    } else if (!nearBottom) {
-      // Update atTop state while scrolled up
-      this.atTop.set(atTop);
+      console.log("[ChatScroll] User at bottom, enabled auto-scroll");
     }
   }
 

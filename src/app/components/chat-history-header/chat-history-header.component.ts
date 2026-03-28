@@ -1,12 +1,19 @@
+/* sys lib */
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { ChatHistoryLoadState } from "@models/chat.model";
-import { ChatStorageService } from "@services/data/chat-storage.service";
-import { RoomStateIndicatorsComponent } from "@components/room-state-indicators/room-state-indicators.component";
 
+/* models */
+import { ChatHistoryLoadState } from "@models/chat.model";
+
+/* services */
+import { ChatStorageService } from "@services/data/chat-storage.service";
+
+/* components */
+import { RoomStateIndicatorsComponent } from "@components/room-state-indicators/room-state-indicators.component";
 @Component({
   selector: "app-chat-history-header",
+  standalone: true,
   imports: [MatIconModule, MatProgressSpinnerModule, RoomStateIndicatorsComponent],
   templateUrl: "./chat-history-header.component.html",
   host: {

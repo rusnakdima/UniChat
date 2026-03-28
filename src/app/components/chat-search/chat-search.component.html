@@ -1,5 +1,5 @@
 <div
-  class="flex h-full min-h-[400px] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-slate-900"
+  class="flex max-h-[calc(100vh-7rem)] min-h-[400px] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-slate-900"
 >
   <!-- Header -->
   <div
@@ -120,7 +120,7 @@
         <mat-progress-spinner diameter="40" mode="indeterminate"></mat-progress-spinner>
       </div>
     } @else if (hasResults()) {
-      <div class="flex-1 overflow-y-auto p-2">
+      <div class="flex-1 overflow-y-auto overscroll-contain p-2">
         <div class="mb-2 flex items-center justify-between px-2">
           <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
             {{ resultCount() }} result(s) found
@@ -150,7 +150,7 @@
               <div class="flex items-center gap-2 text-[10px] text-slate-400">
                 <span>{{ result.message.platform }}</span>
                 <span>·</span>
-                <span>{{ result.message.timestamp | date: 'shortTime' }}</span>
+                <span>{{ result.message.timestamp | date: "shortTime" }}</span>
               </div>
             </button>
           }

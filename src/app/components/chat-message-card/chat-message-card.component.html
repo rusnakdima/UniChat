@@ -103,7 +103,7 @@
       <div class="flex shrink-0 items-center gap-2">
         <!-- Action Buttons (hover only) -->
         <div
-          class="flex items-center gap-0.5 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-x-0 opacity-0 -translate-x-2"
+          class="flex items-center gap-0.5 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-x-0 opacity-0 -translate-x-2"
           role="group"
           aria-label="Message actions"
         >
@@ -116,8 +116,8 @@
             [aria-label]="isPinned ? 'Unpin message' : 'Pin message'"
             [aria-pressed]="isPinned"
           >
-            <mat-icon class="!h-5 !w-5 !text-xl leading-none">
-              {{ isPinned ? 'push_pin' : 'keep' }}
+            <mat-icon class="!h-5 !w-5 !text-xl leading-none" [class.opacity-70]="!isPinned">
+              push_pin
             </mat-icon>
           </button>
           @if (message().actions.reply.status === "available") {
@@ -136,7 +136,7 @@
               type="button"
               (click)="interactions.deleteMessage(message().id)"
               class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/20 dark:text-slate-400 dark:hover:text-red-400"
-              title="Delete"
+              title="Delete message"
               aria-label="Delete message"
             >
               <mat-icon class="!h-5 !w-5 !text-xl leading-none">delete</mat-icon>
@@ -188,7 +188,8 @@
             [src]="segment.emote.url"
             [alt]="segment.emote.code"
             [title]="segment.emote.code"
-            class="mx-0.5 inline h-6 w-6 align-middle"
+            class="mx-0.5 inline align-middle chat-emote"
+            [class.chat-emote-dynamic]="!segment.emote.url.includes('static-cdn.jtvnw.net')"
             loading="lazy"
             (error)="onEmoteImageError($event)"
           />

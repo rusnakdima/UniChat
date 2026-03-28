@@ -1,23 +1,30 @@
-import { ChangeDetectionStrategy, Component, inject, input } from "@angular/core";
+/* sys lib */
 import { NgClass } from "@angular/common";
+import { ChangeDetectionStrategy, Component, inject, input } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { ChatMessage } from "@models/chat.model";
-import { ChatTextSegment } from "@services/ui/chat-rich-text.service";
-import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
-import { ChatRichTextService } from "@services/ui/chat-rich-text.service";
-import { LinkPreviewService } from "@services/ui/link-preview.service";
-import { DashboardChatInteractionService } from "@services/ui/dashboard-chat-interaction.service";
-import { UserProfilePopoverService } from "@services/ui/user-profile-popover.service";
-import { MessageTypeStylingService } from "@services/ui/message-type-styling.service";
-import { TwitchChatService } from "@services/providers/twitch-chat.service";
-import { ChatListService } from "@services/data/chat-list.service";
-import { AvatarCacheService } from "@services/core/avatar-cache.service";
-import { PinnedMessagesService } from "@services/ui/pinned-messages.service";
-import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@helpers/chat.helper";
 
+/* models */
+import { ChatMessage } from "@models/chat.model";
+
+/* services */
+import { AvatarCacheService } from "@services/core/avatar-cache.service";
+import { ChatListService } from "@services/data/chat-list.service";
+import { TwitchChatService } from "@services/providers/twitch-chat.service";
+import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
+import { ChatTextSegment } from "@services/ui/chat-rich-text.service";
+import { ChatRichTextService } from "@services/ui/chat-rich-text.service";
+import { DashboardChatInteractionService } from "@services/ui/dashboard-chat-interaction.service";
+import { LinkPreviewService } from "@services/ui/link-preview.service";
+import { MessageTypeStylingService } from "@services/ui/message-type-styling.service";
+import { PinnedMessagesService } from "@services/ui/pinned-messages.service";
+import { UserProfilePopoverService } from "@services/ui/user-profile-popover.service";
+
+/* helpers */
+import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@helpers/chat.helper";
 @Component({
   selector: "app-chat-message-card",
+  standalone: true,
   imports: [NgClass, MatIconModule, MatTooltipModule],
   templateUrl: "./chat-message-card.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,7 +65,7 @@ export class ChatMessageCardComponent {
   getMessageClasses() {
     const typeConfig = this.getMessageTypeConfig();
     const highlightColor = this.presentation.getHighlightColor(this.message());
-    
+
     return {
       // Base highlighted state (from user interaction)
       "border-emerald-500": this.highlighted(),
@@ -69,7 +76,8 @@ export class ChatMessageCardComponent {
       "border-l-4": highlightColor !== null,
       // Default border when not highlighted
       "border-slate-200": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
-      "dark:border-white/10": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
+      "dark:border-white/10":
+        !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
       // Message type classes
       [typeConfig.cssClass]: !!typeConfig.cssClass,
       [typeConfig.animationClass]: !!typeConfig.animationClass,
