@@ -1,20 +1,18 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  input,
-  output,
-  computed,
-} from "@angular/core";
-import { MatIconModule } from "@angular/material/icon";
+/* sys lib */
+import { TitleCasePipe } from "@angular/common";
+import { ChangeDetectionStrategy, Component, inject, input, output, computed } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
+import { MatIconModule } from "@angular/material/icon";
+
+/* models */
 import { ChannelConnectionError, PlatformType } from "@models/chat.model";
+
+/* services */
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
-import { TitleCasePipe } from "@angular/common";
-
 @Component({
   selector: "app-connection-error-banner",
+  standalone: true,
   imports: [MatIconModule, MatButtonModule, TitleCasePipe],
   template: `
     @if (error(); as err) {
@@ -27,8 +25,11 @@ import { TitleCasePipe } from "@angular/common";
         "
         role="alert"
       >
-        <mat-icon class="shrink-0" [fontSet]="error()?.isRecoverable ? 'material-icons-outlined' : 'material-icons'">
-          {{ error()?.isRecoverable ? 'warning' : 'error' }}
+        <mat-icon
+          class="shrink-0"
+          [fontSet]="error()?.isRecoverable ? 'material-icons-outlined' : 'material-icons'"
+        >
+          {{ error()?.isRecoverable ? "warning" : "error" }}
         </mat-icon>
         <div class="flex-1 text-sm">
           <p class="font-medium">{{ error()?.code | titlecase }}</p>
@@ -68,9 +69,7 @@ export class ConnectionErrorBannerComponent {
   readonly channelId = input.required<string>();
   readonly platform = input.required<PlatformType>();
 
-  readonly error = computed(() =>
-    this.connectionStateService.getChannelError(this.channelId())
-  );
+  readonly error = computed(() => this.connectionStateService.getChannelError(this.channelId()));
 
   readonly retryConnection = output<void>();
   readonly dismissError = output<void>();
