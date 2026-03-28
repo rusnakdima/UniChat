@@ -6,7 +6,7 @@ pub mod oauth_config_helper;
 #[path = "message_sanitizer_helper.rs"]
 pub mod message_sanitizer_helper;
 
-#[path = "message_formatter_helper.rs"]
+#[path = "message.formatter_helper.rs"]
 pub mod message_formatter_helper;
 
 #[path = "twitch_auth.helper.rs"]
