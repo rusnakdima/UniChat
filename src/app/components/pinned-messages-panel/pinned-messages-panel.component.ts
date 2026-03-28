@@ -1,3 +1,5 @@
+/* sys lib */
+import { DatePipe } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,22 +9,17 @@ import {
   output,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { MatIconModule } from "@angular/material/icon";
 import { MatButtonModule } from "@angular/material/button";
+import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
-import { PinnedMessagesService, PinnedMessage } from "@services/ui/pinned-messages.service";
-import { ChatListService } from "@services/data/chat-list.service";
-import { DatePipe } from "@angular/common";
 
+/* services */
+import { ChatListService } from "@services/data/chat-list.service";
+import { PinnedMessagesService, PinnedMessage } from "@services/ui/pinned-messages.service";
 @Component({
   selector: "app-pinned-messages-panel",
-  imports: [
-    FormsModule,
-    MatIconModule,
-    MatButtonModule,
-    MatInputModule,
-    DatePipe,
-  ],
+  standalone: true,
+  imports: [FormsModule, MatIconModule, MatButtonModule, MatInputModule, DatePipe],
   templateUrl: "./pinned-messages-panel.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -55,19 +52,17 @@ export class PinnedMessagesPanelComponent {
 
   readonly filteredPinnedMessages = computed(() => {
     let messages = this.pinnedMessages();
-    
+
     if (this.filterPlatform() !== "all") {
-      messages = messages.filter(m => m.platform === this.filterPlatform());
+      messages = messages.filter((m) => m.platform === this.filterPlatform());
     }
-    
+
     if (this.filterChannel() !== "all") {
-      messages = messages.filter(m => m.channelId === this.filterChannel());
+      messages = messages.filter((m) => m.channelId === this.filterChannel());
     }
-    
+
     // Sort by pinned date (newest first)
-    return messages.sort((a, b) => 
-      new Date(b.pinnedAt).getTime() - new Date(a.pinnedAt).getTime()
-    );
+    return messages.sort((a, b) => new Date(b.pinnedAt).getTime() - new Date(a.pinnedAt).getTime());
   });
 
   readonly closed = output<void>();

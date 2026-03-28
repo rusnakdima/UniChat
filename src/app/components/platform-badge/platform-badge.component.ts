@@ -1,7 +1,11 @@
+/* sys lib */
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { PlatformType } from "@models/chat.model";
-import { getPlatformBadgeClasses, getPlatformLabel } from "@helpers/chat.helper";
 
+/* models */
+import { PlatformType } from "@models/chat.model";
+
+/* helpers */
+import { getPlatformBadgeClasses, getPlatformLabel } from "@helpers/chat.helper";
 @Component({
   selector: "app-platform-badge",
   template: `

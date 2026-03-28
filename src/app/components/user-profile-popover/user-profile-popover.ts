@@ -1,3 +1,4 @@
+/* sys lib */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,10 +9,18 @@ import {
 } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { UserProfilePopoverService } from "@services/ui/user-profile-popover.service";
-import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
+
+/* models */
 import { ChatBadgeIcon } from "@models/chat.model";
 
+/* services */
+import { ChatListService } from "@services/data/chat-list.service";
+import { KickChatService } from "@services/providers/kick-chat.service";
+import { KickUserInfo } from "@services/providers/kick-chat.service";
+import { TwitchChatService } from "@services/providers/twitch-chat.service";
+import { YouTubeChatService } from "@services/providers/youtube-chat.service";
+import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
+import { UserProfilePopoverService } from "@services/ui/user-profile-popover.service";
 const PANEL_WIDTH = 352;
 const PANEL_HEIGHT = 450;
 const GAP = 8;
@@ -37,6 +46,7 @@ export interface TwitchUserInfo {
 
 @Component({
   selector: "app-user-profile-popover",
+  standalone: true,
   imports: [MatIconModule, MatProgressSpinnerModule],
   templateUrl: "./user-profile-popover.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,15 +54,33 @@ export interface TwitchUserInfo {
 export class UserProfilePopoverComponent {
   readonly popover = inject(UserProfilePopoverService);
   readonly presentation = inject(ChatMessagePresentationService);
+  readonly chatList = inject(ChatListService);
+  readonly twitchChat = inject(TwitchChatService);
+  readonly kickChat = inject(KickChatService);
+  readonly youtubeChat = inject(YouTubeChatService);
 
   /** Applied after anchor-based placement; clamped inside the viewport. */
   readonly panelOffsetX = signal(0);
   readonly panelOffsetY = signal(0);
 
-  /** Twitch: user info (text only) */
+  /** Drag state for movable panel */
+  private isDragging = false;
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private dragOffsetX = 0;
+  private dragOffsetY = 0;
+
+  /** User info by platform */
   readonly twitchUserInfo = signal<TwitchUserInfo | null>(null);
   readonly twitchUserInfoLoading = signal(false);
   readonly twitchUserBadges = signal<ChatBadgeIcon[]>([]);
+
+  readonly kickUserInfo = signal<KickUserInfo | null>(null);
+  readonly kickUserInfoLoading = signal(false);
+
+  readonly youtubeUserInfo = signal<{ id: string; name: string; photoUrl?: string } | null>(null);
+  readonly youtubeUserInfoLoading = signal(false);
+  readonly channelInfo = signal<{ name: string; imageUrl?: string } | null>(null);
 
   readonly showChannelLabels = computed(() => false); // Not used in text-only mode
 
@@ -130,55 +158,137 @@ export class UserProfilePopoverComponent {
         this.twitchUserInfo.set(null);
         this.twitchUserInfoLoading.set(false);
         this.twitchUserBadges.set([]);
+        this.kickUserInfo.set(null);
+        this.kickUserInfoLoading.set(false);
+        this.youtubeUserInfo.set(null);
+        this.youtubeUserInfoLoading.set(false);
+        this.channelInfo.set(null);
         return;
       }
+
+      // Reset all platform states based on message platform
       if (st.message.platform !== "twitch") {
         this.twitchUserInfo.set(null);
         this.twitchUserInfoLoading.set(false);
         this.twitchUserBadges.set([]);
-        return;
       }
-      // Auto-load user info when opening card for Twitch users
-      this.twitchUserInfo.set(null);
-      this.twitchUserInfoLoading.set(false);
-      this.twitchUserBadges.set([]);
+      if (st.message.platform !== "kick") {
+        this.kickUserInfo.set(null);
+        this.kickUserInfoLoading.set(false);
+      }
+      if (st.message.platform !== "youtube") {
+        this.youtubeUserInfo.set(null);
+        this.youtubeUserInfoLoading.set(false);
+      }
 
-      // Load user info (text only)
+      // Auto-load user info when opening card
       void this.loadUserInfo();
+      void this.loadChannelInfo();
     });
   }
 
-  /** Load user info - text only, no images or badges */
+  /** Load user info for the current platform */
   async loadUserInfo(): Promise<void> {
     const st = this.popover.open();
-    if (!st || st.message.platform !== "twitch") {
+    if (!st) {
       return;
     }
-    this.twitchUserInfoLoading.set(true);
-    try {
-      const targetLogin = st.message.author;
 
-      // Set basic user info (text only)
-      this.twitchUserInfo.set({
-        id: st.message.sourceUserId,
-        login: targetLogin.toLowerCase(),
-        display_name: st.message.author,
-        description: "",
-        profile_image_url: "", // No image
-        offline_image_url: "",
-        banner: null,
-        created_at: "",
-      });
+    const platform = st.message.platform;
+    const username = st.message.author;
 
-      // No badges loaded - text only display
-      this.twitchUserBadges.set([]);
-    } catch {
-      // Silently handle errors
-      this.twitchUserInfo.set(null);
-      this.twitchUserBadges.set([]);
-    } finally {
-      this.twitchUserInfoLoading.set(false);
+    if (platform === "twitch") {
+      this.twitchUserInfoLoading.set(true);
+      try {
+        const channelLogin = st.message.sourceChannelId;
+        const userInfo =
+          (channelLogin
+            ? await this.twitchChat.fetchTwitchViewerCard(channelLogin, username)
+            : null) ?? (await this.twitchChat.fetchUserInfo(username));
+        if (userInfo) {
+          this.twitchUserInfo.set(userInfo);
+        } else {
+          // Fallback to basic info
+          this.twitchUserInfo.set({
+            id: st.message.sourceUserId,
+            login: username.toLowerCase(),
+            display_name: username,
+            description: "",
+            profile_image_url: "",
+            offline_image_url: "",
+            banner: null,
+            created_at: "",
+          });
+        }
+        this.twitchUserBadges.set([]);
+      } catch {
+        this.twitchUserInfo.set(null);
+        this.twitchUserBadges.set([]);
+      } finally {
+        this.twitchUserInfoLoading.set(false);
+      }
+    } else if (platform === "kick") {
+      this.kickUserInfoLoading.set(true);
+      try {
+        const userInfo = await this.kickChat.fetchUserInfo(username);
+        this.kickUserInfo.set(userInfo);
+      } catch {
+        this.kickUserInfo.set(null);
+      } finally {
+        this.kickUserInfoLoading.set(false);
+      }
+    } else if (platform === "youtube") {
+      this.youtubeUserInfoLoading.set(true);
+      try {
+        // YouTube user info - use the author name from the message
+        this.youtubeUserInfo.set({
+          id: st.message.sourceUserId,
+          name: username,
+          photoUrl: st.message.authorAvatarUrl,
+        });
+      } catch {
+        this.youtubeUserInfo.set(null);
+      } finally {
+        this.youtubeUserInfoLoading.set(false);
+      }
     }
+  }
+
+  async loadChannelInfo(): Promise<void> {
+    const st = this.popover.open();
+    if (!st) {
+      return;
+    }
+
+    const channel = this.chatList
+      .getChannels(st.message.platform)
+      .find((entry) => entry.channelId === st.message.sourceChannelId);
+    const fallbackName = channel?.channelName ?? st.message.sourceChannelId;
+
+    if (st.message.platform === "twitch") {
+      const imageUrl = (await this.twitchChat.fetchChannelProfileImage(fallbackName)) ?? undefined;
+      this.channelInfo.set({ name: fallbackName, imageUrl: imageUrl || undefined });
+      return;
+    }
+
+    if (st.message.platform === "kick") {
+      const info = await this.kickChat.fetchUserInfo(fallbackName);
+      this.channelInfo.set({
+        name: fallbackName,
+        imageUrl: info?.profile_pic_url || undefined,
+      });
+      return;
+    }
+
+    if (st.message.platform === "youtube") {
+      this.channelInfo.set({
+        name: fallbackName,
+        imageUrl: `https://i.ytimg.com/vi/${encodeURIComponent(st.message.sourceChannelId)}/default.jpg`,
+      });
+      return;
+    }
+
+    this.channelInfo.set({ name: fallbackName });
   }
 
   /** Prefer right of the nickname; flip left if needed; clamp into the viewport. */
@@ -209,4 +319,52 @@ export class UserProfilePopoverComponent {
       height: Math.floor(height),
     };
   }
+
+  /** Start dragging the panel */
+  onStartDrag(event: MouseEvent): void {
+    if (event.button !== 0) return; // Only left mouse button
+
+    this.isDragging = true;
+    this.dragStartX = event.clientX;
+    this.dragStartY = event.clientY;
+    this.dragOffsetX = this.panelOffsetX();
+    this.dragOffsetY = this.panelOffsetY();
+
+    // Add global drag listeners
+    document.addEventListener("mousemove", this.onDrag);
+    document.addEventListener("mouseup", this.onStopDrag);
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  /** Handle drag movement */
+  private onDrag = (event: MouseEvent): void => {
+    if (!this.isDragging) return;
+
+    const deltaX = event.clientX - this.dragStartX;
+    const deltaY = event.clientY - this.dragStartY;
+
+    this.panelOffsetX.set(this.dragOffsetX + deltaX);
+    this.panelOffsetY.set(this.dragOffsetY + deltaY);
+  };
+
+  /** Stop dragging and save position */
+  private onStopDrag = (event: MouseEvent): void => {
+    if (!this.isDragging) return;
+
+    this.isDragging = false;
+
+    // Remove global drag listeners
+    document.removeEventListener("mousemove", this.onDrag);
+    document.removeEventListener("mouseup", this.onStopDrag);
+
+    // Save the final position
+    const st = this.popover.open();
+    if (st) {
+      const finalLeft = (st.savedPosition?.left ?? 0) + this.panelOffsetX();
+      const finalTop = (st.savedPosition?.top ?? 0) + this.panelOffsetY();
+      this.popover.saveCurrentPosition(finalLeft, finalTop);
+    }
+  };
 }

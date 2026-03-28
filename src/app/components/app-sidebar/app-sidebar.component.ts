@@ -1,8 +1,10 @@
+/* sys lib */
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
-import { Router } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
-import { ThemeService } from "@services/core/theme.service";
+import { Router } from "@angular/router";
 
+/* services */
+import { ThemeService } from "@services/core/theme.service";
 interface MenuItem {
   path: string;
   icon: string;

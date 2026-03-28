@@ -1,18 +1,16 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  input,
-  signal,
-  effect,
-} from "@angular/core";
+/* sys lib */
+import { ChangeDetectionStrategy, Component, inject, input, signal, effect } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { RoomState } from "@models/chat.model";
-import { ConnectionStateService } from "@services/data/connection-state.service";
 
+/* models */
+import { RoomState } from "@models/chat.model";
+
+/* services */
+import { ConnectionStateService } from "@services/data/connection-state.service";
 @Component({
   selector: "app-room-state-indicators",
+  standalone: true,
   imports: [MatIconModule, MatTooltipModule],
   template: `
     @if (roomState(); as state) {
@@ -85,7 +83,7 @@ export class RoomStateIndicatorsComponent {
   private readonly connectionStateService = inject(ConnectionStateService);
 
   readonly channelId = input.required<string>();
-  
+
   readonly roomState = signal<RoomState | undefined>(undefined);
 
   constructor() {

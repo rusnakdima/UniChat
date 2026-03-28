@@ -1,11 +1,14 @@
+/* sys lib */
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { openUrl } from "@tauri-apps/plugin-opener";
+
+/* services */
 import { InAppLinkBrowserService } from "@services/ui/in-app-link-browser.service";
 import { getLinkPreviewIframeSrc, LinkPreviewService } from "@services/ui/link-preview.service";
-
 @Component({
   selector: "app-link-preview-modal",
+  standalone: true,
   templateUrl: "./link-preview-modal.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

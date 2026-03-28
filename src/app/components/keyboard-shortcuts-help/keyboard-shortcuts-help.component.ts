@@ -1,15 +1,13 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  output,
-} from "@angular/core";
-import { MatIconModule } from "@angular/material/icon";
+/* sys lib */
+import { ChangeDetectionStrategy, Component, inject, output } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
-import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.service";
+import { MatIconModule } from "@angular/material/icon";
 
+/* services */
+import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.service";
 @Component({
   selector: "app-keyboard-shortcuts-help",
+  standalone: true,
   imports: [MatIconModule, MatButtonModule],
   template: `
     <div
@@ -59,9 +57,7 @@ import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.servic
 
           <!-- Actions -->
           <div>
-            <h3 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Actions
-            </h3>
+            <h3 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Actions</h3>
             <div class="space-y-2">
               @for (shortcut of shortcutsByCategory().actions; track shortcut.keys) {
                 <div class="flex items-center justify-between">
@@ -80,9 +76,7 @@ import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.servic
 
           <!-- Overlay -->
           <div>
-            <h3 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Overlay
-            </h3>
+            <h3 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Overlay</h3>
             <div class="space-y-2">
               @for (shortcut of shortcutsByCategory().overlay; track shortcut.keys) {
                 <div class="flex items-center justify-between">
@@ -101,9 +95,7 @@ import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.servic
 
           <!-- General -->
           <div>
-            <h3 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-              General
-            </h3>
+            <h3 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">General</h3>
             <div class="space-y-2">
               @for (shortcut of shortcutsByCategory().general; track shortcut.keys) {
                 <div class="flex items-center justify-between">
@@ -126,8 +118,16 @@ import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.servic
       <div
         class="border-t border-slate-200 bg-slate-50 px-6 py-4 text-center text-xs text-slate-500 dark:border-white/10 dark:bg-slate-900/50 dark:text-slate-400"
       >
-        Press <kbd class="mx-1 rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-white/20 dark:bg-white/5">Ctrl+?</kbd>
-        or <kbd class="mx-1 rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-white/20 dark:bg-white/5">F1</kbd>
+        Press
+        <kbd
+          class="mx-1 rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-white/20 dark:bg-white/5"
+          >Ctrl+?</kbd
+        >
+        or
+        <kbd
+          class="mx-1 rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-white/20 dark:bg-white/5"
+          >F1</kbd
+        >
         to open this help
       </div>
     </div>
@@ -136,7 +136,7 @@ import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.servic
 })
 export class KeyboardShortcutsHelpComponent {
   private readonly keyboardShortcutsService = inject(KeyboardShortcutsService);
-  
+
   readonly shortcutsByCategory = this.keyboardShortcutsService.shortcutsByCategory;
   readonly closed = output<void>();
 }
