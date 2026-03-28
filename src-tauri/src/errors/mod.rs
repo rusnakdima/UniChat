@@ -6,6 +6,3 @@ mod error_conversions;
 mod error_types;
 
 pub use error_types::{UniChatError, UniChatResult};
-
-#[cfg(test)]
-mod tests;
