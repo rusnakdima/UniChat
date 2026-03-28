@@ -17,6 +17,7 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatIconModule } from "@angular/material/icon";
+import { ScrollingModule } from "@angular/cdk/scrolling";
 import { fromEvent } from "rxjs";
 import { throttleTime } from "rxjs/operators";
 
@@ -25,7 +26,7 @@ import { ChatMessage } from "@models/chat.model";
 @Component({
   selector: "app-chat-scroll-region",
   standalone: true,
-  imports: [MatIconModule],
+  imports: [MatIconModule, ScrollingModule],
   templateUrl: "./chat-scroll-region.component.html",
   host: {
     class: "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
@@ -35,6 +36,7 @@ import { ChatMessage } from "@models/chat.model";
 export class ChatScrollRegionComponent {
   private static readonly nearBottomPx = 100; // More generous threshold
   private static readonly topThresholdPx = 200;
+  private static readonly messageItemHeight = 80; // Approximate height in pixels for virtual scroll
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
@@ -52,6 +54,9 @@ export class ChatScrollRegionComponent {
 
   readonly showJumpButton = computed(() => !this.pinnedToBottom());
   readonly showUnreadCount = computed(() => !this.pinnedToBottom() && this.pendingNewCount() > 0);
+
+  // Virtual scroll configuration
+  readonly virtualScrollItemSize = ChatScrollRegionComponent.messageItemHeight;
 
   constructor() {
     fromEvent(globalThis, "resize", { passive: true })
