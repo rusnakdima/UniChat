@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 /* services */
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
-import { KickEmotesService } from "@services/providers/kick-emotes.service";
+import { KickChatEventMapper } from "@services/providers/kick-chat-event.mapper";
 
 /* helpers */
 import { createMessageActionState } from "@helpers/chat.helper";
@@ -27,7 +27,7 @@ export class KickChatService extends BaseChatProviderService {
   private readonly reconnectTimerByChannel = new Map<string, number>();
   private readonly historyNoticeLoggedChannels = new Set<string>();
   private readonly errorService = inject(ConnectionErrorService);
-  private readonly kickEmotes = inject(KickEmotesService);
+  private readonly kickChatEventMapper = inject(KickChatEventMapper);
 
   override connect(channelId: string): void {
     const normalizedChannel = channelId.trim().toLowerCase();
@@ -227,60 +227,29 @@ export class KickChatService extends BaseChatProviderService {
   }
 
   private ingestKickChatEventPayload(channelSlug: string, payload: Record<string, unknown>): void {
-    const sender = (payload["sender"] as Record<string, unknown> | undefined) ?? {};
-    const author = String(sender["username"] ?? "KickUser");
-    const sourceUserId = String(sender["id"] ?? author);
-    const content = String(payload["content"] ?? "");
-    if (!content.trim()) {
+    const mapped = this.kickChatEventMapper.mapChatEventPayload(payload);
+    if (!mapped) {
       return;
     }
-    const sourceMessageId = String(
-      payload["id"] ?? `kick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    );
-    const badges: string[] = [];
-    const identity = sender["identity"] as Record<string, unknown> | undefined;
-    const senderBadges = identity?.["badges"] as unknown[] | undefined;
-    if (Array.isArray(senderBadges)) {
-      for (const role of senderBadges) {
-        if (role && typeof role === "object" && "type" in role) {
-          badges.push(String((role as { type?: unknown }).type ?? ""));
-        }
-      }
-    }
-
-    const emotes = this.kickEmotes.buildEmotesForMessage(content, payload["emotes"]);
-    const previewBase = content.trim();
-
-    const createdRaw = payload["created_at"];
-    let timestamp: string | undefined;
-    if (typeof createdRaw === "string" && createdRaw.trim()) {
-      const parsed = new Date(createdRaw);
-      if (!Number.isNaN(parsed.getTime())) {
-        timestamp = parsed.toISOString();
-      }
-    }
-
-    // Build author avatar URL for Kick
-    const authorAvatarUrl = sender["profile_pic"] as string | undefined;
 
     this.chatStorageService.addMessage(
       channelSlug,
       this.createMessage(channelSlug, {
-        id: `msg-${sourceMessageId}`,
-        sourceMessageId,
-        sourceUserId,
-        author,
-        text: content,
-        badges: badges.filter(Boolean),
-        timestamp,
+        id: `msg-${mapped.sourceMessageId}`,
+        sourceMessageId: mapped.sourceMessageId,
+        sourceUserId: mapped.sourceUserId,
+        author: mapped.author,
+        text: mapped.content,
+        badges: mapped.badges,
+        timestamp: mapped.timestamp,
         rawPayload: {
           providerEvent: "chat.message",
           providerChannelId: channelSlug,
-          providerUserId: sourceUserId,
-          preview: previewBase.slice(0, 120),
-          emotes: emotes.length ? emotes : undefined,
+          providerUserId: mapped.sourceUserId,
+          preview: mapped.previewBase.slice(0, 120),
+          emotes: mapped.emotes.length ? mapped.emotes : undefined,
         },
-        authorAvatarUrl,
+        authorAvatarUrl: mapped.authorAvatarUrl,
       })
     );
   }
