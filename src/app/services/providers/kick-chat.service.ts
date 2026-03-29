@@ -2,12 +2,10 @@
 import { Injectable, inject } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 
-/* models */
-import { ChatMessageEmote } from "@models/chat.model";
-
 /* services */
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
+import { KickEmotesService } from "@services/providers/kick-emotes.service";
 
 /* helpers */
 import { createMessageActionState } from "@helpers/chat.helper";
@@ -24,14 +22,12 @@ export interface KickUserInfo {
 export class KickChatService extends BaseChatProviderService {
   readonly platform = "kick" as const;
 
-  /** Kick serializes native emotes in `content` as `[emote:1730834:emojiYay]`. */
-  private static readonly KICK_EMOTE_BRACKET = /\[emote:([^:\]]+):([^\]]*)\]/g;
-
   private readonly socketByChannel = new Map<string, WebSocket>();
   private readonly chatroomIdByChannel = new Map<string, number>();
   private readonly reconnectTimerByChannel = new Map<string, number>();
   private readonly historyNoticeLoggedChannels = new Set<string>();
   private readonly errorService = inject(ConnectionErrorService);
+  private readonly kickEmotes = inject(KickEmotesService);
 
   override connect(channelId: string): void {
     const normalizedChannel = channelId.trim().toLowerCase();
@@ -252,9 +248,7 @@ export class KickChatService extends BaseChatProviderService {
       }
     }
 
-    const fromBrackets = this.extractKickBracketEmotes(content);
-    const fromApi = this.extractKickEmotesFromApi(content, payload["emotes"]);
-    const emotes = this.mergeKickEmoteRanges(fromBrackets, fromApi);
+    const emotes = this.kickEmotes.buildEmotesForMessage(content, payload["emotes"]);
     const previewBase = content.trim();
 
     const createdRaw = payload["created_at"];
@@ -308,109 +302,6 @@ export class KickChatService extends BaseChatProviderService {
     } catch {
       // History is optional; live websocket still continues.
     }
-  }
-
-  private extractKickBracketEmotes(content: string): ChatMessageEmote[] {
-    if (!content) {
-      return [];
-    }
-    const re = new RegExp(KickChatService.KICK_EMOTE_BRACKET.source, "g");
-    const out: ChatMessageEmote[] = [];
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(content)) !== null) {
-      const emoteId = String(m[1] ?? "").trim();
-      const codeRaw = String(m[2] ?? "").trim();
-      if (!emoteId) {
-        continue;
-      }
-      const code = codeRaw || emoteId;
-      const full = m[0];
-      const start = m.index;
-      const end = start + full.length - 1;
-      out.push({
-        provider: "kick",
-        id: emoteId,
-        code,
-        start,
-        end,
-        url: `https://files.kick.com/emotes/${encodeURIComponent(emoteId)}/fullsize`,
-      });
-    }
-    return out;
-  }
-
-  private mergeKickEmoteRanges(
-    primary: ChatMessageEmote[],
-    secondary: ChatMessageEmote[]
-  ): ChatMessageEmote[] {
-    const overlaps = (a: ChatMessageEmote, b: ChatMessageEmote) =>
-      !(a.end < b.start || b.end < a.start);
-    const out = [...primary];
-    for (const s of secondary) {
-      if (primary.some((p) => overlaps(p, s))) {
-        continue;
-      }
-      out.push(s);
-    }
-    return out.sort((left, right) => left.start - right.start);
-  }
-
-  /**
-   * Optional payload metadata: `emotes: { emote_id, positions: { s, e }[] }[]`
-   * (indices into `content`, inclusive — same convention as Twitch IRC tags).
-   */
-  private extractKickEmotesFromApi(content: string, rawEmotes: unknown): ChatMessageEmote[] {
-    if (!Array.isArray(rawEmotes) || !content.length) {
-      return [];
-    }
-
-    const out: ChatMessageEmote[] = [];
-    for (const entry of rawEmotes) {
-      if (!entry || typeof entry !== "object") {
-        continue;
-      }
-      const row = entry as Record<string, unknown>;
-      const idRaw = row["emote_id"] ?? row["id"];
-      if (idRaw === undefined || idRaw === null) {
-        continue;
-      }
-      const emoteId = String(idRaw);
-      const rawPositions = row["positions"];
-      if (!Array.isArray(rawPositions)) {
-        continue;
-      }
-      for (const pos of rawPositions) {
-        if (!pos || typeof pos !== "object") {
-          continue;
-        }
-        const p = pos as Record<string, unknown>;
-        const sRaw = p["s"] ?? p["start"];
-        const eRaw = p["e"] ?? p["end"];
-        const s = typeof sRaw === "number" ? sRaw : Number(sRaw);
-        const e = typeof eRaw === "number" ? eRaw : Number(eRaw);
-        if (!Number.isFinite(s) || !Number.isFinite(e) || s < 0 || e < s) {
-          continue;
-        }
-        const start = Math.max(0, Math.floor(s));
-        const end = Math.min(content.length - 1, Math.floor(e));
-        if (end < start) {
-          continue;
-        }
-        const code = content.slice(start, end + 1);
-        if (!code) {
-          continue;
-        }
-        out.push({
-          provider: "kick",
-          id: emoteId,
-          code,
-          start,
-          end,
-          url: `https://files.kick.com/emotes/${encodeURIComponent(emoteId)}/fullsize`,
-        });
-      }
-    }
-    return out.sort((left, right) => left.start - right.start);
   }
 
   private scheduleReconnect(channelSlug: string): void {
