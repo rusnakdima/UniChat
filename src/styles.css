@@ -1,9 +1,25 @@
 /* Material Icons */
 @import "@material-icons/font/css/all.css";
 
+/* Single scroll surface: app shell scrolls in <main>, not the document */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 app-root {
   display: block;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Custom element hosts for routed pages participate in block layout */
+app-settings-page-view,
+app-overlay-management-view {
+  display: block;
+  min-height: 0;
 }
 
 @import "tailwindcss";

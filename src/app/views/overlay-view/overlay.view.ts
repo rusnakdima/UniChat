@@ -53,6 +53,9 @@ import {
   imports: [NgStyle, MatIconModule, MatTooltipModule],
   templateUrl: "./overlay.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: "block h-full min-h-0",
+  },
 })
 export class OverlayView implements OnDestroy {
   readonly dashboardState = inject(DashboardStateService);
