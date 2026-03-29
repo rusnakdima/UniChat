@@ -8,3 +8,5 @@ pub mod oauth_config_helper;
 
 #[path = "sanitizer.helper.rs"]
 pub mod sanitizer_helper;
+
+pub mod http_client;

@@ -1,3 +1,4 @@
+use crate::helpers::http_client::shared_client;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -26,9 +27,9 @@ pub async fn youtubeFetchChatMessages(
   videoId: String,
   pageToken: Option<String>,
 ) -> Result<String, String> {
-  let client = reqwest::Client::new();
+  let client = shared_client();
 
-  let live_chat_id = youtube_fetch_live_chat_id_internal(&client, &videoId).await?;
+  let live_chat_id = youtube_fetch_live_chat_id_internal(client, &videoId).await?;
 
   if live_chat_id.is_empty() {
     return Ok("{\"messages\": [], \"nextPageToken\": \"\"}".to_string());

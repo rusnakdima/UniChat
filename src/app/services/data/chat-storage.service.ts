@@ -1,6 +1,5 @@
 /* sys lib */
 import { computed, inject, Injectable, signal } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* models */
 import { ChatMessage, PlatformType, ChatHistoryLoadState, MessageType } from "@models/chat.model";
@@ -36,6 +35,8 @@ const channelMessagesStorageKey = "unichat.channelMessages.v1";
  * - Message deduplication and limiting
  * - History load state tracking
  * - Overlay message broadcasting
+ * - High-throughput coalescing: live `addMessage` is flushed once per animation frame
+ *   to cut signal churn during 1000+ msg/min bursts (memory + CPU).
  *
  * All other services should read from this service, not duplicate its data.
  *
@@ -53,6 +54,10 @@ export class ChatStorageService {
   private readonly overlayBridge = inject(OverlaySourceBridgeService);
   private readonly messageTypeDetector = inject(MessageTypeDetectorService);
   private readonly blockedWordsService = inject(BlockedWordsService);
+
+  /** Live ingress batches (flushed on requestAnimationFrame). */
+  private readonly pendingBatches = new Map<string, ChatMessage[]>();
+  private batchRafId: number | null = null;
 
   readonly channelMessages = this.channelMessagesSignal.asReadonly();
   readonly loadedChannelsSet = this.loadedChannels.asReadonly();
@@ -117,7 +122,6 @@ export class ChatStorageService {
   }
 
   addMessage(channelId: string, message: ChatMessage): void {
-    // Apply blocked words filtering
     const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
       message.text,
       channelId
@@ -126,36 +130,23 @@ export class ChatStorageService {
       message.text = filtered;
     }
 
-    // Detect and assign message type before adding
     const { type, reason } = this.messageTypeDetector.detectMessageType(message);
     message.messageType = type;
     message.messageTypeReason = reason;
 
-    this.channelMessagesSignal.update((store) => {
-      const channelMessages = store[channelId] ?? [];
-      const existingIndex = channelMessages.findIndex((msg) => msg.id === message.id);
-
-      if (existingIndex !== -1) {
-        const updatedMessages = [...channelMessages];
-        updatedMessages[existingIndex] = message;
-        return { ...store, [channelId]: updatedMessages };
-      }
-
-      return {
-        ...store,
-        [channelId]: this.limitMessages(sortMessagesByRecency([...channelMessages, message])),
-      };
-    });
-    this.persistChannelMessages();
-
-    // Update last message time after adding
+    const q = this.pendingBatches.get(channelId);
+    if (q) {
+      q.push(message);
+    } else {
+      this.pendingBatches.set(channelId, [message]);
+    }
     this.messageTypeDetector.updateLastMessageTime(message);
-
-    // Forward to overlay via WebSocket
-    this.overlayBridge.forwardMessage(message);
+    this.scheduleBatchFlush();
   }
 
   addMessages(channelId: string, messages: ChatMessage[]): void {
+    this.flushPendingBatchesNow();
+
     // Sort messages chronologically (oldest first) for correct type detection
     const sortedMessages = [...messages].sort(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -202,6 +193,8 @@ export class ChatStorageService {
   }
 
   prependMessages(channelId: string, messages: ChatMessage[]): void {
+    this.flushPendingBatchesNow();
+
     // Sort messages chronologically (oldest first) for correct type detection
     const sortedMessages = [...messages].sort(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -249,6 +242,7 @@ export class ChatStorageService {
   }
 
   removeMessage(channelId: string, messageId: string): void {
+    this.flushPendingBatchesNow();
     this.channelMessagesSignal.update((store) => {
       const channelMessages = store[channelId];
 
@@ -265,6 +259,7 @@ export class ChatStorageService {
   }
 
   updateMessage(channelId: string, messageId: string, updates: Partial<ChatMessage>): void {
+    this.flushPendingBatchesNow();
     const channelMessages = this.channelMessagesSignal()[channelId];
     if (!channelMessages) {
       return;
@@ -302,6 +297,59 @@ export class ChatStorageService {
     if (shouldForward) {
       this.overlayBridge.forwardMessage(updated);
     }
+  }
+
+  private scheduleBatchFlush(): void {
+    if (this.batchRafId !== null) {
+      return;
+    }
+    this.batchRafId = requestAnimationFrame(() => {
+      this.batchRafId = null;
+      this.flushBatches();
+    });
+  }
+
+  /** Apply pending live messages (one signal update per frame per burst). */
+  private flushBatches(): void {
+    if (this.pendingBatches.size === 0) {
+      return;
+    }
+    const snapshot = new Map(this.pendingBatches);
+    this.pendingBatches.clear();
+
+    this.channelMessagesSignal.update((store) => {
+      let next: Record<string, ChatMessage[]> = { ...store };
+      for (const [channelId, incoming] of snapshot) {
+        if (incoming.length === 0) {
+          continue;
+        }
+        const channelMessages = next[channelId] ?? [];
+        const messageMap = new Map(channelMessages.map((msg) => [msg.id, msg]));
+        for (const message of incoming) {
+          messageMap.set(message.id, message);
+        }
+        next = {
+          ...next,
+          [channelId]: this.limitMessages(sortMessagesByRecency(Array.from(messageMap.values()))),
+        };
+      }
+      return next;
+    });
+    this.persistChannelMessages();
+
+    for (const incoming of snapshot.values()) {
+      for (const message of incoming) {
+        this.overlayBridge.forwardMessage(message);
+      }
+    }
+  }
+
+  private flushPendingBatchesNow(): void {
+    if (this.batchRafId !== null) {
+      cancelAnimationFrame(this.batchRafId);
+      this.batchRafId = null;
+    }
+    this.flushBatches();
   }
 
   private persistChannelMessages(): void {
@@ -352,6 +400,7 @@ export class ChatStorageService {
    * Called periodically to maintain healthy memory usage
    */
   pruneOldMessages(): void {
+    this.flushPendingBatchesNow();
     const now = Date.now();
     const maxAge = APP_CONFIG.OLD_MESSAGE_AGE_MS;
     const maxPerChannel = APP_CONFIG.MAX_MESSAGES_PER_CHANNEL;
@@ -405,6 +454,8 @@ export class ChatStorageService {
    * Clear messages for a specific channel (memory cleanup)
    */
   clearChannel(channelId: string): void {
+    this.flushPendingBatchesNow();
+    this.pendingBatches.delete(channelId);
     this.channelMessagesSignal.update((store) => {
       const newStore = { ...store };
       delete newStore[channelId];
@@ -422,6 +473,8 @@ export class ChatStorageService {
    * Clear all messages (full memory reset)
    */
   clearAllMessages(): void {
+    this.flushPendingBatchesNow();
+    this.pendingBatches.clear();
     this.channelMessagesSignal.set({});
     this.loadedChannels.set(new Set());
     this.historyLoadState.set({});

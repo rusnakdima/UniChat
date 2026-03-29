@@ -1,6 +1,7 @@
 use crate::helpers::auth_twitch_helper::{
   normalize_twitch_cdn_url, twitch_app_access_token, twitch_client_credentials,
 };
+use crate::helpers::http_client::shared_client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -155,7 +156,7 @@ pub async fn twitchFetchGlobalIcons() -> Result<IconsFetchResponseModel, String>
   let (client_id, client_secret) = twitch_client_credentials()?;
   let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
 
-  let client = reqwest::Client::new();
+  let client = shared_client();
 
   let badges_fut = client
     .get("https://api.twitch.tv/helix/chat/badges/global")
@@ -193,7 +194,7 @@ pub async fn twitchFetchChannelIcons(roomId: String) -> Result<IconsFetchRespons
   let (client_id, client_secret) = twitch_client_credentials()?;
   let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
 
-  let client = reqwest::Client::new();
+  let client = shared_client();
 
   let badges_fut = client
     .get("https://api.twitch.tv/helix/chat/badges")

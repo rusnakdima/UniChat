@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::constants::KICK_USER_AGENT;
+use crate::helpers::http_client::shared_client;
 
 #[derive(Debug, Deserialize)]
 pub struct KickChannelResponse {
@@ -30,10 +30,7 @@ pub async fn kickFetchChatroomId(channelSlug: String) -> Result<i64, String> {
   // We use the frontend's browser context to make the request, which has fewer restrictions.
   // This command is now a fallback - the frontend will try to fetch directly first.
 
-  let client = reqwest::Client::builder()
-    .user_agent(KICK_USER_AGENT)
-    .build()
-    .map_err(|e| e.to_string())?;
+  let client = shared_client();
 
   let url = format!("https://kick.com/api/v1/channels/{}", channelSlug);
 
@@ -75,10 +72,7 @@ pub async fn kickFetchChatroomId(channelSlug: String) -> Result<i64, String> {
 
 #[tauri::command]
 pub async fn kickFetchUserInfo(username: String) -> Result<KickUserInfo, String> {
-  let client = reqwest::Client::builder()
-    .user_agent(KICK_USER_AGENT)
-    .build()
-    .map_err(|e| e.to_string())?;
+  let client = shared_client();
 
   let url = format!("https://kick.com/api/v2/channels/{}", username);
 
@@ -120,10 +114,7 @@ pub async fn kickFetchRecentMessages(
   channelSlug: String,
   chatroomId: i64,
 ) -> Result<String, String> {
-  let client = reqwest::Client::builder()
-    .user_agent(KICK_USER_AGENT)
-    .build()
-    .map_err(|e| e.to_string())?;
+  let client = shared_client();
 
   let urls = [
     format!("https://kick.com/api/v2/chatrooms/{}/messages", chatroomId),

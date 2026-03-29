@@ -4,9 +4,9 @@
  */
 
 export const APP_CONFIG = {
-  // Message limits
-  MAX_MESSAGES_PER_CHANNEL: 2000, // Reduced from 4000 for better memory
-  MAX_MESSAGES_TOTAL: 10000, // Global limit across all channels
+  // Message limits (pairs with periodic prune + rAF-batched live ingress for 1000+ msg/min)
+  MAX_MESSAGES_PER_CHANNEL: 2000,
+  MAX_MESSAGES_TOTAL: 10000,
   MESSAGE_CACHE_SIZE: 10000,
 
   // History loading

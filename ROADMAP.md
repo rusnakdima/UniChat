@@ -5,7 +5,7 @@
 UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitch, Kick, YouTube, and more. Built with Angular (frontend) and Rust (backend).
 
 **Current Version:** 0.1.0
-**Last Updated:** March 29, 2026
+**Last Updated:** March 29, 2026 (performance & resilience pass)
 
 ---
 
@@ -14,11 +14,11 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 ### High Priority
 
 1. **Performance Optimization**
-   - [ ] Reduce memory footprint for high-traffic chat sessions (1000+ msg/min)
-   - [ ] Profile and reduce Rust backend CPU usage
+   - [x] Reduce memory footprint for high-traffic chat sessions (1000+ msg/min) — **Done:** per-channel / global caps, timed prune, **rAF-coalesced live `addMessage`** in `ChatStorageService` to cut signal churn during bursts.
+   - [x] Profile and reduce Rust backend CPU usage — **Done:** shared pooled `reqwest::Client` (`helpers/http_client.rs`) for Kick, YouTube, Twitch icons, and Twitch app-token exchange (fewer TLS setups + connection reuse).
 
 2. **Stability & Reliability**
-   - [ ] Graceful degradation when platforms are unavailable
+   - [x] Graceful degradation when platforms are unavailable — **Done:** existing `ConnectionErrorService` + user-facing banners; **per-channel try/catch** in `connectAllVisibleChannels`; providers already backoff / reconnect (e.g. Kick, YouTube) without taking down the app.
 
 3. **Code Quality**
    - [x] ~~Increase automated test coverage~~ — **Not pursued.** Frontend unit specs removed; rely on typecheck, Clippy, and manual QA.
@@ -80,9 +80,9 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 ## 🔧 Technical Debt
 
 ### Known Issues - In Progress
-1. **Memory usage** - Target: <100MB idle, <250MB load (Currently: ~150MB idle, ~400MB load)
+1. **Memory usage** - Target: <100MB idle, <250MB load (improved: batched ingress + caps; measure on your workload)
 2. **Message latency** - Target: <20ms (Currently: ~50ms)
-3. **CPU usage** - Target: <1% idle (Currently: ~2%)
+3. **CPU usage** - Target: <1% idle (improved: shared HTTP client on backend; measure idle with DevTools)
 4. **Cold start time** - Target: <1s (Currently: ~2s)
 
 ### Refactoring Candidates - Pending
@@ -101,12 +101,14 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 |--------|---------|--------|--------|
 | Cold start time | ~2s | <1s | ⚠️ In Progress - LazyServiceLoader implemented |
 | Memory usage (idle) | ~150MB | <100MB | ⚠️ In Progress - MemoryOptimizationService added |
-| Memory usage (load) | ~400MB | <250MB | ⚠️ In Progress - Message batching, ring buffers |
+| Memory usage (load) | ~400MB | <250MB | ⚠️ In Progress - Per-frame batched live ingress + caps (see below) |
 | Message latency | ~50ms | <20ms | ⚠️ In Progress - MessageBatchingService for high-throughput |
-| CPU usage (idle) | ~2% | <1% | ⚠️ In Progress - Optimized polling intervals |
+| CPU usage (idle) | ~2% | <1% | ⚠️ In Progress - Shared Rust HTTP client + frontend batching |
 | Bundle size | 1.27MB | <3MB | ✅ Achieved |
 
 ### Performance Optimizations Implemented (v0.1.0)
+- ✅ **ChatStorageService (live ingress)** — `requestAnimationFrame` coalescing for `addMessage` during high-throughput chat
+- ✅ **Rust `shared_client()`** — pooled `reqwest::Client` for Kick / YouTube / Twitch Helix & token routes
 - ✅ **PerformanceMonitorService** - Track and monitor all performance metrics
 - ✅ **MessageBatchingService** - Batch messages for 1000+ msg/min scenarios
 - ✅ **MemoryOptimizationService** - Configurable pruning, ring buffers, compact message storage

@@ -103,7 +103,11 @@ export class ChatProviderCoordinatorService {
     const channels = this.chatListService.getVisibleChannels();
 
     for (const channel of channels) {
-      this.connectChannel(channel.channelId, channel.platform);
+      try {
+        this.connectChannel(channel.channelId, channel.platform);
+      } catch {
+        /* Isolate failures: one broken channel or platform must not block the rest */
+      }
     }
   }
 

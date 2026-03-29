@@ -1,3 +1,4 @@
+use crate::helpers::http_client::shared_client;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::platform_type_model::PlatformTypeModel;
 use serde::Deserialize;
@@ -20,7 +21,7 @@ pub async fn twitch_app_access_token(
   client_id: &str,
   client_secret: Option<&str>,
 ) -> Result<String, String> {
-  let client = reqwest::Client::new();
+  let client = shared_client();
 
   let form = if let Some(secret) = client_secret {
     vec![
