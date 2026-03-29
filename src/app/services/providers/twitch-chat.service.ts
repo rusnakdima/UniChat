@@ -3,19 +3,14 @@ import { Injectable, inject } from "@angular/core";
 import tmi from "tmi.js";
 
 /* models */
-import {
-  ChatBadgeIcon,
-  ChatHistoryLoadState,
-  ChatMessage,
-  ChatMessageEmote,
-} from "@models/chat.model";
+import { ChatBadgeIcon, ChatHistoryLoadState, ChatMessage } from "@models/chat.model";
 
 /* services */
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
-import { EmoteUrlService } from "@services/ui/emote-url.service";
 import { IconsCatalogService } from "@services/ui/icons-catalog.service";
+import { TwitchEmotesService } from "@services/providers/twitch-emotes.service";
 import { ReconnectionService } from "@services/core/reconnection.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
@@ -136,7 +131,7 @@ export class TwitchChatService extends BaseChatProviderService {
     (channelId: string, status: TwitchConnectionStatus) => void
   >();
   private readonly iconsCatalog = inject(IconsCatalogService);
-  private readonly emoteUrl = inject(EmoteUrlService);
+  private readonly twitchEmotes = inject(TwitchEmotesService);
   private readonly errorService = inject(ConnectionErrorService);
   private readonly connectionStateService = inject(ConnectionStateService);
   private readonly reconnectionService = inject(ReconnectionService);
@@ -492,164 +487,6 @@ export class TwitchChatService extends BaseChatProviderService {
   }
 
   /**
-   * Fetch 7TV badges/emotes for a Twitch user (public API, no auth required)
-   * @param twitchUserId - Twitch user ID
-   * @returns Array of 7TV badge icons
-   */
-  async fetch7TVBadges(twitchUserId: string): Promise<ChatBadgeIcon[]> {
-    try {
-      const url = `https://7tv.io/v3/users/twitch/${encodeURIComponent(twitchUserId)}`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        return [];
-      }
-
-      const data = (await res.json()) as {
-        emote_sets?: Array<{
-          emotes?: Array<{
-            id?: string;
-            name?: string;
-            data?: {
-              common_names?: string[];
-              image_urls?: string[];
-            };
-          }>;
-        }>;
-      };
-
-      const badges: ChatBadgeIcon[] = [];
-      const emoteSets = data.emote_sets ?? [];
-
-      for (const set of emoteSets) {
-        const emotes = set.emotes ?? [];
-        for (const emote of emotes) {
-          const id = emote.id ?? "";
-          const name = emote.name ?? emote.data?.common_names?.[0] ?? "";
-          const imageUrl = emote.data?.image_urls?.[0] ?? "";
-
-          if (id && imageUrl) {
-            badges.push({
-              id: `7tv-${id}`,
-              label: name,
-              url: imageUrl,
-            });
-          }
-        }
-      }
-
-      return badges;
-    } catch {
-      return [];
-    }
-  }
-
-  /**
-   * Fetch BetterTTV badges/emotes for a Twitch user (public API, no auth required)
-   * @param twitchUserId - Twitch user ID
-   * @returns Array of BTTV badge icons
-   */
-  async fetchBTTVBadges(twitchUserId: string): Promise<ChatBadgeIcon[]> {
-    try {
-      const url = `https://api.betterttv.net/3/cached/users/twitch/${encodeURIComponent(twitchUserId)}`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        return [];
-      }
-
-      const data = (await res.json()) as {
-        sharedEmotes?: Array<{
-          id?: string;
-          code?: string;
-          imageType?: string;
-        }>;
-        personalEmotes?: Array<{
-          id?: string;
-          code?: string;
-          imageType?: string;
-        }>;
-      };
-
-      const badges: ChatBadgeIcon[] = [];
-      const emotes = [...(data.sharedEmotes ?? []), ...(data.personalEmotes ?? [])];
-
-      for (const emote of emotes) {
-        const id = emote.id ?? "";
-        const code = emote.code ?? "";
-        const imageType = emote.imageType ?? "png";
-
-        if (id && code) {
-          badges.push({
-            id: `bttv-${id}`,
-            label: code,
-            url: `https://cdn.betterttv.net/emote/${id}/1x.${imageType}`,
-          });
-        }
-      }
-
-      return badges;
-    } catch {
-      return [];
-    }
-  }
-
-  /**
-   * Fetch FrankerFaceZ badges/emotes for a Twitch user (public API, no auth required)
-   * @param username - Twitch username
-   * @returns Array of FFZ badge icons
-   */
-  async fetchFFZBadges(username: string): Promise<ChatBadgeIcon[]> {
-    try {
-      const url = `https://api.frankerfacez.com/v1/id/${encodeURIComponent(username)}`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        return [];
-      }
-
-      const data = (await res.json()) as {
-        sets?: Record<
-          string,
-          {
-            emoticons?: Array<{
-              id?: number;
-              name?: string;
-              urls?: Record<string, string>;
-            }>;
-          }
-        >;
-      };
-
-      const badges: ChatBadgeIcon[] = [];
-      const sets = data.sets ?? {};
-
-      for (const setKey of Object.keys(sets)) {
-        const set = sets[setKey];
-        const emoticons = set?.emoticons ?? [];
-
-        for (const emote of emoticons) {
-          const id = emote.id ?? 0;
-          const name = emote.name ?? "";
-          const imageUrl = emote.urls?.["1"] ?? emote.urls?.["2"] ?? emote.urls?.["4"] ?? "";
-
-          if (id && name && imageUrl) {
-            badges.push({
-              id: `ffz-${id}`,
-              label: name,
-              url: imageUrl,
-            });
-          }
-        }
-      }
-
-      return badges;
-    } catch {
-      return [];
-    }
-  }
-
-  /**
    * Fetch Twitch user viewer card from GraphQL API
    * This is the same API Twitch's frontend uses - no auth required for public data
    * @param channelLogin - The channel login name (e.g., "milanrodd")
@@ -774,8 +611,12 @@ export class TwitchChatService extends BaseChatProviderService {
     if (roomId) {
       void this.iconsCatalog.ensureChannelLoaded(roomId);
     }
-    const emotes = this.extractEmotes(normalizedText, tags, roomId);
-    const badgeIcons = this.extractBadgeIcons(tags, roomId);
+    const emotes = this.twitchEmotes.extractEmotesForTwitchMessage(
+      normalizedText,
+      tags.emotes,
+      roomId
+    );
+    const badgeIcons = this.twitchEmotes.extractBadgeIconsForTwitchMessage(tags.badges, roomId);
 
     const canDelete = channel?.accountCapabilities?.canDelete === true;
 
@@ -1079,87 +920,6 @@ export class TwitchChatService extends BaseChatProviderService {
           entry.channelName.toLowerCase() === normalizedChannel
       );
     return this.authorizationService.getAccountById(channel?.accountId);
-  }
-
-  private extractEmotes(
-    messageText: string,
-    tags: tmi.ChatUserstate,
-    roomId: string | undefined
-  ): ChatMessageEmote[] {
-    const result: ChatMessageEmote[] = [];
-
-    const twitchEmotes = tags.emotes ?? {};
-    for (const [emoteId, ranges] of Object.entries(twitchEmotes)) {
-      if (!/^\d+$/.test(String(emoteId))) {
-        continue;
-      }
-      for (const range of ranges) {
-        const [startRaw, endRaw] = range.split("-");
-        const start = Number(startRaw);
-        const end = Number(endRaw);
-        if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start) {
-          continue;
-        }
-        const code = messageText.slice(start, end + 1);
-        result.push({
-          provider: "twitch",
-          id: emoteId,
-          code,
-          start,
-          end,
-          url: this.emoteUrl.getTwitchEmote(emoteId),
-        });
-      }
-    }
-
-    // Add 7TV emotes by token if they do not overlap native Twitch emotes.
-    const tokenRegex = /\S+/g;
-    let match: RegExpExecArray | null;
-    while ((match = tokenRegex.exec(messageText))) {
-      const code = match[0];
-      const start = match.index;
-      const end = start + code.length - 1;
-      const overlaps = result.some((emote) => !(end < emote.start || start > emote.end));
-      if (overlaps) {
-        continue;
-      }
-
-      const seven = this.iconsCatalog.resolveSevenTvEmote(roomId, code);
-      if (!seven) {
-        continue;
-      }
-      result.push({
-        provider: "7tv",
-        id: seven.id,
-        code,
-        start,
-        end,
-        url: seven.url,
-      });
-    }
-
-    return result.sort((left, right) => left.start - right.start);
-  }
-
-  private extractBadgeIcons(tags: tmi.ChatUserstate, roomId: string | undefined): ChatBadgeIcon[] {
-    const badges = tags.badges ?? {};
-    const icons: ChatBadgeIcon[] = [];
-
-    for (const [badgeKey, badgeVersion] of Object.entries(badges)) {
-      if (!badgeVersion) {
-        continue;
-      }
-      const resolved = this.iconsCatalog.resolveTwitchBadgeIcon(roomId, badgeKey, badgeVersion);
-      if (resolved) {
-        icons.push({
-          id: resolved.id,
-          label: resolved.label,
-          url: resolved.url,
-        });
-      }
-    }
-
-    return icons;
   }
 
   private emitStatus(channelId: string, status: TwitchConnectionStatus): void {
