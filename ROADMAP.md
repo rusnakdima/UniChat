@@ -5,7 +5,7 @@
 UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitch, Kick, YouTube, and more. Built with Angular (frontend) and Rust (backend).
 
 **Current Version:** 0.1.0
-**Last Updated:** March 28, 2026
+**Last Updated:** March 29, 2026
 
 ---
 
@@ -21,8 +21,7 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
    - [ ] Graceful degradation when platforms are unavailable
 
 3. **Code Quality**
-   - [ ] Increase test coverage (target: 70%+)
-     - Current: ~35% (Rust: 44 tests, Frontend: 3 test files)
+   - [x] ~~Increase automated test coverage~~ — **Not pursued.** Frontend unit specs removed; rely on typecheck, Clippy, and manual QA.
 
 ### Medium Priority
 
@@ -48,8 +47,8 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 ### Backend (Rust/Tauri)
 
 #### Frontend Large Services (P2)
-- [ ] Extract emote/badge fetching from `twitch-chat.service.ts` (1166 lines)
-- [ ] Extract emote parsing from `kick-chat.service.ts` (500+ lines)
+- [x] Extract emote/badge fetching from `twitch-chat.service.ts` — **Done:** `twitch-viewer-card.service.ts`, `twitch-robotty-privmsg.parser.ts`; service ~579 lines (March 2026).
+- [x] Extract emote/event shaping from `kick-chat.service.ts` — **Done:** `kick-chat-event.mapper.ts`; service ~399 lines (March 2026).
 
 #### Future Architecture (P3)
 - [ ] Implement plugin architecture for new platforms (v0.2.0)
@@ -74,8 +73,7 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 - [ ] Cloud sync for settings (optional)
 - [ ] AI-powered chat filtering (optional)
 - [ ] State management centralization (Signals/NgRx)
-- [ ] Web Workers for message parsing (for 1000+ msg/min scenarios)
-- [ ] IndexedDB for chat history caching
+- [ ] Extend Web Workers / parsing pipeline for heavier workloads (baseline worker + IndexedDB caching already in v0.1.0; see Performance Optimizations below)
 
 ---
 
@@ -89,7 +87,7 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 
 ### Refactoring Candidates - Pending
 1. **Component structure** - Break down large components (>500 lines)
-   - `twitch-chat.service.ts`: 1166 lines
+   - `twitch-chat.service.ts`: ~579 lines (viewer card + Robotty IRC parsing extracted)
    - `chat-message-card.component.ts`: 260+ lines
 2. **State management** - Centralize with NgRx or Signals (v0.2.0)
 3. **Helper function extraction** - Split large route files (icons.route.rs, youtube.route.rs)
@@ -120,7 +118,7 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 ### Quality Targets
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Test coverage | ~35% | 70%+ | ⚠️ In Progress |
+| Automated tests | Not maintained | Optional | ⚠️ N/A — manual QA + static checks |
 | Linter violations | 0 | 0 | ✅ Achieved |
 | TypeScript strict mode | Full | Full | ✅ Achieved |
 | Documentation coverage | ~70% | 80%+ | ⚠️ In Progress |
@@ -143,7 +141,7 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 - **TypeScript**: Strict mode, ESLint rules ✅
 - **Rust**: Clippy warnings as errors, rustfmt ✅
 - **Commits**: Conventional Commits specification ✅
-- **PRs**: Include tests, update documentation
+- **PRs**: Update documentation where behavior changes; add tests only when introducing a durable test harness
 
 ### Available Scripts
 ```bash
@@ -173,7 +171,7 @@ npm run lint:all              # Check all linting
 - ✅ Dead code: 6 → 0 instances  
 - ✅ Lock acquisitions: 3 → 1 (67% reduction)
 - ✅ Clippy warnings: 2 → 0
-- ✅ Integration tests: 0 → 44 tests
+- ✅ Service modularization and lint/format discipline (automated test count not a current KPI)
 - ✅ Bundle size: ~5MB → 1.27MB (75% reduction)
 - ✅ Web Workers: Added for message parsing
 - ✅ IndexedDB: Added for chat history
