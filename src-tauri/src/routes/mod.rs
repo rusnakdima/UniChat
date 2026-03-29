@@ -1,11 +1,8 @@
-#[path = "provider.route.rs"]
-pub mod provider_route;
+// Allow non_snake_case for Tauri IPC commands (camelCase is the convention for JavaScript interop)
+#![allow(non_snake_case)]
 
 #[path = "auth_provider.route.rs"]
 pub mod auth_provider_route;
-
-#[path = "twitch_badges.route.rs"]
-pub mod twitch_badges_route;
 
 #[path = "overlay.route.rs"]
 pub mod overlay_route;

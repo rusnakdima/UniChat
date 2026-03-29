@@ -64,9 +64,4 @@ impl OverlayServerService {
     }
     Ok(())
   }
-
-  /// Get the server state for broadcasting messages
-  pub fn state(&self) -> &OverlayServerState {
-    &self.state
-  }
 }

@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::models::auth_account_model::AuthAccountModel;
 use crate::models::auth_oauth_model::OAuthTokenModel;
-use crate::models::provider_contract_model::{PlatformKey, PlatformTypeModel};
+use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -104,7 +104,7 @@ impl TokenVaultService {
     // Fallback to keyring (slow path)
     let entry = Entry::new(
       &self.service_name,
-      &format!("oauth-{}-{}", platform.asKey(), account_id),
+      &format!("oauth-{}-{}", platform.as_key(), account_id),
     )
     .map_err(|e| format!("keyring init failed: {e}"))?;
 
@@ -123,7 +123,7 @@ impl TokenVaultService {
   pub fn delete_token(&self, platform: &PlatformTypeModel, account_id: &str) -> Result<(), String> {
     let entry = Entry::new(
       &self.service_name,
-      &format!("oauth-{}-{}", platform.asKey(), account_id),
+      &format!("oauth-{}-{}", platform.as_key(), account_id),
     )
     .map_err(|e| format!("keyring init failed: {e}"))?;
 
@@ -139,34 +139,15 @@ impl TokenVaultService {
     }
   }
 
+  /// Read all accounts for a platform from keyring
   pub fn read_accounts(
     &self,
     platform: &PlatformTypeModel,
   ) -> Result<Vec<AuthAccountModel>, String> {
-    let account_ids = self.read_account_index(platform)?;
-    let mut accounts = Vec::new();
-
-    for account_id in account_ids {
-      let entry = Entry::new(
-        &self.service_name,
-        &format!("oauth-{}-{}", platform.asKey(), account_id),
-      )
-      .map_err(|e| format!("keyring init failed: {e}"))?;
-      match entry.get_password() {
-        Ok(raw) => {
-          let record = serde_json::from_str::<AccountVaultRecord>(&raw)
-            .map_err(|e| format!("token parse failed: {e}"))?;
-          accounts.push(record.account);
-        }
-        Err(keyring::Error::NoEntry) => {}
-        Err(e) => return Err(format!("token read failed: {e}")),
-      }
-    }
-
-    Ok(accounts)
+    self.read_accounts_internal(platform)
   }
 
-  /// Internal method to read accounts (for cache loading)
+  /// Internal method to read accounts (for cache loading and public API)
   fn read_accounts_internal(
     &self,
     platform: &PlatformTypeModel,
@@ -177,7 +158,7 @@ impl TokenVaultService {
     for account_id in account_ids {
       let entry = Entry::new(
         &self.service_name,
-        &format!("oauth-{}-{}", platform.asKey(), account_id),
+        &format!("oauth-{}-{}", platform.as_key(), account_id),
       )
       .map_err(|e| format!("keyring init failed: {e}"))?;
       match entry.get_password() {
@@ -214,11 +195,11 @@ impl TokenVaultService {
   }
 
   fn account_key(&self, account: &AuthAccountModel) -> String {
-    format!("oauth-{}-{}", account.platform.asKey(), account.id)
+    format!("oauth-{}-{}", account.platform.as_key(), account.id)
   }
 
   fn index_key(&self, platform: &PlatformTypeModel) -> String {
-    format!("oauth-{}-index", platform.asKey())
+    format!("oauth-{}-index", platform.as_key())
   }
 
   fn read_account_index(&self, platform: &PlatformTypeModel) -> Result<Vec<String>, String> {

@@ -1,4 +1,4 @@
-use crate::models::provider_contract_model::PlatformTypeModel;
+use crate::models::platform_type_model::PlatformTypeModel;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -110,8 +110,8 @@ fn parse_dotenv(dotenv_content: &str) -> HashMap<String, String> {
 
       let mut parts = trimmed.splitn(2, '=');
       let key = parts.next()?.trim().to_string();
-      let rawValue = parts.next()?.trim();
-      let value = rawValue.trim_matches('"').trim_matches('\'').to_string();
+      let raw_value = parts.next()?.trim();
+      let value = raw_value.trim_matches('"').trim_matches('\'').to_string();
       Some((key, value))
     })
     .collect()

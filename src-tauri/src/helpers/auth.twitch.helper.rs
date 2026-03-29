@@ -1,5 +1,5 @@
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
-use crate::models::provider_contract_model::PlatformTypeModel;
+use crate::models::platform_type_model::PlatformTypeModel;
 use serde::Deserialize;
 
 #[derive(Deserialize)]

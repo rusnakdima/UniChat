@@ -27,7 +27,9 @@ app-root {
   @apply flex min-h-0 flex-1 flex-col overflow-y-auto;
 }
 
-/* Custom Checkbox Styling (TaskFlow-inspired) */
+/* Custom Checkbox & Radio Styling (TaskFlow-inspired) */
+
+/* ===== Custom Checkbox ===== */
 input[type="checkbox"].peer {
   @apply sr-only;
 }
@@ -48,6 +50,45 @@ input[type="checkbox"].peer:checked + .checkmark::before {
 input[type="checkbox"].peer:checked + .checkmark::after {
   content: "";
   @apply absolute h-2.5 w-2.5 bg-white rounded-sm top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+}
+
+input[type="checkbox"].peer:focus + .checkmark::before {
+  @apply ring-2 ring-blue-500/30;
+}
+
+input[type="checkbox"].peer:disabled + .checkmark::before {
+  @apply bg-red-700 border-red-700 cursor-not-allowed;
+}
+
+/* ===== Custom Radio Button ===== */
+input[type="radio"].peer {
+  @apply sr-only;
+}
+
+input[type="radio"].peer + .radio-mark {
+  @apply relative inline-flex h-5 w-5 cursor-pointer items-center justify-center;
+}
+
+input[type="radio"].peer + .radio-mark::before {
+  content: "";
+  @apply h-5 w-5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-transparent transition-all duration-200;
+}
+
+input[type="radio"].peer:checked + .radio-mark::before {
+  @apply bg-blue-600 border-blue-500;
+}
+
+input[type="radio"].peer:checked + .radio-mark::after {
+  content: "";
+  @apply absolute h-2 w-2 bg-white rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+}
+
+input[type="radio"].peer:focus + .radio-mark::before {
+  @apply ring-2 ring-blue-500/30;
+}
+
+input[type="radio"].peer:disabled + .radio-mark::before {
+  @apply bg-red-700 border-red-700 cursor-not-allowed;
 }
 
 /* ===== Chat Emote Styling ===== */
@@ -81,14 +122,6 @@ input[type="checkbox"].peer:checked + .checkmark::after {
   width: auto;
   max-width: 60px;
   height: 24px;
-}
-
-input[type="checkbox"].peer:focus + .checkmark::before {
-  @apply ring-2 ring-blue-500/30;
-}
-
-input[type="checkbox"].peer:disabled + .checkmark::before {
-  @apply bg-red-700 border-red-700 cursor-not-allowed;
 }
 
 .material-icons,

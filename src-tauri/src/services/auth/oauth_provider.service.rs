@@ -8,9 +8,10 @@ use chrono::{Duration, Utc};
 use reqwest::Client;
 use url::Url;
 
+use crate::constants::OAUTH_CALLBACK_TIMEOUT_SECS;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::auth_account_model::{AuthAccountModel, AuthStatusModel};
-use crate::models::provider_contract_model::{PlatformKey, PlatformTypeModel};
+use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
 use crate::services::auth::oauth_helpers::{
   extract_callback_params, parse_loopback_redirect, pkce_challenge,
 };
@@ -54,7 +55,7 @@ impl OAuthProviderService {
     let (host, port, path) = parse_loopback_redirect(&config.redirect_uri)?;
     self
       .oauth_loopback_service
-      .start_listener(platform.asKey(), &host, port, &path)?;
+      .start_listener(platform.as_key(), &host, port, &path)?;
     let session = self.oauth_state_service.create_session(&platform)?;
     let code_challenge = pkce_challenge(&session.code_verifier);
     let scope = config.scopes.join(" ");
@@ -81,7 +82,7 @@ impl OAuthProviderService {
   ) -> Result<AuthAccountModel, String> {
     let callback_url = self
       .oauth_loopback_service
-      .wait_for_callback(platform.asKey(), 240)?;
+      .wait_for_callback(platform.as_key(), OAUTH_CALLBACK_TIMEOUT_SECS)?;
     self.complete_auth(platform, callback_url).await
   }
 
@@ -118,7 +119,7 @@ impl OAuthProviderService {
       .expires_in_seconds
       .map(|seconds| (Utc::now() + Duration::seconds(seconds)).to_rfc3339());
     let account = AuthAccountModel {
-      id: format!("acc-{}-{}", platform.asKey(), user_id),
+      id: format!("acc-{}-{}", platform.as_key(), user_id),
       platform: platform.clone(),
       username,
       user_id,
@@ -180,19 +181,11 @@ impl OAuthProviderService {
         match self.http.post(revoke_url).form(&form).send().await {
           Ok(response) => {
             if !response.status().is_success() {
-              tracing::warn!(
-                "OAuth token revocation failed for {} (status: {})",
-                platform.asKey(),
-                response.status()
-              );
+              // Token revocation failed (best effort, ignore)
             }
           }
-          Err(e) => {
-            tracing::warn!(
-              "OAuth token revocation request failed for {}: {}",
-              platform.asKey(),
-              e
-            );
+          Err(_) => {
+            // Token revocation request failed (best effort, ignore)
           }
         }
       }

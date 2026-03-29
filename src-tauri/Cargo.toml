@@ -39,13 +39,6 @@ hyper = { version = "1", features = ["server"] }
 lazy_static = "1"
 once_cell = "1"
 
-# Structured logging
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-
-# Error handling
-thiserror = "1"
-
 # Testing
 [dev-dependencies]
 tokio-test = "0.4"

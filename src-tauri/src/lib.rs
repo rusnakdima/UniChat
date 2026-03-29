@@ -1,6 +1,4 @@
-#![allow(non_snake_case)]
-
-pub mod errors;
+pub mod constants;
 pub mod helpers;
 pub mod models;
 pub mod routes;
@@ -8,7 +6,6 @@ pub mod services;
 
 use std::sync::Arc;
 use tauri::Manager;
-use tracing::info;
 
 use crate::routes::auth_provider_route::{
   authAwaitCallback, authComplete, authDisconnect, authStart, authStatus,
@@ -16,110 +13,59 @@ use crate::routes::auth_provider_route::{
 use crate::routes::icons_route::{twitchFetchChannelIcons, twitchFetchGlobalIcons};
 use crate::routes::kick_route::{kickFetchChatroomId, kickFetchRecentMessages, kickFetchUserInfo};
 use crate::routes::overlay_route::{
-  emitOverlayConfigChanged, getOverlayConfig, getOverlayMessages, getOverlayUrl,
-  initOverlayConfigFromStorage, openOverlayWindow, sendOverlayMessage, startOverlayServer,
-  stopOverlayServer,
+  emitOverlayConfigChanged, getOverlayConfig, initOverlayConfigFromStorage, openOverlayWindow,
+  startOverlayServer, stopOverlayServer,
 };
-use crate::routes::provider_route::{
-  connectPlatform, deleteMessage, disconnectPlatform, listenPlatformMessages,
-  providerCapabilityLookup, replyToMessage,
-};
-use crate::routes::twitch_badges_route::{twitchFetchChannelBadges, twitchFetchGlobalBadges};
-use crate::routes::youtube_route::{
-  youtubeDeleteMessage, youtubeFetchChatMessages, youtubeFetchLiveChatId, youtubeGetLiveVideoId,
-  youtubeSendMessage,
-};
+use crate::routes::youtube_route::youtubeFetchChatMessages;
 use crate::services::auth::oauth_provider_service::OAuthProviderService;
-use crate::services::message_filter_service::MessageFilterService;
-use crate::services::message_router_service::MessageRouterService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
 
 pub struct AppState {
-  pub oauthProviderService: Arc<OAuthProviderService>,
-  pub overlayServerService: Arc<OverlayServerService>,
-  pub messageRouterService: Arc<MessageRouterService>,
-  pub messageFilterService: Arc<MessageFilterService>,
+  pub oauth_provider_service: Arc<OAuthProviderService>,
+  pub overlay_server_service: Arc<OverlayServerService>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  info!("🏗️  Initializing Tauri application...");
-
   tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_deep_link::init())
     .setup(|app| {
-      info!("⚙️  Setting up application state...");
-
       let frontend_dist_dir = resolve_frontend_dist_dir();
 
       // Initialize overlay server
       let overlay_server = Arc::new(OverlayServerService::new(frontend_dist_dir));
-      info!("📡 Overlay server initialized");
-
-      // Initialize message filter service
-      let message_filter = Arc::new(MessageFilterService::new());
-      info!("🔧 Message filter service initialized");
-
-      // Initialize message router service (will be wired to overlay server after start)
-      let message_router = Arc::new(MessageRouterService::new(1000, None));
-      info!("📨 Message router service initialized");
 
       app.manage(AppState {
-        oauthProviderService: Arc::new(OAuthProviderService::new()),
-        overlayServerService: overlay_server,
-        messageRouterService: message_router,
-        messageFilterService: message_filter,
+        oauth_provider_service: Arc::new(OAuthProviderService::new()),
+        overlay_server_service: overlay_server,
       });
-      info!("✅ Application state managed");
 
       Ok(())
     })
     .on_window_event(|_window, event| match event {
-      tauri::WindowEvent::CloseRequested { .. } => {
-        info!("🚪 Window close requested");
-      }
-      tauri::WindowEvent::Focused(focused) => {
-        if *focused {
-          info!("👁️  Window focused");
-        }
-      }
+      tauri::WindowEvent::CloseRequested { .. } => {}
+      tauri::WindowEvent::Focused(focused) => if *focused {},
       _ => {}
     })
     .invoke_handler(tauri::generate_handler![
-      connectPlatform,
-      disconnectPlatform,
-      listenPlatformMessages,
-      replyToMessage,
-      deleteMessage,
-      providerCapabilityLookup,
       authStart,
       authAwaitCallback,
       authComplete,
       authStatus,
       authDisconnect,
-      twitchFetchGlobalBadges,
-      twitchFetchChannelBadges,
       twitchFetchGlobalIcons,
       twitchFetchChannelIcons,
       startOverlayServer,
       stopOverlayServer,
-      getOverlayUrl,
       openOverlayWindow,
       emitOverlayConfigChanged,
+      initOverlayConfigFromStorage,
       getOverlayConfig,
-      sendOverlayMessage,
-      getOverlayMessages,
-      youtubeFetchLiveChatId,
-      youtubeSendMessage,
-      youtubeDeleteMessage,
-      youtubeGetLiveVideoId,
       youtubeFetchChatMessages,
       kickFetchChatroomId,
       kickFetchRecentMessages,
       kickFetchUserInfo,
-      initOverlayConfigFromStorage,
-      sendOverlayMessage,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

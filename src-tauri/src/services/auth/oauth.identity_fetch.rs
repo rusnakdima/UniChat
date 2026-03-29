@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use crate::helpers::oauth_config_helper::OAuthProviderConfig;
 use crate::models::auth_oauth_model::OAuthTokenModel;
-use crate::models::provider_contract_model::PlatformTypeModel;
+use crate::models::platform_type_model::PlatformTypeModel;
 
 /// Fetch user identity from OAuth provider
 /// Returns (username, user_id) tuple

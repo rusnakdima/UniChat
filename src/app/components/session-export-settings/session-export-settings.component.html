@@ -1,4 +1,4 @@
-<section
+<div
   class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
 >
   <h2 class="text-lg font-semibold">Session Export</h2>
@@ -10,33 +10,36 @@
   <div class="mt-4 space-y-4">
     <!-- Format Selection -->
     <div class="flex gap-4">
-      <label class="flex items-center gap-2 text-sm">
+      <label class="flex items-center gap-2 text-sm cursor-pointer">
         <input
           type="radio"
           [(ngModel)]="format"
           [value]="'json'"
-          class="text-emerald-600 focus:ring-emerald-500"
+          class="peer"
         />
+        <span class="radio-mark"></span>
         <span>JSON</span>
       </label>
-      <label class="flex items-center gap-2 text-sm">
+      <label class="flex items-center gap-2 text-sm cursor-pointer">
         <input
           type="radio"
           [(ngModel)]="format"
           [value]="'csv'"
-          class="text-emerald-600 focus:ring-emerald-500"
+          class="peer"
         />
+        <span class="radio-mark"></span>
         <span>CSV</span>
       </label>
     </div>
 
     <!-- Include Metadata -->
-    <label class="flex items-center gap-2 text-sm">
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
       <input
         type="checkbox"
         [(ngModel)]="includeMetadata"
-        class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-white/20 dark:bg-black/20"
+        class="peer"
       />
+      <span class="checkmark"></span>
       <span>Include metadata (message IDs, user IDs, etc.)</span>
     </label>
 
@@ -86,15 +89,15 @@
         @for (channel of channels(); track channel.id) {
           <button
             type="button"
-            (click)="toggleChannel(channel.channelId)"
+            (click)="toggleChannel(channelRefFor(channel))"
             class="rounded-full border px-3 py-1 text-xs font-medium transition"
             [class]="
-              selectedChannels().includes(channel.channelId)
+              selectedChannels().includes(channelRefFor(channel))
                 ? 'border-emerald-500 bg-emerald-500 text-white'
                 : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-black/20 dark:text-slate-300'
             "
           >
-            {{ channel.channelName }}
+            {{ channel.channelName }} ({{ channel.platform }})
           </button>
         }
       </div>
@@ -158,4 +161,4 @@
       </span>
     </button>
   </div>
-</section>
+</div>

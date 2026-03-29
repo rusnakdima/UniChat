@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::constants::KICK_USER_AGENT;
+
 #[derive(Debug, Deserialize)]
 pub struct KickChannelResponse {
   pub id: Option<i64>,
@@ -29,7 +31,7 @@ pub async fn kickFetchChatroomId(channelSlug: String) -> Result<i64, String> {
   // This command is now a fallback - the frontend will try to fetch directly first.
 
   let client = reqwest::Client::builder()
-    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+    .user_agent(KICK_USER_AGENT)
     .build()
     .map_err(|e| e.to_string())?;
 
@@ -74,7 +76,7 @@ pub async fn kickFetchChatroomId(channelSlug: String) -> Result<i64, String> {
 #[tauri::command]
 pub async fn kickFetchUserInfo(username: String) -> Result<KickUserInfo, String> {
   let client = reqwest::Client::builder()
-    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    .user_agent(KICK_USER_AGENT)
     .build()
     .map_err(|e| e.to_string())?;
 
@@ -119,7 +121,7 @@ pub async fn kickFetchRecentMessages(
   chatroomId: i64,
 ) -> Result<String, String> {
   let client = reqwest::Client::builder()
-    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+    .user_agent(KICK_USER_AGENT)
     .build()
     .map_err(|e| e.to_string())?;
 

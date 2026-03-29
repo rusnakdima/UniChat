@@ -1,4 +1,5 @@
-pub mod provider_contract_model;
+#[path = "platform_type.model.rs"]
+pub mod platform_type_model;
 
 #[path = "auth_account.model.rs"]
 pub mod auth_account_model;

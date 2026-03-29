@@ -22,7 +22,7 @@ pub struct OverlayFullConfigModel {
   pub widget_id: String,
   pub filter: String,
   pub custom_css: String,
-  pub channel_ids: Vec<String>,
+  pub channel_ids: Option<Vec<String>>,
   pub text_size: u32,
   pub animation_type: String,
   pub animation_direction: String,
@@ -37,7 +37,7 @@ pub async fn startOverlayServer(
   port: u16,
   state: tauri::State<'_, crate::AppState>,
 ) -> Result<OverlayServerStartResultModel, String> {
-  state.overlayServerService.clone().start(port).await?;
+  state.overlay_server_service.clone().start(port).await?;
 
   Ok(OverlayServerStartResultModel {
     port,
@@ -48,20 +48,7 @@ pub async fn startOverlayServer(
 /// Stop the local overlay HTTP/WS server.
 #[tauri::command]
 pub async fn stopOverlayServer(state: tauri::State<'_, crate::AppState>) -> Result<(), String> {
-  state.overlayServerService.clone().stop().await
-}
-
-/// Compute the overlay URL (same format Angular helper uses).
-#[tauri::command]
-pub fn getOverlayUrl(port: u16, widgetId: String) -> Result<String, String> {
-  if widgetId.trim().is_empty() {
-    return Err("widgetId required".to_string());
-  }
-
-  Ok(format!(
-    "http://127.0.0.1:{port}/overlay?widgetId={}",
-    widgetId.trim()
-  ))
+  state.overlay_server_service.clone().stop().await
 }
 
 /// Open the overlay in a new native window with transparency support.
@@ -95,7 +82,11 @@ pub async fn openOverlayWindow(
   let _window = WebviewWindowBuilder::new(
     &app,
     &window_label,
-    WebviewUrl::External(overlay_url.parse().unwrap()),
+    WebviewUrl::External(
+      overlay_url
+        .parse()
+        .map_err(|e| format!("Invalid overlay URL: {}", e))?,
+    ),
   )
   .title("UniChat Overlay Preview")
   .inner_size(500.0, 700.0)
@@ -111,7 +102,6 @@ pub async fn openOverlayWindow(
 }
 
 use lazy_static::lazy_static;
-/// Overlay configuration storage for cross-window sync
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 
@@ -131,7 +121,7 @@ pub async fn emitOverlayConfigChanged(
   timestamp: u64,
   filter: String,
   custom_css: String,
-  channel_ids: Vec<String>,
+  channel_ids: Option<Vec<String>>,
   text_size: u32,
   animation_type: String,
   animation_direction: String,
@@ -170,13 +160,6 @@ pub async fn emitOverlayConfigChanged(
   Ok(())
 }
 
-/// Get stored overlay config for a widget
-#[tauri::command]
-pub async fn getOverlayConfig(widget_id: String) -> Result<Option<OverlayFullConfigModel>, String> {
-  let configs = OVERLAY_CONFIGS.read().await;
-  Ok(configs.get(&widget_id).cloned())
-}
-
 /// Initialize overlay config from client-side storage (called on app startup)
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
@@ -184,7 +167,7 @@ pub async fn initOverlayConfigFromStorage(
   widget_id: String,
   filter: String,
   custom_css: String,
-  channel_ids: Vec<String>,
+  channel_ids: Option<Vec<String>>,
   text_size: u32,
   animation_type: String,
   animation_direction: String,
@@ -220,71 +203,9 @@ pub async fn initOverlayConfigFromStorage(
   Ok(())
 }
 
-/// Send a message to overlay storage for a widget
+/// Get overlay configuration for a widget
 #[tauri::command]
-pub async fn sendOverlayMessage(
-  widget_id: String,
-  message: OverlayMessageModel,
-) -> Result<(), String> {
-  let mut messages = OVERLAY_MESSAGES.write().await;
-
-  let widget_messages = messages.entry(widget_id.clone()).or_insert_with(Vec::new);
-
-  // Check if message already exists (update instead of duplicate)
-  if let Some(existing) = widget_messages.iter_mut().find(|m| m.id == message.id) {
-    *existing = message.clone();
-  } else {
-    // Add new message, keep only last 100
-    widget_messages.push(message.clone());
-    if widget_messages.len() > 100 {
-      widget_messages.remove(0);
-    }
-  }
-
-  Ok(())
-}
-
-/// Get messages for a widget (returns most recent messages up to limit, filtered by channel IDs if provided)
-/// Channel IDs use composite key format: "platform:channelName" (e.g., "twitch:bratishkinoff")
-#[tauri::command]
-pub async fn getOverlayMessages(
-  widget_id: String,
-  limit: usize,
-  channel_ids: Option<Vec<String>>,
-) -> Result<Vec<OverlayMessageModel>, String> {
-  let messages = OVERLAY_MESSAGES.read().await;
-
-  let widget_messages = messages.get(&widget_id);
-
-  if let Some(msgs) = widget_messages {
-    // Filter by channel IDs if provided
-    let filtered: Vec<OverlayMessageModel> = if let Some(ids) = &channel_ids {
-      if ids.is_empty() {
-        // Empty channel list means no channels selected - return empty
-        Vec::new()
-      } else {
-        // Only return messages from enabled channels
-        // Use composite key (platform:source_channel_id) to match filter
-        msgs
-          .iter()
-          .filter(|m| {
-            let composite_key = format!("{}:{}", m.platform, m.source_channel_id);
-            ids.contains(&composite_key)
-          })
-          .cloned()
-          .collect()
-      }
-    } else {
-      // No channel filter provided - return all messages
-      msgs.clone()
-    };
-
-    // Return messages sorted by timestamp (newest first), limited to count
-    let mut sorted = filtered;
-    sorted.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-
-    Ok(sorted.into_iter().take(limit).collect())
-  } else {
-    Ok(Vec::new())
-  }
+pub async fn getOverlayConfig(widget_id: String) -> Result<Option<OverlayFullConfigModel>, String> {
+  let configs = OVERLAY_CONFIGS.read().await;
+  Ok(configs.get(&widget_id).cloned())
 }

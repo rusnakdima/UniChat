@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::provider_contract_model::PlatformTypeModel;
+use crate::models::platform_type_model::PlatformTypeModel;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

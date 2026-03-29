@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::overlay_message_model::ChatMessageEmoteModel;
-use super::provider_contract_model::PlatformTypeModel;
+use super::platform_type_model::PlatformTypeModel;
 
 /// Canonical chat message model used throughout the application
 /// This is the single source of truth for chat messages
@@ -78,58 +78,5 @@ impl ChatMessageModel {
       is_deleted: false,
       reply_to_message_id: None,
     }
-  }
-
-  /// Builder-style method to set supporter status
-  pub fn with_supporter(mut self, is_supporter: bool) -> Self {
-    self.is_supporter = is_supporter;
-    self
-  }
-
-  /// Builder-style method to set avatar URL
-  pub fn with_avatar(mut self, url: Option<String>) -> Self {
-    self.author_avatar_url = url;
-    self
-  }
-
-  /// Builder-style method to set badges
-  pub fn with_badges(mut self, badges: Vec<String>) -> Self {
-    self.badges = badges;
-    self
-  }
-
-  /// Builder-style method to set emotes
-  pub fn with_emotes(mut self, emotes: Option<Vec<ChatMessageEmoteModel>>) -> Self {
-    self.emotes = emotes;
-    self
-  }
-
-  /// Builder-style method to set raw payload
-  pub fn with_raw_payload(mut self, payload: Option<serde_json::Value>) -> Self {
-    self.raw_payload = payload;
-    self
-  }
-
-  /// Check if message has emotes
-  pub fn has_emotes(&self) -> bool {
-    self.emotes.as_ref().is_some_and(|e| !e.is_empty())
-  }
-
-  /// Get emote count
-  pub fn emote_count(&self) -> usize {
-    self.emotes.as_ref().map_or(0, |e| e.len())
-  }
-
-  /// Check if message has a specific badge
-  pub fn has_badge(&self, badge: &str) -> bool {
-    self
-      .badges
-      .iter()
-      .any(|b| b.to_lowercase() == badge.to_lowercase())
-  }
-
-  /// Check if message is from a specific platform
-  pub fn is_from_platform(&self, platform: PlatformTypeModel) -> bool {
-    std::mem::discriminant(&self.platform) == std::mem::discriminant(&platform)
   }
 }

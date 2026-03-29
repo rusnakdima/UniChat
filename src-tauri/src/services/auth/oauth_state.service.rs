@@ -4,8 +4,9 @@ use std::sync::Mutex;
 use chrono::Utc;
 use rand::{distributions::Alphanumeric, Rng};
 
+use crate::constants::{OAUTH_CODE_VERIFIER_LENGTH, OAUTH_STATE_LENGTH};
 use crate::models::auth_oauth_model::OAuthPendingSessionModel;
-use crate::models::provider_contract_model::{PlatformKey, PlatformTypeModel};
+use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
 
 pub struct OAuthStateService {
   sessions: Mutex<HashMap<String, OAuthPendingSessionModel>>,
@@ -28,10 +29,14 @@ impl OAuthStateService {
     &self,
     platform: &PlatformTypeModel,
   ) -> Result<OAuthPendingSessionModel, String> {
-    let state = format!("{}-{}", platform.asKey(), randomString(32));
+    let state = format!(
+      "{}-{}",
+      platform.as_key(),
+      random_string(OAUTH_STATE_LENGTH)
+    );
     let session = OAuthPendingSessionModel {
       state: state.clone(),
-      code_verifier: randomString(64),
+      code_verifier: random_string(OAUTH_CODE_VERIFIER_LENGTH),
       created_at: Utc::now().timestamp(),
     };
 
@@ -54,7 +59,7 @@ impl OAuthStateService {
   }
 }
 
-fn randomString(len: usize) -> String {
+fn random_string(len: usize) -> String {
   rand::thread_rng()
     .sample_iter(&Alphanumeric)
     .take(len)

@@ -148,7 +148,7 @@
             <p class="text-xs text-slate-600 dark:text-slate-400">
               {{
                 selectedChannelIds.length === 0
-                  ? "Showing all channels"
+                  ? "Showing no channels"
                   : "Showing selected channels only"
               }}
             </p>
@@ -187,8 +187,8 @@
                   <input
                     type="checkbox"
                     class="peer sr-only"
-                    [checked]="isChannelSelected(channel.platform, channel.channelName)"
-                    (change)="toggleChannel(channel.platform, channel.channelName)"
+                    [checked]="isChannelSelected(channelSelectionValue(channel))"
+                    (change)="toggleChannel(channelSelectionValue(channel))"
                   />
                   <div class="checkmark"></div>
                 </div>
@@ -232,12 +232,13 @@ h3 { font-size: 18px; } */"
         <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
           Remove background for OBS browser source
         </p>
-        <label class="mt-3 flex items-center gap-3">
+        <label class="mt-3 flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
             [(ngModel)]="transparentBg"
-            class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-white/20 dark:bg-black/20"
+            class="peer"
           />
+          <span class="checkmark"></span>
           <span class="text-sm font-medium text-slate-700 dark:text-slate-300"
             >Enable transparent background</span
           >

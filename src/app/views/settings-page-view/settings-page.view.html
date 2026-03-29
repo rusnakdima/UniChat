@@ -1,7 +1,7 @@
 <div class="mx-auto w-full max-w-5xl px-4 py-8">
-  <div class="space-y-8">
+  <div class="flex flex-col gap-y-3">
     <!-- Authorization Section -->
-    <section
+    <div
       class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
     >
       <h2 class="text-lg font-semibold">Authorization</h2>
@@ -84,10 +84,10 @@
           </div>
         }
       </div>
-    </section>
+    </div>
 
     <!-- YouTube API Section -->
-    <section
+    <div
       class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
     >
       <h2 class="text-lg font-semibold">YouTube live chat</h2>
@@ -95,7 +95,7 @@
         Add YouTube live streams by explicit video ID. Watch/live URLs are normalized to the video
         ID automatically. Sending requires a linked authorized YouTube account.
       </p>
-    </section>
+    </div>
 
     <!-- Blocked Words Section -->
     <app-blocked-words-settings />
@@ -107,7 +107,7 @@
     <app-session-export-settings />
 
     <!-- Channel Management Section -->
-    <section
+    <div
       class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
     >
       <h2 class="text-lg font-semibold">Channel Management</h2>
@@ -303,10 +303,10 @@
           </div>
         }
       </div>
-    </section>
+    </div>
 
     <!-- Chat History Export Section -->
-    <section
+    <div
       class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
     >
       <h2 class="text-lg font-semibold">Export Chat History</h2>
@@ -364,28 +364,31 @@
 
           <!-- Options -->
           <div class="grid grid-cols-2 gap-3">
-            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
               <input
                 type="checkbox"
                 [(ngModel)]="exportIncludeTimestamps"
-                class="rounded border-slate-300"
+                class="peer"
               />
+              <span class="checkmark"></span>
               Include Timestamps
             </label>
-            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
               <input
                 type="checkbox"
                 [(ngModel)]="exportIncludePlatform"
-                class="rounded border-slate-300"
+                class="peer"
               />
+              <span class="checkmark"></span>
               Include Platform
             </label>
-            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
               <input
                 type="checkbox"
                 [(ngModel)]="exportIncludeBadges"
-                class="rounded border-slate-300"
+                class="peer"
               />
+              <span class="checkmark"></span>
               Include Badges
             </label>
           </div>
@@ -428,6 +431,6 @@
           </div>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </div>

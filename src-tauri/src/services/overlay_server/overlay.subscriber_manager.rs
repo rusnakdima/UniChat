@@ -7,6 +7,11 @@ use tokio::sync::mpsc;
 
 use crate::models::overlay_message_model::{OverlayMessageModel, OverlayWidgetFilterModel};
 
+/// Build a channel reference string for filtering
+pub(crate) fn build_channel_ref(platform: &str, source_channel_id: &str) -> String {
+  format!("{platform}:{source_channel_id}")
+}
+
 /// Represents a connected overlay subscriber (OBS browser source)
 #[derive(Clone, Debug)]
 pub struct OverlaySubscriber {
@@ -69,6 +74,10 @@ impl OverlayServerState {
       map.values().flat_map(|vec| vec.clone()).collect()
     };
 
+    let mut _sent_count = 0;
+    let mut _filtered_supporter = 0;
+    let mut _filtered_channel = 0;
+
     for sub in snapshot {
       // Apply supporter filter
       let filter: OverlayWidgetFilterModel = sub.filter.read().await.clone();
@@ -77,20 +86,29 @@ impl OverlayServerState {
         OverlayWidgetFilterModel::Supporters => message.is_supporter,
       };
       if !allowed {
+        _filtered_supporter += 1;
         continue;
       }
 
       // Apply channel filter
       let channel_ids = sub.channel_ids.read().await;
-      let channel_allowed = match &*channel_ids {
+      let _channel_allowed = match &*channel_ids {
         None => true,
-        Some(ids) => ids.contains(&message.source_channel_id),
+        Some(ids) => {
+          let is_allowed = ids.contains(&build_channel_ref(
+            &message.platform,
+            &message.source_channel_id,
+          ));
+          if !is_allowed {
+            _filtered_channel += 1;
+            continue;
+          }
+          true
+        }
       };
-      if !channel_allowed {
-        continue;
-      }
 
       let _ = sub.tx.send(Message::Text(text.clone()));
+      _sent_count += 1;
     }
   }
 }

@@ -3,15 +3,15 @@
 
 use axum::{
   extract::{Path, Query, WebSocketUpgrade},
-  http::StatusCode,
-  response::{Html, IntoResponse, Json},
+  response::Html,
   routing::get,
-  Router,
+  Json, Router,
 };
+use serde_json::json;
 use std::path::PathBuf;
 use tower_http::services::ServeDir;
 
-use crate::routes::overlay_route::{OverlayFullConfigModel, OVERLAY_CONFIGS};
+use crate::routes::overlay_route::OVERLAY_CONFIGS;
 use crate::services::overlay_server::overlay_subscriber_manager::OverlayServerState;
 use crate::services::overlay_server::overlay_ws_handlers::{handle_overlay_ws, OverlayWsQuery};
 
@@ -27,26 +27,34 @@ async fn serve_overlay_index(dist_dir: PathBuf) -> Html<String> {
   }
 }
 
-/// Custom 404 handler for missing static files
-async fn not_found() -> impl IntoResponse {
-  (StatusCode::NOT_FOUND, Html("<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested resource was not found.</p></body></html>"))
+/// Get overlay config for a widget
+async fn get_overlay_config(Path(widget_id): Path<String>) -> Json<serde_json::Value> {
+  let configs = OVERLAY_CONFIGS.read().await;
+  if let Some(config) = configs.get(&widget_id) {
+    Json(json!({
+      "widgetId": config.widget_id,
+      "filter": config.filter,
+      "customCss": config.custom_css,
+      "channelIds": config.channel_ids,
+      "textSize": config.text_size,
+      "animationType": config.animation_type,
+      "animationDirection": config.animation_direction,
+      "maxMessages": config.max_messages,
+      "transparentBg": config.transparent_bg
+    }))
+  } else {
+    Json(json!(null))
+  }
 }
 
 /// Build the overlay server router
 pub fn build_overlay_router(dist_dir: PathBuf, state: OverlayServerState) -> Router {
-  let serve_dir = ServeDir::new(dist_dir.clone())
-    .append_index_html_on_directories(false)
-    .not_found_service(axum::routing::get(not_found));
+  let serve_dir = ServeDir::new(dist_dir.clone()).append_index_html_on_directories(false);
 
   let ws_state = state.clone();
   let overlay_dist = dist_dir.clone();
-  let config_state = state.clone();
 
   Router::new()
-    .route(
-      "/api/overlay/:widget_id/config",
-      get(move |path: Path<String>| handle_get_overlay_config(config_state.clone(), path)),
-    )
     .route(
       "/ws/overlay",
       get(
@@ -66,17 +74,6 @@ pub fn build_overlay_router(dist_dir: PathBuf, state: OverlayServerState) -> Rou
         }
       }),
     )
+    .route("/api/overlay/:widget_id/config", get(get_overlay_config))
     .fallback_service(serve_dir)
-}
-
-/// Handle GET request for overlay configuration
-async fn handle_get_overlay_config(
-  _state: OverlayServerState,
-  Path(widget_id): Path<String>,
-) -> Result<Json<OverlayFullConfigModel>, StatusCode> {
-  let configs = OVERLAY_CONFIGS.read().await;
-  match configs.get(&widget_id) {
-    Some(config) => Ok(Json(config.clone())),
-    None => Err(StatusCode::NOT_FOUND),
-  }
 }

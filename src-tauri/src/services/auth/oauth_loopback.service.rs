@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 pub struct OAuthLoopbackService {
-  pendingCallbacks: Mutex<HashMap<String, Receiver<String>>>,
+  pending_callbacks: Mutex<HashMap<String, Receiver<String>>>,
 }
 
 impl Default for OAuthLoopbackService {
@@ -18,7 +18,7 @@ impl Default for OAuthLoopbackService {
 impl OAuthLoopbackService {
   pub fn new() -> Self {
     Self {
-      pendingCallbacks: Mutex::new(HashMap::new()),
+      pending_callbacks: Mutex::new(HashMap::new()),
     }
   }
 
@@ -27,7 +27,7 @@ impl OAuthLoopbackService {
     platform_key: &str,
     host: &str,
     port: u16,
-    callbackPath: &str,
+    callback_path: &str,
   ) -> Result<(), String> {
     let address = format!("{host}:{port}");
     let listener = TcpListener::bind(&address).map_err(|e| format!("callback bind failed: {e}"))?;
@@ -35,46 +35,46 @@ impl OAuthLoopbackService {
 
     {
       let mut guard = self
-        .pendingCallbacks
+        .pending_callbacks
         .lock()
         .map_err(|_| "callback map lock poisoned".to_string())?;
       guard.insert(platform_key.to_string(), receiver);
     }
 
-    let expectedPath = callbackPath.to_string();
+    let expected_path = callback_path.to_string();
     std::thread::spawn(move || {
       if let Ok((mut stream, _)) = listener.accept() {
         let mut buffer = [0_u8; 4096];
-        let mut callbackUrl: Option<String> = None;
+        let mut callback_url: Option<String> = None;
         if let Ok(size) = stream.read(&mut buffer) {
           let request = String::from_utf8_lossy(&buffer[..size]).to_string();
-          if let Some(firstLine) = request.lines().next() {
-            let parts: Vec<&str> = firstLine.split_whitespace().collect();
+          if let Some(first_line) = request.lines().next() {
+            let parts: Vec<&str> = first_line.split_whitespace().collect();
             if parts.len() >= 2 {
-              let pathAndQuery = parts[1];
-              if pathAndQuery.starts_with(&expectedPath) {
-                callbackUrl = Some(format!("http://{address}{pathAndQuery}"));
+              let path_and_query = parts[1];
+              if path_and_query.starts_with(&expected_path) {
+                callback_url = Some(format!("http://{address}{path_and_query}"));
               }
             }
           }
         }
 
-        let body = if callbackUrl.is_some() {
+        let body = if callback_url.is_some() {
           "Authorization completed. You can close this tab."
         } else {
           "Authorization callback is invalid."
         };
-        let statusLine = if callbackUrl.is_some() {
+        let status_line = if callback_url.is_some() {
           "HTTP/1.1 200 OK"
         } else {
           "HTTP/1.1 400 Bad Request"
         };
         let response = format!(
-          "{statusLine}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+          "{status_line}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
           body.len()
         );
         let _ = stream.write_all(response.as_bytes());
-        if let Some(url) = callbackUrl {
+        if let Some(url) = callback_url {
           let _ = sender.send(url);
         }
       }
@@ -90,7 +90,7 @@ impl OAuthLoopbackService {
   ) -> Result<String, String> {
     let receiver = {
       let mut guard = self
-        .pendingCallbacks
+        .pending_callbacks
         .lock()
         .map_err(|_| "callback map lock poisoned".to_string())?;
       guard

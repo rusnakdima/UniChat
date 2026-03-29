@@ -94,20 +94,22 @@
 
     <!-- Options -->
     <div class="flex gap-4">
-      <label class="flex items-center gap-2 text-xs">
+      <label class="flex items-center gap-2 text-xs cursor-pointer">
         <input
           type="checkbox"
           [(ngModel)]="isRegex"
-          class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-white/20 dark:bg-black/20"
+          class="peer"
         />
+        <span class="checkmark"></span>
         <span>Regex</span>
       </label>
-      <label class="flex items-center gap-2 text-xs">
+      <label class="flex items-center gap-2 text-xs cursor-pointer">
         <input
           type="checkbox"
           [(ngModel)]="caseSensitive"
-          class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-white/20 dark:bg-black/20"
+          class="peer"
         />
+        <span class="checkmark"></span>
         <span>Case sensitive</span>
       </label>
     </div>

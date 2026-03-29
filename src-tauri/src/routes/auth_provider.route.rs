@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::models::auth_account_model::AuthCommandResultModel;
-use crate::models::provider_contract_model::PlatformTypeModel;
+use crate::models::platform_type_model::PlatformTypeModel;
 use crate::AppState;
 
 #[tauri::command]
@@ -9,11 +9,11 @@ pub async fn authStart(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
-  let authUrl = state.oauthProviderService.start_auth(platform)?;
+  let auth_url = state.oauth_provider_service.start_auth(platform)?;
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization URL prepared.".to_string(),
-    auth_url: Some(authUrl),
+    auth_url: Some(auth_url),
     account: None,
     accounts: None,
   })
@@ -26,7 +26,7 @@ pub async fn authComplete(
   callbackUrl: String,
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
-    .oauthProviderService
+    .oauth_provider_service
     .complete_auth(platform, callbackUrl)
     .await?;
   Ok(AuthCommandResultModel {
@@ -44,7 +44,7 @@ pub async fn authAwaitCallback(
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
-    .oauthProviderService
+    .oauth_provider_service
     .await_loopback_and_complete(platform)
     .await?;
   Ok(AuthCommandResultModel {
@@ -61,7 +61,7 @@ pub async fn authStatus(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
-  let accounts = state.oauthProviderService.get_auth_status(platform)?;
+  let accounts = state.oauth_provider_service.get_auth_status(platform)?;
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization status loaded.".to_string(),
@@ -78,7 +78,7 @@ pub async fn authDisconnect(
   accountId: String,
 ) -> Result<AuthCommandResultModel, String> {
   state
-    .oauthProviderService
+    .oauth_provider_service
     .disconnect(platform, accountId)
     .await?;
   Ok(AuthCommandResultModel {
