@@ -3,7 +3,7 @@ import { Injectable, inject } from "@angular/core";
 import tmi from "tmi.js";
 
 /* models */
-import { ChatBadgeIcon, ChatHistoryLoadState, ChatMessage } from "@models/chat.model";
+import { ChatMessage } from "@models/chat.model";
 
 /* services */
 import { ConnectionErrorService } from "@services/core/connection-error.service";
@@ -12,106 +12,18 @@ import { BaseChatProviderService } from "@services/providers/base-chat-provider.
 import { IconsCatalogService } from "@services/ui/icons-catalog.service";
 import { TwitchEmotesService } from "@services/providers/twitch-emotes.service";
 import { ReconnectionService } from "@services/core/reconnection.service";
+import { TwitchViewerCardService } from "@services/providers/twitch-viewer-card.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
+
+import {
+  extractIrcTagMapFromLine,
+  parseRecentMessagesPrivmsg,
+} from "@services/providers/twitch-robotty-privmsg.parser";
 
 /* helpers */
 import { createMessageActionState } from "@helpers/chat.helper";
-export interface TwitchUserInfo {
-  id: string;
-  login: string;
-  display_name: string;
-  description: string;
-  profile_image_url: string;
-  offline_image_url: string;
-  banner?: string | null;
-  created_at: string;
-}
 
-/**
- * Interface for Twitch GraphQL ViewerCard response
- */
-interface TwitchGraphQLViewerCard {
-  data?: {
-    user?: {
-      id?: string;
-      login?: string;
-      displayName?: string;
-      description?: string;
-      profileImageURL?: string;
-      offlineImageUrl?: string;
-      createdAt?: string;
-      chatColor?: string;
-      roles?: {
-        isAffiliate?: boolean;
-        isPartner?: boolean;
-        isStaff?: boolean;
-        isAdmin?: boolean;
-        isGlobalMod?: boolean;
-      };
-      badges?: Array<{
-        id?: string;
-        title?: string;
-        image?: {
-          url_1x?: string;
-          url_2x?: string;
-          url_4x?: string;
-        };
-      }>;
-      chatRoomRules?: string[];
-      primaryColorHex?: string;
-      follow?: {
-        followedAt?: string;
-      };
-      stream?: {
-        id?: string;
-        previewImage?: {
-          url?: string;
-        };
-      };
-      panels?: {
-        id?: string;
-        data?: {
-          title?: string;
-          description?: string;
-          image?: {
-            url?: string;
-          };
-          link?: {
-            url?: string;
-          };
-        };
-      }[];
-      videos?: {
-        edges?: Array<{
-          node?: {
-            id?: string;
-            title?: string;
-            previewURL?: string;
-            viewCount?: number;
-            createdAt?: string;
-          };
-        }>;
-      };
-      clips?: {
-        edges?: Array<{
-          node?: {
-            id?: string;
-            title?: string;
-            thumbnailURL?: string;
-            viewCount?: number;
-            createdAt?: string;
-          };
-        }>;
-      };
-      channel?: {
-        id?: string;
-      };
-    };
-  };
-  errors?: Array<{
-    message?: string;
-  }>;
-}
+export type { TwitchUserInfo } from "@services/providers/twitch-viewer-card.service";
 
 @Injectable({
   providedIn: "root",
@@ -135,6 +47,7 @@ export class TwitchChatService extends BaseChatProviderService {
   private readonly errorService = inject(ConnectionErrorService);
   private readonly connectionStateService = inject(ConnectionStateService);
   private readonly reconnectionService = inject(ReconnectionService);
+  private readonly viewerCard = inject(TwitchViewerCardService);
 
   override connect(channelId: string): void {
     void this.iconsCatalog.ensureGlobalLoaded();
@@ -170,10 +83,8 @@ export class TwitchChatService extends BaseChatProviderService {
           self
         );
         if (messageModel) {
-          // Add received timestamp for gap detection
           messageModel.receivedAt = Date.now();
 
-          // Track message for gap detection
           this.reconnectionService.trackMessage(normalizedChannel, messageModel, "twitch");
 
           this.chatStorageService.addMessage(normalizedChannel, messageModel);
@@ -186,8 +97,6 @@ export class TwitchChatService extends BaseChatProviderService {
       this.errorService.clearError(normalizedChannel);
       // Clear gap indicator on successful reconnect
       this.reconnectionService.clearGap(normalizedChannel);
-      // Don't load initial messages - only show new messages from current session
-      // Old messages will be loaded only when user clicks "Load Previous Messages"
     });
     client.on("disconnected", () => {
       this.emitStatus(normalizedChannel, "disconnected");
@@ -197,8 +106,6 @@ export class TwitchChatService extends BaseChatProviderService {
       this.emitStatus(normalizedChannel, "reconnecting");
     });
     client.on("roomstate", (channel: string, state: tmi.RoomState) => {
-      // Handle Twitch room state changes (slow mode, followers-only, etc.)
-      // Note: tmi.js uses string "0" or "-1" for slow mode, parse accordingly
       const slowValue = state.slow;
       const slowModeWaitTime =
         typeof slowValue === "string" ? parseInt(slowValue, 10) : slowValue ? 0 : undefined;
@@ -225,7 +132,6 @@ export class TwitchChatService extends BaseChatProviderService {
       this.errorService.reportNetworkTimeout(normalizedChannel, "twitch");
     });
     client.on("notice", (reason: string) => {
-      // Handle Twitch-specific notices like MSG_RATELIMITED, MSG_REJECTED, etc.
       if (reason.includes("ratelimit") || reason.includes("rate limit")) {
         this.errorService.reportRateLimited(normalizedChannel, "twitch");
       }
@@ -371,10 +277,6 @@ export class TwitchChatService extends BaseChatProviderService {
     };
   }
 
-  /**
-   * Pulls everything Robotty currently stores for this channel (paginates with `before=` cursors).
-   * Twitch's website popout uses Twitch-internal APIs; this is the best-available public substitute.
-   */
   async fetchRobottyMessagesForUser(
     channelLogin: string,
     twitchUserId: string
@@ -383,9 +285,6 @@ export class TwitchChatService extends BaseChatProviderService {
     return all.filter((m) => m.sourceUserId === twitchUserId);
   }
 
-  /**
-   * Load previous history for a channel (called manually by user)
-   */
   async loadChannelHistory(channelName: string, count: number = 100): Promise<ChatMessage[]> {
     const normalized = channelName.replace(/^#/, "").toLowerCase();
     const channelRef = buildChannelRef("twitch", normalized);
@@ -396,12 +295,10 @@ export class TwitchChatService extends BaseChatProviderService {
         Math.ceil(count / 800) + 1
       );
 
-      // Get existing messages to avoid duplicates
       const existingMessages = this.chatStorageService.getMessagesByChannel(channelRef);
       const existingIds = new Set(existingMessages.map((m) => m.id));
       const newMessages = messages.filter((m) => !existingIds.has(m.id));
 
-      // Update history load state
       const hasMore = messages.length >= count;
       this.chatStorageService.setHistoryLoadState(channelRef, {
         loaded: true,
@@ -417,9 +314,6 @@ export class TwitchChatService extends BaseChatProviderService {
     }
   }
 
-  /**
-   * Fetch messages for a user with pagination support
-   */
   async fetchRobottyMessagesForUserPaginated(
     channelLogin: string,
     userId: string,
@@ -429,157 +323,36 @@ export class TwitchChatService extends BaseChatProviderService {
     const all = await this.fetchRobottyHistoryForChannel(channelLogin);
     const filtered = all.filter((m) => m.sourceUserId === userId);
 
-    // If we have a beforeTimestamp, filter messages older than that
     let paginated = filtered;
     if (options.beforeTimestamp) {
       const beforeTime = new Date(options.beforeTimestamp).getTime();
       paginated = filtered.filter((m) => new Date(m.timestamp).getTime() < beforeTime);
     }
 
-    // Sort chronologically (oldest first) for pagination
     paginated.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    // Take the most recent 'limit' messages from the filtered set
     const messages = paginated.slice(-limit);
     const hasMore = paginated.length > limit;
 
     return { messages, hasMore };
   }
 
-  /**
-   * Fetch Twitch user profile image from Twitch CDN (public, no auth required)
-   * Uses the predictable Twitch profile image URL pattern
-   * @param username - Twitch username (case-insensitive)
-   * @returns Profile image URL or null
-   */
   async fetchUserProfileImage(username: string): Promise<string | null> {
-    try {
-      const info =
-        (await this.fetchTwitchViewerCard(username, username)) ??
-        (await this.fetchUserInfo(username));
-      return info?.profile_image_url?.trim() ? info.profile_image_url : null;
-    } catch {
-      return null;
-    }
+    return this.viewerCard.fetchUserProfileImage(username);
   }
 
-  /**
-   * Fetch Twitch user info (no API call - returns basic info only)
-   * @param username - Twitch username
-   * @returns Basic user info with generated profile URL
-   */
-  async fetchUserInfo(username: string): Promise<TwitchUserInfo | null> {
-    const viewerCard = await this.fetchTwitchViewerCard(username, username);
-    if (viewerCard) {
-      return viewerCard;
-    }
-
-    return {
-      id: "",
-      login: username.toLowerCase(),
-      display_name: username,
-      description: "",
-      profile_image_url: "",
-      offline_image_url: "",
-      banner: null,
-      created_at: "",
-    };
+  async fetchUserInfo(username: string) {
+    return this.viewerCard.fetchUserInfo(username);
   }
 
-  /**
-   * Fetch Twitch user viewer card from GraphQL API
-   * This is the same API Twitch's frontend uses - no auth required for public data
-   * @param channelLogin - The channel login name (e.g., "milanrodd")
-   * @param targetLogin - The target user login name (e.g., "radio86pk")
-   * @returns User info from GraphQL API
-   */
-  async fetchTwitchViewerCard(
-    channelLogin: string,
-    targetLogin: string
-  ): Promise<(TwitchUserInfo & { chatColor?: string; badges?: ChatBadgeIcon[] }) | null> {
-    const url = "https://gql.twitch.tv/gql";
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Client-ID": "kimne78kx3ncx6brgo4mv6wki5h1ko",
-        },
-        body: JSON.stringify([
-          {
-            operationName: "ViewerCard",
-            variables: {
-              channelID: "",
-              channelIDStr: "",
-              channelLogin: channelLogin.toLowerCase(),
-              targetLogin: targetLogin.toLowerCase(),
-              isViewerBadgeCollectionEnabled: true,
-            },
-            extensions: {
-              persistedQuery: {
-                version: 1,
-                sha256Hash: "c02d0aa3e6fdaad9a668f354236e0ded00e338cb742da33bb166e0f34ebf3c3b",
-              },
-            },
-          },
-        ]),
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = (await response.json()) as TwitchGraphQLViewerCard[];
-      const result = data[0];
-
-      if (!result?.data?.user) {
-        return null;
-      }
-
-      const user = result.data.user;
-
-      // Parse badges from GraphQL response
-      const badges: ChatBadgeIcon[] = [];
-      if (user.badges) {
-        for (const badge of user.badges) {
-          if (badge.id && badge.title && badge.image?.url_1x) {
-            badges.push({
-              id: badge.id,
-              label: badge.title,
-              url: badge.image.url_1x,
-            });
-          }
-        }
-      }
-
-      return {
-        id: user.id ?? "",
-        login: user.login ?? targetLogin.toLowerCase(),
-        display_name: user.displayName ?? targetLogin,
-        description: user.description ?? "",
-        profile_image_url: user.profileImageURL ?? "",
-        offline_image_url: user.offlineImageUrl ?? "",
-        banner: user.primaryColorHex ?? null,
-        created_at: user.createdAt ?? "",
-        chatColor: user.chatColor,
-        badges,
-      };
-    } catch (error) {
-      // Ignore network errors
-      return null;
-    }
+  async fetchTwitchViewerCard(channelLogin: string, targetLogin: string) {
+    return this.viewerCard.fetchTwitchViewerCard(channelLogin, targetLogin);
   }
 
-  /**
-   * Fetch channel profile image from Twitch CDN (no auth required)
-   */
   async fetchChannelProfileImage(channelLogin: string): Promise<string | null> {
-    const info = await this.fetchUserInfo(channelLogin);
-    return info?.profile_image_url?.trim() ? info.profile_image_url : null;
+    return this.viewerCard.fetchChannelProfileImage(channelLogin);
   }
 
-  // Unused for Twitch because action states are computed per message and role.
   protected override getActionStates() {
     return {
       reply: createMessageActionState("reply", "disabled"),
@@ -593,7 +366,6 @@ export class TwitchChatService extends BaseChatProviderService {
     message: string,
     self: boolean
   ): ChatMessage | null {
-    // Look up channel by name (channelName is the login name like "bratishkinoff")
     const channel = this.chatListService
       .getChannels("twitch")
       .find((entry) => entry.channelName.toLowerCase() === channelName.toLowerCase());
@@ -629,12 +401,17 @@ export class TwitchChatService extends BaseChatProviderService {
       }
     }
 
-    // Build author avatar URL from Twitch CDN
     const authorAvatarUrl = undefined;
 
-    // Use provider channel ID for consistent channel filtering in overlay
     const providerChannelId = channel?.channelId ?? channelName;
-    console.log('[TwitchChat] Building message - channelName:', channelName, 'found channel:', channel?.channelId, 'using providerChannelId:', providerChannelId);
+    console.log(
+      "[TwitchChat] Building message - channelName:",
+      channelName,
+      "found channel:",
+      channel?.channelId,
+      "using providerChannelId:",
+      providerChannelId
+    );
 
     return {
       id: `msg-${sourceMessageId}`,
@@ -725,7 +502,7 @@ export class TwitchChatService extends BaseChatProviderService {
 
         let pageMinRm = Infinity;
         for (const line of lines) {
-          const tagMap = TwitchChatService.extractIrcTagMapFromLine(line);
+          const tagMap = extractIrcTagMapFromLine(line);
           if (tagMap) {
             const rm = Number(tagMap["rm-received-ts"]);
             if (Number.isFinite(rm)) {
@@ -735,7 +512,7 @@ export class TwitchChatService extends BaseChatProviderService {
         }
 
         for (const line of lines) {
-          const parsed = this.parseRecentMessagesPrivmsg(line, normalized);
+          const parsed = parseRecentMessagesPrivmsg(line, normalized);
           if (!parsed) {
             continue;
           }
@@ -771,129 +548,6 @@ export class TwitchChatService extends BaseChatProviderService {
     }
 
     return merged;
-  }
-
-  private static extractIrcTagMapFromLine(line: string): Record<string, string> | null {
-    if (!line.startsWith("@")) {
-      return null;
-    }
-    const sep = line.indexOf(" :");
-    if (sep === -1) {
-      return null;
-    }
-    const tagString = line.slice(1, sep);
-    const tagMap: Record<string, string> = {};
-    for (const part of tagString.split(";")) {
-      const eq = part.indexOf("=");
-      if (eq === -1) {
-        continue;
-      }
-      tagMap[part.slice(0, eq)] = part.slice(eq + 1);
-    }
-    return tagMap;
-  }
-
-  private parseRecentMessagesPrivmsg(
-    line: string,
-    expectedChannel: string
-  ): { tags: tmi.ChatUserstate; message: string } | null {
-    const privIdx = line.indexOf(" PRIVMSG ");
-    if (privIdx === -1 || !line.startsWith("@")) {
-      return null;
-    }
-    const sep = line.indexOf(" :");
-    if (sep === -1 || sep > privIdx) {
-      return null;
-    }
-    const rest = line.slice(sep + 2);
-    const privmsgIdx = rest.indexOf(" PRIVMSG ");
-    if (privmsgIdx === -1) {
-      return null;
-    }
-    const nickPart = rest.slice(0, privmsgIdx);
-    const nick = nickPart.includes("!") ? nickPart.slice(0, nickPart.indexOf("!")) : nickPart;
-    const afterPriv = rest.slice(privmsgIdx + " PRIVMSG ".length).trimStart();
-    if (!afterPriv.startsWith("#")) {
-      return null;
-    }
-    const spaceAfterChan = afterPriv.indexOf(" ");
-    if (spaceAfterChan === -1) {
-      return null;
-    }
-    const chan = afterPriv.slice(1, spaceAfterChan).toLowerCase();
-    if (chan !== expectedChannel.toLowerCase()) {
-      return null;
-    }
-    let message = afterPriv.slice(spaceAfterChan + 1);
-    if (message.startsWith(":")) {
-      message = message.slice(1);
-    }
-
-    const tagMap = TwitchChatService.extractIrcTagMapFromLine(line);
-    if (!tagMap) {
-      return null;
-    }
-
-    const tags = this.rawIrcTagsToUserstate(tagMap, nick);
-    return { tags, message };
-  }
-
-  private rawIrcTagsToUserstate(
-    raw: Record<string, string>,
-    fallbackNick: string
-  ): tmi.ChatUserstate {
-    const badges: tmi.Badges = {};
-    if (raw["badges"]) {
-      for (const seg of raw["badges"].split(",")) {
-        if (!seg) {
-          continue;
-        }
-        const slash = seg.indexOf("/");
-        if (slash === -1) {
-          badges[seg] = "1";
-        } else {
-          badges[seg.slice(0, slash)] = seg.slice(slash + 1);
-        }
-      }
-    }
-
-    const emotes: { [emoteId: string]: string[] } = {};
-    if (raw["emotes"]) {
-      for (const segment of raw["emotes"].split("/")) {
-        if (!segment) {
-          continue;
-        }
-        const colon = segment.indexOf(":");
-        if (colon === -1) {
-          continue;
-        }
-        const id = segment.slice(0, colon);
-        const ranges = segment
-          .slice(colon + 1)
-          .split(",")
-          .filter(Boolean);
-        if (ranges.length) {
-          emotes[id] = ranges;
-        }
-      }
-    }
-
-    const displayName = raw["display-name"];
-    const login =
-      raw["login"]?.trim() || fallbackNick.trim().toLowerCase() || displayName?.toLowerCase();
-
-    return {
-      "display-name": displayName,
-      "user-id": raw["user-id"],
-      username: login,
-      id: raw["id"],
-      "room-id": raw["room-id"],
-      "reply-parent-msg-id": raw["reply-parent-msg-id"],
-      color: raw["color"],
-      "tmi-sent-ts": raw["tmi-sent-ts"],
-      badges,
-      emotes,
-    } as tmi.ChatUserstate;
   }
 
   private computeDeletePermission(

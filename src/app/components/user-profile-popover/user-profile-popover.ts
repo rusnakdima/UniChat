@@ -17,7 +17,8 @@ import { ChatBadgeIcon } from "@models/chat.model";
 import { ChatListService } from "@services/data/chat-list.service";
 import { KickChatService } from "@services/providers/kick-chat.service";
 import { KickUserInfo } from "@services/providers/kick-chat.service";
-import { TwitchChatService } from "@services/providers/twitch-chat.service";
+import { TwitchViewerCardService } from "@services/providers/twitch-viewer-card.service";
+import type { TwitchUserInfo } from "@services/providers/twitch-viewer-card.service";
 import { YouTubeChatService } from "@services/providers/youtube-chat.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { UserProfilePopoverService } from "@services/ui/user-profile-popover.service";
@@ -33,17 +34,6 @@ export interface UserProfilePanelLayout {
   height: number;
 }
 
-export interface TwitchUserInfo {
-  id: string;
-  login: string;
-  display_name: string;
-  description: string;
-  profile_image_url: string;
-  offline_image_url: string;
-  banner?: string | null;
-  created_at: string;
-}
-
 @Component({
   selector: "app-user-profile-popover",
   standalone: true,
@@ -55,7 +45,7 @@ export class UserProfilePopoverComponent {
   readonly popover = inject(UserProfilePopoverService);
   readonly presentation = inject(ChatMessagePresentationService);
   readonly chatList = inject(ChatListService);
-  readonly twitchChat = inject(TwitchChatService);
+  readonly twitchViewerCard = inject(TwitchViewerCardService);
   readonly kickChat = inject(KickChatService);
   readonly youtubeChat = inject(YouTubeChatService);
 
@@ -203,8 +193,8 @@ export class UserProfilePopoverComponent {
         const channelLogin = st.message.sourceChannelId;
         const userInfo =
           (channelLogin
-            ? await this.twitchChat.fetchTwitchViewerCard(channelLogin, username)
-            : null) ?? (await this.twitchChat.fetchUserInfo(username));
+            ? await this.twitchViewerCard.fetchTwitchViewerCard(channelLogin, username)
+            : null) ?? (await this.twitchViewerCard.fetchUserInfo(username));
         if (userInfo) {
           this.twitchUserInfo.set(userInfo);
         } else {
@@ -266,7 +256,8 @@ export class UserProfilePopoverComponent {
     const fallbackName = channel?.channelName ?? st.message.sourceChannelId;
 
     if (st.message.platform === "twitch") {
-      const imageUrl = (await this.twitchChat.fetchChannelProfileImage(fallbackName)) ?? undefined;
+      const imageUrl =
+        (await this.twitchViewerCard.fetchChannelProfileImage(fallbackName)) ?? undefined;
       this.channelInfo.set({ name: fallbackName, imageUrl: imageUrl || undefined });
       return;
     }
