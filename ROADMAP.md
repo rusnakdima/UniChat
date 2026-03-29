@@ -47,10 +47,6 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 
 ### Backend (Rust/Tauri)
 
-#### Large Files to Split (P2)
-- [ ] Split `icons.route.rs` (283 lines) - Split: 7TV logic, Twitch logic, helpers
-- [ ] Split `youtube.route.rs` (287 lines) - Split: request structs, command handlers
-
 #### Frontend Large Services (P2)
 - [ ] Extract emote/badge fetching from `twitch-chat.service.ts` (1166 lines)
 - [ ] Extract emote parsing from `kick-chat.service.ts` (500+ lines)
@@ -59,13 +55,6 @@ UniChat is a Tauri-based desktop chat aggregator for streamers, supporting Twitc
 - [ ] Implement plugin architecture for new platforms (v0.2.0)
 - [ ] Add gRPC support for inter-process communication - ⚠️ **Deferred** (not needed for desktop)
 
-### Build & CI/CD
-
-#### Next Steps (v0.2.0)
-- [ ] Set up automated release pipeline
-- [ ] Implement semantic versioning
-- [ ] Add changelog generation
-- [ ] Create automated performance regression tests
 
 ---
 
