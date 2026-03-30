@@ -1,5 +1,5 @@
 /* sys lib */
-import { Component, inject } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { RouterOutlet } from "@angular/router";
 
 /* services */
@@ -8,10 +8,13 @@ import { MemoryManagementService } from "@services/core/memory-management.servic
 
 /* components */
 import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal";
+
 @Component({
   selector: "app-root",
+  standalone: true,
   imports: [RouterOutlet, LinkPreviewModal],
   templateUrl: "./app.html",
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
   private readonly themeService = inject(ThemeService);

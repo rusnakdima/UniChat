@@ -21,6 +21,7 @@
       "@config/*": ["src/app/config/*"],
       "@directives/*": ["src/app/directives/*"],
       "@helpers/*": ["src/app/helpers/*"],
+      "@layouts/*": ["src/app/layouts/*"],
       "@models/*": ["src/app/models/*"],
       "@services/*": ["src/app/services/*"],
       "@views/*": ["src/app/views/*"],

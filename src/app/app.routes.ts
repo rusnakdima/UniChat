@@ -1,8 +1,8 @@
 /* sys lib */
 import { Routes } from "@angular/router";
 
-/* app */
-import { AppLayoutComponent } from "@app/layout/app-layout.component";
+/* layouts */
+import { DashboardLayoutComponent } from "@layouts/dashboard-layout.component";
 
 /* views */
 import { DashboardView } from "@views/dashboard-view/dashboard.view";
@@ -16,21 +16,21 @@ import { ChatDataResolver } from "@resolvers/chat-data.resolver";
 export const routes: Routes = [
   {
     path: "",
-    component: AppLayoutComponent,
+    pathMatch: "full",
+    redirectTo: "dashboard",
+  },
+  {
+    path: "overlay",
+    component: OverlayView,
+  },
+  {
+    path: "",
+    component: DashboardLayoutComponent,
     children: [
-      {
-        path: "",
-        pathMatch: "full",
-        redirectTo: "dashboard",
-      },
       {
         path: "dashboard",
         component: DashboardView,
         resolve: { chatData: ChatDataResolver },
-      },
-      {
-        path: "overlay",
-        component: OverlayView,
       },
       {
         path: "overlay-management",
@@ -40,10 +40,10 @@ export const routes: Routes = [
         path: "settings",
         component: SettingsPageView,
       },
-      {
-        path: "**",
-        redirectTo: "dashboard",
-      },
     ],
+  },
+  {
+    path: "**",
+    redirectTo: "dashboard",
   },
 ];

@@ -1,20 +1,6 @@
 /* Material Icons */
 @import "@material-icons/font/css/all.css";
 
-/* Single scroll surface: app shell scrolls in <main>, not the document */
-html,
-body {
-  height: 100%;
-  overflow: hidden;
-}
-
-app-root {
-  display: block;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
 /* Custom element hosts for routed pages participate in block layout */
 app-settings-page-view,
 app-overlay-management-view {
@@ -25,23 +11,6 @@ app-overlay-management-view {
 @import "tailwindcss";
 @source "../node_modules/flowbite";
 @custom-variant dark (&:where(.dark, .dark *));
-
-/* ===== Page Layout Utilities ===== */
-
-/* Adaptive centered container for non-dashboard pages */
-.page-container {
-  @apply mx-auto w-full max-w-5xl px-4 py-8;
-}
-
-/* Dashboard layout - no scroll, full viewport */
-.dashboard-layout {
-  @apply flex h-screen w-full min-h-0 flex-col overflow-hidden;
-}
-
-/* Standard page layout - scrollable content */
-.page-layout {
-  @apply flex min-h-0 flex-1 flex-col overflow-y-auto;
-}
 
 /* Custom Checkbox & Radio Styling (TaskFlow-inspired) */
 
@@ -73,7 +42,7 @@ input[type="checkbox"].peer:focus + .checkmark::before {
 }
 
 input[type="checkbox"].peer:disabled + .checkmark::before {
-  @apply bg-red-700 border-red-700 cursor-not-allowed;
+  @apply bg-zinc-400 border-zinc-400 cursor-not-allowed dark:bg-zinc-600 dark:border-zinc-600;
 }
 
 /* ===== Custom Radio Button ===== */
@@ -218,4 +187,25 @@ mat-icon {
   .message-type-highlighted {
     animation: none;
   }
+}
+
+/* ===== Settings Section Animations ===== */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
 }

@@ -1,0 +1,15 @@
+<div
+  class="flex flex-row bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 w-screen h-screen"
+>
+  <!-- Sidebar (fixed position) -->
+  <app-sidebar />
+
+  <!-- Main content area with left margin for sidebar - full width/height -->
+  <main
+    class="flex h-full min-h-0 w-full flex-col"
+    [style.marginLeft.px]="SIDEBAR_WIDTH"
+    role="main"
+  >
+    <router-outlet />
+  </main>
+</div>
