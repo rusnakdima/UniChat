@@ -84,7 +84,7 @@ export class OverlayView implements OnDestroy {
   readonly animationType = signal<OverlayAnimationType>("fade");
   readonly animationDirection = signal<OverlayDirection>("top");
   readonly maxMessages = signal<number>(6);
-  readonly transparentBg = signal<boolean>(false);
+  readonly transparentBg = signal<boolean>(true);
 
   readonly animationCssText = computed(() => this.animationCss());
 

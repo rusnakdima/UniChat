@@ -18,7 +18,7 @@
       >
         @if (showUnreadCount()) {
           <span
-            class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-violet-600 px-1.5 py-0.5 text-[10px] font-bold text-white dark:bg-violet-500"
+            class="inline-flex min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 py-0.5 text-[10px] font-bold text-white dark:bg-violet-500"
             [class.animate-pulse]="pendingNewCount() > 5"
           >
             {{ pendingNewCount() > 99 ? "99+" : pendingNewCount() }}

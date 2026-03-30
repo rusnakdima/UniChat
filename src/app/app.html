@@ -1,5 +1,12 @@
 <div
-  class="flex flex-row h-full w-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+  [class.flex]="!isOverlay()"
+  [class.flex-row]="!isOverlay()"
+  [class.h-full]="!isOverlay()"
+  [class.w-full]="!isOverlay()"
+  [class.bg-slate-50]="!isOverlay()"
+  [class.text-slate-900]="!isOverlay()"
+  [class.dark:bg-slate-950]="!isOverlay()"
+  [class.dark:text-slate-100]="!isOverlay()"
 >
   <router-outlet />
 </div>

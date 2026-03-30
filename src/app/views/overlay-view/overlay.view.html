@@ -1,5 +1,5 @@
 <section
-  class="flex h-full min-h-0 w-full flex-col overflow-hidden text-slate-100"
+  class="flex h-screen min-h-0 w-screen flex-col overflow-hidden"
   [ngStyle]="{ 'background-color': backgroundColor() }"
   [style.background]="transparentBg() ? 'transparent !important' : ''"
 >
@@ -7,14 +7,12 @@
   <style [textContent]="animationCssText()"></style>
 
   <!-- Main Content Block - Centered, Full Width -->
-  <div class="mx-auto w-full">
+  <div class="flex flex-1 items-center justify-center">
     <!-- Messages Container -->
     @if (orderedMessages().length === 0) {
-      <div class="flex h-64 items-center justify-center">
-        <div class="text-center">
-          <mat-icon [fontIcon]="'chat_bubble_outline'" class="mx-auto h-16 w-16 text-slate-600" />
-          <p class="mt-4 text-sm uppercase tracking-[0.2em] text-slate-400">Waiting for messages</p>
-        </div>
+      <div class="text-center">
+        <mat-icon [fontIcon]="'chat_bubble_outline'" class="mx-auto h-16 w-16 opacity-50" />
+        <p class="mt-4 text-sm uppercase tracking-[0.2em] opacity-50">Waiting for messages</p>
       </div>
     } @else {
       <div class="flex flex-col gap-2" [class]="messagesContainerClasses()">
@@ -54,7 +52,7 @@
               />
             } @else {
               <div
-                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold uppercase"
                 [title]="message.author"
               >
                 {{ message.author.charAt(0) }}
@@ -69,10 +67,10 @@
               >
                 {{ message.author }}
               </span>
-              <span class="shrink-0 text-slate-500" [ngStyle]="{ 'font-size.px': textSize() - 2 }"
+              <span class="shrink-0 text-white/50" [ngStyle]="{ 'font-size.px': textSize() - 2 }"
                 >:</span
               >
-              <p class="min-w-0 flex-1 text-slate-200" [ngStyle]="{ 'font-size.px': textSize() }">
+              <p class="min-w-0 flex-1 text-white" [ngStyle]="{ 'font-size.px': textSize() }">
                 @for (segment of getMessageSegments(message); track $index) {
                   @if (segment.type === "text") {
                     <span>{{ segment.value }}</span>
@@ -92,7 +90,7 @@
                     />
                   } @else if (segment.emote) {
                     <span
-                      class="mx-0.5 inline align-middle text-xs text-slate-500"
+                      class="mx-0.5 inline align-middle text-xs text-white/50"
                       [title]="segment.emote.code"
                       >{{ segment.emote.code }}</span
                     >
