@@ -1,5 +1,5 @@
 /* sys lib */
-import { Injectable, signal, computed, inject } from "@angular/core";
+import { Injectable, signal, computed, inject, effect } from "@angular/core";
 
 /* services */
 import { LocalStorageService } from "@services/core/local-storage.service";
@@ -33,6 +33,7 @@ export class BlockedWordsService {
   private readonly chatListService = inject(ChatListService);
 
   private readonly rulesSignal = signal<BlockedWordRule[]>([]);
+  private readonly compiledRegexByRuleId = new Map<string, RegExp | null>();
 
   readonly rules = this.rulesSignal.asReadonly();
 
@@ -42,20 +43,68 @@ export class BlockedWordsService {
 
   constructor() {
     this.loadRules();
+
+    // Precompile regex once per rules change to avoid per-message RegExp allocations.
+    effect(() => {
+      // Track rulesSignal changes.
+      const rules = this.rulesSignal();
+      void rules;
+      this.rebuildCompiledRegexes();
+    });
   }
 
   private loadRules(): void {
     const stored = this.localStorageService.get<BlockedWordRule[]>(BLOCKED_WORDS_STORAGE_KEY, []);
-    const channels = this.chatListService.getChannels();
+    // Don't read channels signal during init to avoid change detection loops
+    // Channel ref migration is handled lazily when rules are used
     const migrated = stored.map((rule) => ({
       ...rule,
-      channelIds: rule.isGlobal ? undefined : migrateLegacyChannelRefs(rule.channelIds, channels),
+      // Keep channelIds as-is, migrate lazily when needed
+      channelIds: rule.channelIds,
     }));
     this.rulesSignal.set(migrated);
   }
 
+  private migrateChannelRefs(rule: BlockedWordRule): BlockedWordRule {
+    if (!rule.channelIds || rule.isGlobal) {
+      return rule;
+    }
+    const channels = this.chatListService.getChannels();
+    const migrated = migrateLegacyChannelRefs(rule.channelIds, channels);
+    // Only update if refs actually changed
+    if (JSON.stringify(migrated) !== JSON.stringify(rule.channelIds)) {
+      const updatedRule = { ...rule, channelIds: migrated };
+      this.updateRule(rule.id, { channelIds: migrated });
+      return updatedRule;
+    }
+    return rule;
+  }
+
   private persistRules(): void {
     this.localStorageService.set(BLOCKED_WORDS_STORAGE_KEY, this.rulesSignal());
+  }
+
+  private rebuildCompiledRegexes(): void {
+    this.compiledRegexByRuleId.clear();
+
+    for (const rule of this.rulesSignal()) {
+      const pattern = rule.pattern?.trim() ?? "";
+      if (!pattern) {
+        this.compiledRegexByRuleId.set(rule.id, null);
+        continue;
+      }
+
+      try {
+        if (rule.isRegex) {
+          this.compiledRegexByRuleId.set(rule.id, new RegExp(pattern, "gi"));
+        } else {
+          const escapedPattern = this.escapeRegExp(pattern);
+          this.compiledRegexByRuleId.set(rule.id, new RegExp(escapedPattern, "gi"));
+        }
+      } catch {
+        this.compiledRegexByRuleId.set(rule.id, null);
+      }
+    }
   }
 
   /**
@@ -105,36 +154,30 @@ export class BlockedWordsService {
    * Returns the filtered text and whether any replacements were made
    */
   filterMessage(text: string, channelId: string): { filtered: string; wasFiltered: boolean } {
-    const applicableRules = this.activeRules().filter(
-      (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
-    );
+    const applicableRules = this.activeRules()
+      .map((rule) => this.migrateChannelRefs(rule))
+      .filter(
+        (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
+      );
 
     let filtered = text;
     let wasFiltered = false;
 
     for (const rule of applicableRules) {
-      if (!rule.pattern.trim()) {
-        continue;
-      }
+      if (!rule.pattern.trim()) continue;
+
+      const regex = this.compiledRegexByRuleId.get(rule.id);
+      if (!regex) continue;
 
       try {
-        if (rule.isRegex) {
-          const regex = new RegExp(rule.pattern, "gi");
-          if (regex.test(filtered)) {
-            wasFiltered = true;
-            filtered = filtered.replace(regex, rule.replacement);
-          }
-        } else {
-          // Simple string replacement (case-insensitive)
-          const escapedPattern = this.escapeRegExp(rule.pattern);
-          const regex = new RegExp(escapedPattern, "gi");
-          if (regex.test(filtered)) {
-            wasFiltered = true;
-            filtered = filtered.replace(regex, rule.replacement);
-          }
+        regex.lastIndex = 0;
+        const next = filtered.replace(regex, rule.replacement);
+        if (next !== filtered) {
+          wasFiltered = true;
+          filtered = next;
         }
       } catch {
-        /* invalid regex for rule — skip */
+        // Compiled regex should be valid; ignore runtime replace errors.
       }
     }
 
@@ -153,9 +196,11 @@ export class BlockedWordsService {
    * Get rules that apply to a specific channel
    */
   getRulesForChannel(channelId: string): BlockedWordRule[] {
-    return this.activeRules().filter(
-      (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
-    );
+    return this.activeRules()
+      .map((rule) => this.migrateChannelRefs(rule))
+      .filter(
+        (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
+      );
   }
 
   private generateId(): string {

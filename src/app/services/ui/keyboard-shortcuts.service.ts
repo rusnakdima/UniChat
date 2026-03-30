@@ -62,7 +62,7 @@ export const DEFAULT_KEYBOARD_BINDINGS: KeyboardShortcutBinding[] = [
   { bindingId: "bind-reply", actionId: "reply-selected", keys: "Ctrl+R" },
   { bindingId: "bind-delete", actionId: "delete-selected", keys: "Delete" },
   { bindingId: "bind-overlay", actionId: "open-overlay-settings", keys: "Ctrl+O" },
-  { bindingId: "bind-shortcuts-ctrl", actionId: "show-shortcuts", keys: "Ctrl+?" },
+  { bindingId: "bind-shortcuts-ctrl", actionId: "show-shortcuts", keys: "Shift+?" },
   { bindingId: "bind-shortcuts-f1", actionId: "show-shortcuts", keys: "F1" },
 ];
 
@@ -239,7 +239,7 @@ export class KeyboardShortcutsService {
     if (event.shiftKey) keys.push("Shift");
     if (event.metaKey) keys.push("Meta");
 
-    const key = event.key.toUpperCase();
+    const key = this.getPrimaryKey(event);
     if (!["CONTROL", "ALT", "SHIFT", "META"].includes(key)) {
       keys.push(key);
     }
@@ -250,7 +250,7 @@ export class KeyboardShortcutsService {
   normalizeKeys(keys: string): string {
     return keys
       .split("+")
-      .map((k) => k.trim().toUpperCase())
+      .flatMap((k) => this.expandKeyToken(k))
       .sort((a, b) => {
         const modifiers = ["CTRL", "ALT", "SHIFT", "META"];
         const aIsMod = modifiers.includes(a);
@@ -260,5 +260,35 @@ export class KeyboardShortcutsService {
         return a.localeCompare(b);
       })
       .join("+");
+  }
+
+  private getPrimaryKey(event: KeyboardEvent): string {
+    const key = event.key.toUpperCase();
+
+    // `?` is typically produced by Shift+/, so canonicalize it to `/`
+    // and let the modifier list carry the `Shift` portion.
+    if (key === "?" || event.code === "Slash") {
+      return "/";
+    }
+
+    return key;
+  }
+
+  private expandKeyToken(token: string): string[] {
+    const normalized = token.trim().toUpperCase();
+
+    if (!normalized) {
+      return [];
+    }
+
+    if (normalized === "?") {
+      return ["SHIFT", "/"];
+    }
+
+    if (normalized === "SLASH") {
+      return ["/"];
+    }
+
+    return [normalized];
   }
 }
