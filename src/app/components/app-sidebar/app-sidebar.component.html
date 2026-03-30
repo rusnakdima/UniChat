@@ -13,7 +13,7 @@
         "
         (click)="navigate(item.path)"
       >
-        <mat-icon class="text-lg">{{ item.icon }}</mat-icon>
+        <mat-icon [fontIcon]="item.icon" />
         <span class="sr-only">{{ item.label }}</span>
       </button>
     }
@@ -30,9 +30,7 @@
           : 'text-slate-400 hover:bg-white/10'
       "
     >
-      <mat-icon class="text-lg">
-        {{ themeMode() === "dark" ? "light_mode" : "dark_mode" }}
-      </mat-icon>
+      <mat-icon [fontIcon]="themeMode() === 'dark' ? 'light_mode' : 'dark_mode'" />
       <span class="sr-only">Toggle theme</span>
     </button>
   </div>

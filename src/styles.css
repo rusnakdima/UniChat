@@ -1,6 +1,13 @@
 /* Material Icons */
 @import "@material-icons/font/css/all.css";
 
+/* Full height reset for proper flex layout */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 /* Custom element hosts for routed pages participate in block layout */
 app-settings-page-view,
 app-overlay-management-view {

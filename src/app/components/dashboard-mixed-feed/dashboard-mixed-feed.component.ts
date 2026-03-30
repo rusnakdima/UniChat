@@ -36,7 +36,7 @@ import { ConnectionErrorBannerComponent } from "@components/connection-error-ban
   selector: "app-dashboard-mixed-feed",
   standalone: true,
   host: {
-    class: "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+    class: "flex h-full min-w-0 flex-1 flex-col overflow-hidden",
   },
   imports: [
     DragDropModule,

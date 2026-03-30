@@ -50,7 +50,7 @@ interface SplitPlatformViewModel {
   selector: "app-dashboard-split-feed",
   standalone: true,
   host: {
-    class: "flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden",
+    class: "flex h-full min-w-0 w-full flex-1 flex-col overflow-hidden",
   },
   imports: [
     DragDropModule,
