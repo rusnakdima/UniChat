@@ -116,55 +116,108 @@
     <!-- YouTube API Section -->
     <app-settings-section
       title="YouTube live chat"
-      description="Add YouTube live streams by explicit video ID. Watch/live URLs are normalized to the video ID automatically. Sending requires a linked authorized YouTube account."
+      description="Connect your YouTube account to receive live chat messages. Video ID is automatically detected from your live stream."
       sectionId="youtube"
       [collapsedState]="sectionStates()['youtube']"
       (collapsedChange)="updateSectionState('youtube', $event)"
     >
-    </app-settings-section>
+      <div class="mt-4 space-y-3">
+        <div
+          class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-black/20"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <img
+                [src]="presentation.platformIconUrl('youtube')"
+                alt="YouTube"
+                title="YouTube"
+                class="h-6 w-6 shrink-0 object-contain"
+              />
+              @if (getAuthorizedAccounts('youtube').length > 0) {
+                <span class="text-sm text-emerald-600 dark:text-emerald-400">
+                  {{ getAuthorizedAccounts('youtube').length }} account(s) connected
+                </span>
+              } @else {
+                <span class="text-sm text-slate-500 dark:text-slate-400"> Not connected </span>
+              }
+            </div>
+            <button
+              type="button"
+              (click)="authorize('youtube')"
+              class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+            >
+              {{ getAuthorizedAccounts('youtube').length > 0 ? "Connect Another" : "Connect" }}
+            </button>
+          </div>
 
-    <!-- Blocked Words Section -->
-    <app-settings-section
-      title="Blocked Words & Filters"
-      description="Filter out unwanted words or patterns from chat messages"
-      sectionId="blockedWords"
-      [collapsedState]="sectionStates()['blockedWords']"
-      (collapsedChange)="updateSectionState('blockedWords', $event)"
-    >
-      <app-blocked-words-settings />
-    </app-settings-section>
+          @if (getAuthorizedAccounts('youtube').length > 0) {
+            <div class="mt-3 space-y-2">
+              @for (account of getAuthorizedAccounts('youtube'); track account.id) {
+                <div
+                  class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                >
+                  <div class="flex min-w-0 flex-col">
+                    <div class="flex items-center gap-2">
+                      <span class="truncate text-sm font-medium text-slate-900 dark:text-white">
+                        {{ account.username }}
+                      </span>
+                      @if ($first) {
+                        <span
+                          class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                          title="Primary account for this platform"
+                        >
+                          Primary
+                        </span>
+                      }
+                    </div>
+                    <span class="truncate text-xs text-slate-500 dark:text-slate-400">
+                      {{ account.userId }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="removeAuthorizedAccount(account)"
+                    class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400"
+                    title="Remove this account"
+                  >
+                    Remove
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
 
-    <!-- Highlight Rules Section -->
-    <app-settings-section
-      title="Highlight Rules"
-      description="Configure message highlighting rules"
-      sectionId="highlightRules"
-      [collapsedState]="sectionStates()['highlightRules']"
-      (collapsedChange)="updateSectionState('highlightRules', $event)"
-    >
-      <app-highlight-rules-settings />
-    </app-settings-section>
-
-    <!-- Keyboard shortcuts -->
-    <app-settings-section
-      title="Keyboard Shortcuts"
-      description="View and customize keyboard shortcuts"
-      sectionId="keyboardShortcuts"
-      [collapsedState]="sectionStates()['keyboardShortcuts']"
-      (collapsedChange)="updateSectionState('keyboardShortcuts', $event)"
-    >
-      <app-keyboard-shortcuts-settings />
-    </app-settings-section>
-
-    <!-- Session Export Section -->
-    <app-settings-section
-      title="Session Export"
-      description="Export chat session data"
-      sectionId="sessionExport"
-      [collapsedState]="sectionStates()['sessionExport']"
-      (collapsedChange)="updateSectionState('sessionExport', $event)"
-    >
-      <app-session-export-settings />
+        <!-- YouTube API Key Input (optional, for public live chat) -->
+        <div
+          class="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-black/20"
+        >
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
+            Optional: YouTube Data API Key
+          </h3>
+          <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            Add a YouTube Data API key to receive chat messages without OAuth (read-only mode). Not
+            required if you've connected your account above.
+          </p>
+          <div class="mt-3 flex gap-2">
+            <input
+              type="text"
+              [value]="youtubeApiKey"
+              (input)="youtubeApiKey = $any($event.target).value"
+              (blur)="saveYoutubeApiKey()"
+              placeholder="AIzaSy..."
+              class="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-500"
+            />
+            <button
+              type="button"
+              (click)="saveYoutubeApiKey()"
+              class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
     </app-settings-section>
 
     <!-- Channel Management Section -->
@@ -283,29 +336,25 @@
                   [checked]="channel.isVisible"
                   (checkedChange)="toggleChannelVisibility(channel.id)"
                   inputClass="sr-only"
-                  [label]="'Toggle ' + channel.channelName"
                 />
-                <img
-                  [src]="presentation.platformIconUrl(channel.platform)"
-                  [alt]="getPlatformLbl(channel.platform)"
-                  [title]="getPlatformLbl(channel.platform)"
-                  class="h-5 w-5 shrink-0 object-contain"
-                />
+                @if (channel.accountId) {
+                  <img
+                    [src]="getAccountIcon(channel.accountId)"
+                    [alt]="getAccountLabelById(channel.accountId) ?? 'Account'"
+                    [title]="getAccountLabelById(channel.accountId) ?? 'Account'"
+                    class="h-5 w-5 shrink-0 rounded-full object-cover"
+                  />
+                } @else {
+                  <img
+                    [src]="presentation.platformIconUrl(channel.platform)"
+                    [alt]="getPlatformLbl(channel.platform)"
+                    [title]="getPlatformLbl(channel.platform)"
+                    class="h-5 w-5 shrink-0 object-contain"
+                  />
+                }
                 <span class="text-sm font-medium text-slate-900 dark:text-white">
                   {{ channel.channelName }}
                 </span>
-                @if (channel.isAuthorized) {
-                  <span
-                    class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400"
-                  >
-                    Auth
-                  </span>
-                  @if (channel.accountId) {
-                    <span class="text-xs text-slate-500 dark:text-slate-400">
-                      {{ getAccountLabelById(channel.accountId) ?? "linked account" }}
-                    </span>
-                  }
-                }
               </div>
               <div class="flex items-center gap-2">
                 <select
@@ -345,6 +394,50 @@
           </div>
         }
       </div>
+    </app-settings-section>
+
+    <!-- Blocked Words Section -->
+    <app-settings-section
+      title="Blocked Words & Filters"
+      description="Filter out unwanted words or patterns from chat messages"
+      sectionId="blockedWords"
+      [collapsedState]="sectionStates()['blockedWords']"
+      (collapsedChange)="updateSectionState('blockedWords', $event)"
+    >
+      <app-blocked-words-settings />
+    </app-settings-section>
+
+    <!-- Highlight Rules Section -->
+    <app-settings-section
+      title="Highlight Rules"
+      description="Configure message highlighting rules"
+      sectionId="highlightRules"
+      [collapsedState]="sectionStates()['highlightRules']"
+      (collapsedChange)="updateSectionState('highlightRules', $event)"
+    >
+      <app-highlight-rules-settings />
+    </app-settings-section>
+
+    <!-- Keyboard shortcuts -->
+    <app-settings-section
+      title="Keyboard Shortcuts"
+      description="View and customize keyboard shortcuts"
+      sectionId="keyboardShortcuts"
+      [collapsedState]="sectionStates()['keyboardShortcuts']"
+      (collapsedChange)="updateSectionState('keyboardShortcuts', $event)"
+    >
+      <app-keyboard-shortcuts-settings />
+    </app-settings-section>
+
+    <!-- Session Export Section -->
+    <app-settings-section
+      title="Session Export"
+      description="Export chat session data"
+      sectionId="sessionExport"
+      [collapsedState]="sectionStates()['sessionExport']"
+      (collapsedChange)="updateSectionState('sessionExport', $event)"
+    >
+      <app-session-export-settings />
     </app-settings-section>
 
     <!-- Chat History Export Section -->

@@ -268,6 +268,16 @@ export class SettingsPageView {
     return account?.username ?? null;
   }
 
+  getAccountIcon(accountId: string): string {
+    const account = this.getChannelManagementAccounts().find((item) => item.id === accountId);
+    if (!account) {
+      return '';
+    }
+    // Return a default avatar or profile image URL if available
+    // For now, return a placeholder based on username
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(account.username)}&background=random&size=32`;
+  }
+
   getPlatformLbl(platform: PlatformType): string {
     return getPlatformLabel(platform);
   }
