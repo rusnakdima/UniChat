@@ -1,0 +1,18 @@
+@if (hasGap && missedCount > 0) {
+  <div
+    class="mx-4 my-2 flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700 backdrop-blur-sm dark:text-amber-400"
+  >
+    <mat-icon class="h-4 w-4">warning</mat-icon>
+    <span>
+      <strong>{{ missedCount }}</strong> messages missed during reconnection
+    </span>
+    <button
+      type="button"
+      (click)="dismiss()"
+      class="ml-2 rounded-lg p-1 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
+      title="Dismiss"
+    >
+      <mat-icon class="h-3 w-3">close</mat-icon>
+    </button>
+  </div>
+}
