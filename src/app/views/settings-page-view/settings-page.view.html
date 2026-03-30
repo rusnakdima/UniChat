@@ -1,14 +1,47 @@
-<div class="mx-auto w-full max-w-5xl px-4 py-8">
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <app-shared-header
+    title="Settings"
+    subtitle="Manage your connections and channels"
+    [showBackButton]="false"
+  />
+
+  <main class="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div class="flex flex-1 items-start justify-center px-6 py-8">
+      <div class="w-full max-w-5xl">
+        <!-- Page Header with Collapse/Expand Controls -->
+        <div class="mb-6 flex items-center justify-between">
+          <h1 class="text-2xl font-bold">Settings</h1>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              (click)="collapseAll()"
+              class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+              title="Collapse all sections"
+            >
+              <mat-icon class="!h-4 !w-4 align-middle">collapse_all</mat-icon>
+              <span class="ml-1 align-middle">Collapse All</span>
+            </button>
+            <button
+              type="button"
+              (click)="expandAll()"
+              class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+              title="Expand all sections"
+            >
+              <mat-icon class="!h-4 !w-4 align-middle">expand_all</mat-icon>
+              <span class="ml-1 align-middle">Expand All</span>
+            </button>
+          </div>
+        </div>
+
   <div class="flex flex-col gap-y-3">
     <!-- Authorization Section -->
-    <div
-      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
+    <app-settings-section
+      title="Authorization"
+      description="Connect your accounts to enable replying and moderation"
+      sectionId="authorization"
+      [collapsedState]="sectionStates()['authorization']"
+      (collapsedChange)="updateSectionState('authorization', $event)"
     >
-      <h2 class="text-lg font-semibold">Authorization</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Connect your accounts to enable replying and moderation
-      </p>
-
       <div class="mt-4 space-y-3">
         @for (platform of platforms; track platform) {
           <div
@@ -16,18 +49,12 @@
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <span
-                  class="inline-flex h-9 w-9 items-center justify-center rounded-full ring-1 ring-inset"
-                  [class]="getPlatformBadgeClasses(platform)"
+                <img
+                  [src]="presentation.platformIconUrl(platform)"
+                  [alt]="getPlatformLbl(platform)"
                   [title]="getPlatformLbl(platform)"
-                  [attr.aria-label]="getPlatformLbl(platform)"
-                >
-                  <img
-                    [src]="presentation.platformIconUrl(platform)"
-                    [alt]="getPlatformLbl(platform)"
-                    class="h-6 w-6 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
-                  />
-                </span>
+                  class="h-6 w-6 shrink-0 object-contain"
+                />
                 @if (getAuthorizedAccounts(platform).length > 0) {
                   <span class="text-sm text-emerald-600 dark:text-emerald-400">
                     {{ getAuthorizedAccounts(platform).length }} account(s) connected
@@ -84,40 +111,70 @@
           </div>
         }
       </div>
-    </div>
+    </app-settings-section>
 
     <!-- YouTube API Section -->
-    <div
-      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
+    <app-settings-section
+      title="YouTube live chat"
+      description="Add YouTube live streams by explicit video ID. Watch/live URLs are normalized to the video ID automatically. Sending requires a linked authorized YouTube account."
+      sectionId="youtube"
+      [collapsedState]="sectionStates()['youtube']"
+      (collapsedChange)="updateSectionState('youtube', $event)"
     >
-      <h2 class="text-lg font-semibold">YouTube live chat</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Add YouTube live streams by explicit video ID. Watch/live URLs are normalized to the video
-        ID automatically. Sending requires a linked authorized YouTube account.
-      </p>
-    </div>
+    </app-settings-section>
 
     <!-- Blocked Words Section -->
-    <app-blocked-words-settings />
+    <app-settings-section
+      title="Blocked Words & Filters"
+      description="Filter out unwanted words or patterns from chat messages"
+      sectionId="blockedWords"
+      [collapsedState]="sectionStates()['blockedWords']"
+      (collapsedChange)="updateSectionState('blockedWords', $event)"
+    >
+      <app-blocked-words-settings />
+    </app-settings-section>
 
     <!-- Highlight Rules Section -->
-    <app-highlight-rules-settings />
+    <app-settings-section
+      title="Highlight Rules"
+      description="Configure message highlighting rules"
+      sectionId="highlightRules"
+      [collapsedState]="sectionStates()['highlightRules']"
+      (collapsedChange)="updateSectionState('highlightRules', $event)"
+    >
+      <app-highlight-rules-settings />
+    </app-settings-section>
 
     <!-- Keyboard shortcuts -->
-    <app-keyboard-shortcuts-settings />
+    <app-settings-section
+      title="Keyboard Shortcuts"
+      description="View and customize keyboard shortcuts"
+      sectionId="keyboardShortcuts"
+      [collapsedState]="sectionStates()['keyboardShortcuts']"
+      (collapsedChange)="updateSectionState('keyboardShortcuts', $event)"
+    >
+      <app-keyboard-shortcuts-settings />
+    </app-settings-section>
 
     <!-- Session Export Section -->
-    <app-session-export-settings />
+    <app-settings-section
+      title="Session Export"
+      description="Export chat session data"
+      sectionId="sessionExport"
+      [collapsedState]="sectionStates()['sessionExport']"
+      (collapsedChange)="updateSectionState('sessionExport', $event)"
+    >
+      <app-session-export-settings />
+    </app-settings-section>
 
     <!-- Channel Management Section -->
-    <div
-      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
+    <app-settings-section
+      title="Channel Management"
+      description="Add channels to display in your chat view"
+      sectionId="channelManagement"
+      [collapsedState]="sectionStates()['channelManagement']"
+      (collapsedChange)="updateSectionState('channelManagement', $event)"
     >
-      <h2 class="text-lg font-semibold">Channel Management</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Add channels to display in your chat view
-      </p>
-
       @if (getChannelManagementAccounts().length > 0) {
         <div
           class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-black/20"
@@ -136,7 +193,7 @@
                   [src]="presentation.platformIconUrl(account.platform)"
                   [alt]="getPlatformLbl(account.platform)"
                   [title]="getPlatformLbl(account.platform)"
-                  class="h-5 w-5 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
+                  class="h-5 w-5 shrink-0 object-contain"
                 />
                 {{ account.username }}
               </span>
@@ -145,19 +202,13 @@
         </div>
       }
 
-      <div class="mt-4 flex gap-2">
-        <span
-          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset"
-          [class]="getPlatformBadgeClasses(selectedPlatform)"
+      <div class="mt-4 flex items-center gap-2">
+        <img
+          [src]="presentation.platformIconUrl(selectedPlatform)"
+          [alt]="getPlatformLbl(selectedPlatform)"
           [title]="getPlatformLbl(selectedPlatform)"
-          [attr.aria-label]="getPlatformLbl(selectedPlatform)"
-        >
-          <img
-            [src]="presentation.platformIconUrl(selectedPlatform)"
-            [alt]="getPlatformLbl(selectedPlatform)"
-            class="h-6 w-6 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
-          />
-        </span>
+          class="h-6 w-6 shrink-0 object-contain"
+        />
         <select
           [(ngModel)]="selectedPlatform"
           class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
@@ -192,7 +243,7 @@
       </div>
 
       <div class="mt-4 space-y-2">
-        @for (channel of chatListService.channels(); track channel.id) {
+        @for (channel of channels(); track channel.id) {
           <div
             class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-black/20"
           >
@@ -228,18 +279,18 @@
             } @else {
               <!-- View Mode -->
               <div class="flex items-center gap-3">
-                <span
-                  class="inline-flex h-8 w-8 items-center justify-center rounded-full ring-1 ring-inset"
-                  [class]="getPlatformBadgeClasses(channel.platform)"
+                <app-checkbox
+                  [checked]="channel.isVisible"
+                  (checkedChange)="toggleChannelVisibility(channel.id)"
+                  inputClass="sr-only"
+                  [label]="'Toggle ' + channel.channelName"
+                />
+                <img
+                  [src]="presentation.platformIconUrl(channel.platform)"
+                  [alt]="getPlatformLbl(channel.platform)"
                   [title]="getPlatformLbl(channel.platform)"
-                  [attr.aria-label]="getPlatformLbl(channel.platform)"
-                >
-                  <img
-                    [src]="presentation.platformIconUrl(channel.platform)"
-                    [alt]="getPlatformLbl(channel.platform)"
-                    class="h-5 w-5 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
-                  />
-                </span>
+                  class="h-5 w-5 shrink-0 object-contain"
+                />
                 <span class="text-sm font-medium text-slate-900 dark:text-white">
                   {{ channel.channelName }}
                 </span>
@@ -284,18 +335,6 @@
                 }
                 <button
                   type="button"
-                  (click)="toggleChannelVisibility(channel.id)"
-                  class="rounded-md px-3 py-1.5 text-xs font-medium transition"
-                  [class]="
-                    channel.isVisible
-                      ? 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20'
-                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10'
-                  "
-                >
-                  {{ channel.isVisible ? "Hide" : "Show" }}
-                </button>
-                <button
-                  type="button"
                   (click)="removeChannel(channel.id)"
                   class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400"
                 >
@@ -306,17 +345,16 @@
           </div>
         }
       </div>
-    </div>
+    </app-settings-section>
 
     <!-- Chat History Export Section -->
-    <div
-      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5"
+    <app-settings-section
+      title="Export Chat History"
+      description="Export your chat history to JSON, TXT, or CSV format"
+      sectionId="chatHistoryExport"
+      [collapsedState]="sectionStates()['chatHistoryExport']"
+      (collapsedChange)="updateSectionState('chatHistoryExport', $event)"
     >
-      <h2 class="text-lg font-semibold">Export Chat History</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Export your chat history to JSON, TXT, or CSV format
-      </p>
-
       <div
         class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-black/20"
       >
@@ -367,27 +405,21 @@
 
           <!-- Options -->
           <div class="grid grid-cols-2 gap-3">
-            <label
-              class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
-            >
-              <input type="checkbox" [(ngModel)]="exportIncludeTimestamps" class="peer" />
-              <span class="checkmark"></span>
-              Include Timestamps
-            </label>
-            <label
-              class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
-            >
-              <input type="checkbox" [(ngModel)]="exportIncludePlatform" class="peer" />
-              <span class="checkmark"></span>
-              Include Platform
-            </label>
-            <label
-              class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
-            >
-              <input type="checkbox" [(ngModel)]="exportIncludeBadges" class="peer" />
-              <span class="checkmark"></span>
-              Include Badges
-            </label>
+            <app-checkbox
+              [(checked)]="exportIncludeTimestamps"
+              label="Include Timestamps"
+              labelClass="text-sm text-slate-700 dark:text-slate-300"
+            />
+            <app-checkbox
+              [(checked)]="exportIncludePlatform"
+              label="Include Platform"
+              labelClass="text-sm text-slate-700 dark:text-slate-300"
+            />
+            <app-checkbox
+              [(checked)]="exportIncludeBadges"
+              label="Include Badges"
+              labelClass="text-sm text-slate-700 dark:text-slate-300"
+            />
           </div>
 
           <!-- Export Actions -->
@@ -419,7 +451,7 @@
               class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
             >
               <option value="">-- Select a channel --</option>
-              @for (channel of chatListService.channels(); track channel.id) {
+              @for (channel of channels(); track channel.id) {
                 <option [value]="channel.id">
                   {{ channel.platform | uppercase }} - {{ channel.channelName }}
                 </option>
@@ -428,6 +460,9 @@
           </div>
         </div>
       </div>
-    </div>
+    </app-settings-section>
   </div>
+      </div>
+    </div>
+  </main>
 </div>

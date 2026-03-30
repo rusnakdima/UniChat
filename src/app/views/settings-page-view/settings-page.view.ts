@@ -3,8 +3,10 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   effect,
   inject,
+  signal,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
@@ -31,10 +33,13 @@ import {
 } from "@helpers/chat.helper";
 
 /* components */
+import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
 import { BlockedWordsSettingsComponent } from "@components/blocked-words-settings/blocked-words-settings.component";
 import { HighlightRulesSettingsComponent } from "@components/highlight-rules-settings/highlight-rules-settings.component";
 import { KeyboardShortcutsSettingsComponent } from "@components/keyboard-shortcuts-settings/keyboard-shortcuts-settings.component";
 import { SessionExportSettingsComponent } from "@components/session-export-settings/session-export-settings.component";
+import { SettingsSectionComponent } from "@components/ui/settings-section/settings-section.component";
+import { SharedHeaderComponent } from "@components/shared-header/shared-header.component";
 @Component({
   selector: "app-settings-page-view",
   standalone: true,
@@ -42,10 +47,13 @@ import { SessionExportSettingsComponent } from "@components/session-export-setti
     FormsModule,
     MatIconModule,
     UpperCasePipe,
+    CheckboxComponent,
     BlockedWordsSettingsComponent,
     HighlightRulesSettingsComponent,
     KeyboardShortcutsSettingsComponent,
     SessionExportSettingsComponent,
+    SettingsSectionComponent,
+    SharedHeaderComponent,
   ],
   templateUrl: "./settings-page.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,6 +68,10 @@ export class SettingsPageView {
 
   readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
   readonly getPlatformBadgeClasses = getPlatformBadgeClasses;
+
+  // Local computed signals to avoid direct service signal reads in template
+  readonly channels = computed(() => this.chatListService.channels());
+  readonly visibleChannels = computed(() => this.chatListService.getVisibleChannels());
 
   newChannelName = "";
   selectedPlatform: PlatformType = "twitch";
@@ -79,6 +91,72 @@ export class SettingsPageView {
 
   /** Export statistics */
   readonly exportStats = () => this.chatHistoryExport.getExportStats();
+
+  /** Section collapse state management */
+  readonly sectionStates = signal<Record<string, boolean>>({
+    authorization: true,
+    youtube: true,
+    blockedWords: true,
+    highlightRules: true,
+    keyboardShortcuts: true,
+    sessionExport: true,
+    channelManagement: true,
+    chatHistoryExport: true,
+  });
+
+  /** Collapse all sections */
+  collapseAll(): void {
+    this.sectionStates.set({
+      authorization: true,
+      youtube: true,
+      blockedWords: true,
+      highlightRules: true,
+      keyboardShortcuts: true,
+      sessionExport: true,
+      channelManagement: true,
+      chatHistoryExport: true,
+    });
+    this.changeDetectorRef.markForCheck();
+  }
+
+  /** Expand all sections */
+  expandAll(): void {
+    this.sectionStates.set({
+      authorization: false,
+      youtube: false,
+      blockedWords: false,
+      highlightRules: false,
+      keyboardShortcuts: false,
+      sessionExport: false,
+      channelManagement: false,
+      chatHistoryExport: false,
+    });
+    this.changeDetectorRef.markForCheck();
+  }
+
+  /** Toggle a specific section */
+  toggleSection(sectionId: string): void {
+    this.sectionStates.update((states) => ({
+      ...states,
+      [sectionId]: !states[sectionId],
+    }));
+    this.changeDetectorRef.markForCheck();
+  }
+
+  /** Check if all sections are collapsed */
+  allCollapsed = computed(() => {
+    const states = this.sectionStates();
+    return Object.values(states).every((v) => v);
+  });
+
+  /** Update section state - helper for template */
+  updateSectionState(sectionId: string, collapsed: boolean): void {
+    this.sectionStates.update((states) => ({
+      ...states,
+      [sectionId]: collapsed,
+    }));
+    this.changeDetectorRef.markForCheck();
+  }
 
   constructor() {
     effect(() => {
@@ -136,6 +214,8 @@ export class SettingsPageView {
   }
 
   toggleChannelVisibility(channelId: string): void {
+    // Simply toggle channel visibility
+    // This affects getVisibleChannels() which is used everywhere
     this.chatListService.toggleChannelVisibility(channelId);
   }
 
