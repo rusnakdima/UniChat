@@ -1,0 +1,18 @@
+<label class="flex items-center gap-2 cursor-pointer" [class]="labelClass">
+  <input
+    type="radio"
+    [ngModel]="value"
+    (ngModelChange)="onModelChange($event)"
+    [value]="radioValue"
+    [disabled]="disabled"
+    (change)="onRadioChange($event)"
+    (click)="onRadioClick($event)"
+    class="peer"
+    [class]="inputClass"
+  />
+  <span class="radio-mark"></span>
+  @if (label) {
+    <span [class]="labelTextClass">{{ label }}</span>
+  }
+  <ng-content></ng-content>
+</label>

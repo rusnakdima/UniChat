@@ -1,0 +1,17 @@
+<label class="flex items-center gap-2 cursor-pointer" [class]="labelClass">
+  <input
+    type="checkbox"
+    [ngModel]="checked"
+    (ngModelChange)="onModelChange($event)"
+    [disabled]="disabled"
+    (change)="onCheckboxChange($event)"
+    (click)="onCheckboxClick($event)"
+    class="peer"
+    [class]="inputClass"
+  />
+  <span class="checkmark"></span>
+  @if (label) {
+    <span [class]="labelTextClass">{{ label }}</span>
+  }
+  <ng-content></ng-content>
+</label>
