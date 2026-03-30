@@ -46,6 +46,7 @@ import {
   getDensityTextClasses,
   getPlatformBadgeClasses,
   getPlatformLabel,
+  isSafeRemoteImageUrl,
 } from "@helpers/chat.helper";
 @Component({
   selector: "app-overlay-view",
@@ -69,6 +70,14 @@ export class OverlayView implements OnDestroy {
   private readonly avatarCache = inject(AvatarCacheService);
   private configPollInterval: ReturnType<typeof setInterval> | null = null;
   private lastKnownConfig: Map<string, string> = new Map();
+  private readonly pendingUserAvatarLoads = new Set<string>();
+  private readonly pendingChannelAvatarLoads = new Set<string>();
+  private readonly messageSegmentsCache = new Map<
+    string,
+    { text: string; segments: ChatTextSegment[] }
+  >();
+  private readonly brokenEmoteUrls = new Set<string>();
+  private readonly onOverlayConfigChangedHandler = () => this.onOverlayConfigChanged();
 
   readonly customCssText = signal<string>("");
   readonly textSize = signal<number>(16);
@@ -76,6 +85,8 @@ export class OverlayView implements OnDestroy {
   readonly animationDirection = signal<OverlayDirection>("top");
   readonly maxMessages = signal<number>(6);
   readonly transparentBg = signal<boolean>(false);
+
+  readonly animationCssText = computed(() => this.animationCss());
 
   readonly backgroundColor = computed(() => {
     return this.transparentBg() ? "transparent" : "rgba(0, 0, 0, 1)";
@@ -102,7 +113,10 @@ export class OverlayView implements OnDestroy {
     void this.initializeOverlayRuntime(widget);
 
     // Same-tab updates (management page saves in the same window).
-    window.addEventListener("unichat-overlay-config-changed", () => this.onOverlayConfigChanged());
+    window.addEventListener(
+      "unichat-overlay-config-changed",
+      this.onOverlayConfigChangedHandler
+    );
 
     // Auto-trigger change detection when config signals change
     effect(() => {
@@ -114,6 +128,16 @@ export class OverlayView implements OnDestroy {
       this.customCssText();
       this.backgroundColor();
       this.cdr.markForCheck();
+    });
+
+    // Load avatars based on currently queued overlay messages.
+    // This keeps `getChannelImageUrl()` / `getUserImageUrl()` side-effect free.
+    effect(() => {
+      const messages = this.overlayWs.messages();
+      const changed = this.ensureAvatarCachesForMessages(messages);
+      if (changed) {
+        this.cdr.markForCheck();
+      }
     });
 
     // Poll backend for config changes (works across all Tauri windows)
@@ -145,6 +169,7 @@ export class OverlayView implements OnDestroy {
       filter: this.currentFilter,
       channelIds: channelIds,
       preserveMessages: true, // Preserve messages on reconnect to prevent flickering
+      maxMessages: this.maxMessages(),
     });
   }
 
@@ -224,6 +249,7 @@ export class OverlayView implements OnDestroy {
         filter: this.currentFilter,
         channelIds: channelIds,
         preserveMessages: true, // Preserve messages when config changes
+        maxMessages: this.maxMessages(),
       });
       this.cdr.markForCheck();
     });
@@ -233,6 +259,12 @@ export class OverlayView implements OnDestroy {
     if (this.configPollInterval) {
       clearInterval(this.configPollInterval);
     }
+
+    // Remove global listener to prevent leaks on repeated mount/unmount.
+    window.removeEventListener(
+      "unichat-overlay-config-changed",
+      this.onOverlayConfigChangedHandler
+    );
   }
 
   private async startBackendConfigPolling(widgetId: string): Promise<void> {
@@ -277,16 +309,22 @@ export class OverlayView implements OnDestroy {
         config.channelIds,
         this.chatList.getVisibleChannels()
       );
+      const currentChannelsCanonical = this.canonicalizeChannelRefs(currentChannels);
       const currentTextSize = config.textSize || 16;
       const currentAnimationType = config.animationType || "fade";
       const currentAnimationDirection = config.animationDirection || "top";
       const currentMaxMessages = config.maxMessages || 6;
       const currentTransparentBg = config.transparentBg || false;
 
+      const prevFilter = this.lastKnownConfig.get("filter");
+      const prevChannelsCanonical = this.lastKnownConfig.get("channelsCanonical");
+
+      const hasFilterOrChannelsChanged =
+        prevFilter !== currentFilter || prevChannelsCanonical !== currentChannelsCanonical;
+
       const hasChanged =
-        this.lastKnownConfig.get("filter") !== currentFilter ||
+        hasFilterOrChannelsChanged ||
         this.lastKnownConfig.get("css") !== currentCss ||
-        this.lastKnownConfig.get("channels") !== JSON.stringify(currentChannels ?? null) ||
         this.lastKnownConfig.get("textSize") !== String(currentTextSize) ||
         this.lastKnownConfig.get("animationType") !== currentAnimationType ||
         this.lastKnownConfig.get("animationDirection") !== currentAnimationDirection ||
@@ -296,7 +334,7 @@ export class OverlayView implements OnDestroy {
       if (hasChanged) {
         this.lastKnownConfig.set("filter", currentFilter);
         this.lastKnownConfig.set("css", currentCss);
-        this.lastKnownConfig.set("channels", JSON.stringify(currentChannels ?? null));
+        this.lastKnownConfig.set("channelsCanonical", currentChannelsCanonical ?? "");
         this.lastKnownConfig.set("textSize", String(currentTextSize));
         this.lastKnownConfig.set("animationType", currentAnimationType);
         this.lastKnownConfig.set("animationDirection", currentAnimationDirection);
@@ -313,18 +351,21 @@ export class OverlayView implements OnDestroy {
         this.maxMessages.set(currentMaxMessages);
         this.transparentBg.set(currentTransparentBg);
 
-        // Reconnect WebSocket with new filter/channels
-        const channelIds = this.extractChannelIdsFromSelection(this.currentChannelIds);
-        this.overlayWs.connect({
-          port: this.widget!.port,
-          widgetId: this.widget!.id,
-          filter: this.currentFilter,
-          channelIds: channelIds,
-          preserveMessages: true, // Preserve messages when config changes
-        });
+        // Reconnect WebSocket only if filter/channels set changed.
+        if (hasFilterOrChannelsChanged) {
+          const channelIds = this.extractChannelIdsFromSelection(this.currentChannelIds);
+          this.overlayWs.connect({
+            port: this.widget!.port,
+            widgetId: this.widget!.id,
+            filter: this.currentFilter,
+            channelIds: channelIds,
+            preserveMessages: true, // Preserve messages when config changes
+            maxMessages: this.maxMessages(),
+          });
 
-        // Poll messages from backend after config change
-        await this.pollBackendMessages(widgetId, currentChannels);
+          // Poll messages from backend after filter/channels change.
+          await this.pollBackendMessages(widgetId, currentChannels);
+        }
 
         this.cdr.markForCheck();
       }
@@ -365,7 +406,15 @@ export class OverlayView implements OnDestroy {
     if (channelIds === undefined) {
       return undefined;
     }
-    return channelIds;
+    // Ensure stable ordering to avoid WS reconnect storms.
+    return [...channelIds].sort();
+  }
+
+  private canonicalizeChannelRefs(channelRefs: string[] | undefined): string | null {
+    if (!channelRefs || channelRefs.length === 0) {
+      return null;
+    }
+    return [...channelRefs].sort().join("|");
   }
 
   platformLabel(platform: PlatformType): string {
@@ -382,6 +431,10 @@ export class OverlayView implements OnDestroy {
 
   hasMultipleChannels(): boolean {
     return (this.currentChannelIds?.length ?? 0) > 1;
+  }
+
+  shouldShowPlatformIcon(): boolean {
+    return this.hasMultipleChannels();
   }
 
   /**
@@ -407,46 +460,110 @@ export class OverlayView implements OnDestroy {
    * Get channel profile image URL for overlay messages
    * Currently supports Twitch multi-chat channels
    */
+  private ensureAvatarCachesForMessages(
+    messages: readonly OverlayChatMessage[]
+  ): boolean {
+    let changed = false;
+
+    for (const message of messages) {
+      // Channel avatar
+      if (message.sourceChannelId) {
+        const channelCacheKey = this.channelAvatarCacheKey(message);
+
+        // Prefer direct provider-provided URL (if safe), but only set if missing.
+        if (isSafeRemoteImageUrl(message.channelImageUrl)) {
+          const directUrl = message.channelImageUrl!.trim();
+          if (!this.avatarCache.hasChannelAvatar(channelCacheKey)) {
+            this.avatarCache.setChannelAvatar(channelCacheKey, directUrl);
+            changed = true;
+          }
+        }
+
+        if (!this.avatarCache.hasChannelAvatar(channelCacheKey)) {
+          const channel = findChannelByRef(
+            this.chatList.getChannels(message.platform),
+            buildChannelRef(message.platform, message.sourceChannelId)
+          );
+
+          if (channel && isSafeRemoteImageUrl(channel.channelImageUrl)) {
+            const imageUrl = channel.channelImageUrl!.trim();
+            this.avatarCache.setChannelAvatar(channelCacheKey, imageUrl);
+            changed = true;
+          } else if (!this.pendingChannelAvatarLoads.has(channelCacheKey)) {
+            // Fallback: fetch via provider APIs (optional).
+            if (message.platform === "twitch" && channel) {
+              this.pendingChannelAvatarLoads.add(channelCacheKey);
+              void this.fetchTwitchChannelImage(channel.channelName, channelCacheKey);
+            } else if (message.platform === "kick" && channel) {
+              this.pendingChannelAvatarLoads.add(channelCacheKey);
+              void this.fetchKickChannelImage(channel.channelName, channelCacheKey);
+            }
+          }
+        }
+      }
+
+      // User avatar
+      const userCacheKey = this.userAvatarCacheKey(message);
+
+      if (isSafeRemoteImageUrl(message.authorAvatarUrl)) {
+        const directUrl = message.authorAvatarUrl!.trim();
+        if (!this.avatarCache.hasUserAvatar(userCacheKey)) {
+          this.avatarCache.setUserAvatar(userCacheKey, directUrl);
+          changed = true;
+        }
+      }
+
+      if (!this.avatarCache.hasUserAvatar(userCacheKey) && !isSafeRemoteImageUrl(message.authorAvatarUrl)) {
+        if (!this.pendingUserAvatarLoads.has(userCacheKey)) {
+          this.pendingUserAvatarLoads.add(userCacheKey);
+          if (message.platform === "twitch") {
+            void this.fetchTwitchUserImage(message.author, userCacheKey);
+          } else if (message.platform === "kick") {
+            void this.fetchKickUserImage(message.author, userCacheKey);
+          }
+        }
+      }
+    }
+
+    return changed;
+  }
+
+  isEmoteUrlBroken(url: string | undefined | null): boolean {
+    return !!url && this.brokenEmoteUrls.has(url);
+  }
+
+  onEmoteImageError(url: string | undefined | null): void {
+    if (!url) {
+      return;
+    }
+    if (!this.brokenEmoteUrls.has(url)) {
+      this.brokenEmoteUrls.add(url);
+      this.cdr.markForCheck();
+    }
+  }
+
   getChannelImageUrl(message: OverlayChatMessage): string | null {
     if (!message.sourceChannelId) {
       return null;
     }
 
-    if (message.channelImageUrl) {
-      return message.channelImageUrl;
+    if (isSafeRemoteImageUrl(message.channelImageUrl)) {
+      return message.channelImageUrl!.trim();
     }
 
-    const cacheKey = `${message.platform}:${message.sourceChannelId}`;
+    const cacheKey = this.channelAvatarCacheKey(message);
 
-    // Check cache first
-    const cached = this.avatarCache.getChannelAvatar(cacheKey);
-    if (cached) {
-      return cached;
+    return this.avatarCache.getChannelAvatar(cacheKey) ?? null;
+  }
+
+  getUserImageUrl(message: OverlayChatMessage): string | null {
+    const cacheKey = this.userAvatarCacheKey(message);
+
+    if (isSafeRemoteImageUrl(message.authorAvatarUrl)) {
+      return message.authorAvatarUrl!.trim();
     }
 
-    const channel = findChannelByRef(
-      this.chatList.getChannels(message.platform),
-      buildChannelRef(message.platform, message.sourceChannelId)
-    );
-
-    if (!channel) {
-      if (message.platform === "youtube") {
-        return `https://i.ytimg.com/vi/${encodeURIComponent(message.sourceChannelId)}/default.jpg`;
-      }
-      return null;
-    }
-
-    if (message.platform === "twitch") {
-      void this.fetchTwitchChannelImage(channel.channelName, cacheKey);
-    } else if (message.platform === "kick") {
-      void this.fetchKickChannelImage(channel.channelName, cacheKey);
-    } else if (message.platform === "youtube") {
-      const fallback = `https://i.ytimg.com/vi/${encodeURIComponent(channel.channelId)}/default.jpg`;
-      this.avatarCache.setChannelAvatar(cacheKey, fallback);
-      return fallback;
-    }
-
-    return cached ?? null;
+    return this.avatarCache.getUserAvatar(cacheKey) ?? null;
   }
 
   /**
@@ -457,11 +574,12 @@ export class OverlayView implements OnDestroy {
       const imageUrl = await this.twitchChat.fetchUserProfileImage(channelName);
       if (imageUrl) {
         this.avatarCache.setChannelAvatar(cacheKey, imageUrl);
-        // Trigger change detection to update UI
-        this.cdr.markForCheck();
       }
     } catch {
       // Ignore errors - channel images are optional
+    } finally {
+      this.pendingChannelAvatarLoads.delete(cacheKey);
+      this.cdr.markForCheck();
     }
   }
 
@@ -470,11 +588,48 @@ export class OverlayView implements OnDestroy {
       const info = await this.kickChat.fetchUserInfo(channelName);
       if (info?.profile_pic_url) {
         this.avatarCache.setChannelAvatar(cacheKey, info.profile_pic_url);
-        this.cdr.markForCheck();
       }
     } catch {
       // Ignore errors - channel images are optional
+    } finally {
+      this.pendingChannelAvatarLoads.delete(cacheKey);
+      this.cdr.markForCheck();
     }
+  }
+
+  private async fetchTwitchUserImage(username: string, cacheKey: string): Promise<void> {
+    try {
+      const imageUrl = await this.twitchChat.fetchUserProfileImage(username);
+      if (imageUrl) {
+        this.avatarCache.setUserAvatar(cacheKey, imageUrl);
+      }
+    } catch {
+      // Ignore errors - author avatars are optional
+    } finally {
+      this.pendingUserAvatarLoads.delete(cacheKey);
+      this.cdr.markForCheck();
+    }
+  }
+
+  private async fetchKickUserImage(username: string, cacheKey: string): Promise<void> {
+    try {
+      const info = await this.kickChat.fetchUserInfo(username);
+      if (info?.profile_pic_url) {
+        this.avatarCache.setUserAvatar(cacheKey, info.profile_pic_url);
+      }
+    } catch {
+      // Ignore errors - author avatars are optional
+    } finally {
+      this.pendingUserAvatarLoads.delete(cacheKey);
+      this.cdr.markForCheck();
+    }
+  }
+
+  channelTitle(message: OverlayChatMessage): string {
+    const channel = this.chatList
+      .getChannels(message.platform)
+      .find((item) => item.channelId === message.sourceChannelId);
+    return channel?.channelName ?? message.sourceChannelId ?? this.platformLabel(message.platform);
   }
 
   messageTimeLabel(message: OverlayChatMessage): string {
@@ -549,8 +704,8 @@ export class OverlayView implements OnDestroy {
         break;
     }
 
-    // Generate unique animation name to avoid conflicts
-    const animId = `anim-${type}-${dir}-${Date.now()}`;
+    // Deterministic animation name so Angular re-renders don't continuously recreate keyframes.
+    const animId = `anim-${type}-${dir}-${this.widgetId}`;
 
     if (type === "fade") {
       return `
@@ -592,6 +747,11 @@ export class OverlayView implements OnDestroy {
   }
 
   getMessageSegments(message: OverlayChatMessage): ChatTextSegment[] {
+    const cached = this.messageSegmentsCache.get(message.id);
+    if (cached && cached.text === message.text) {
+      return cached.segments;
+    }
+
     // Create a minimal ChatMessage-like object for rich text parsing
     const chatMessage: ChatMessage = {
       id: message.id,
@@ -621,7 +781,10 @@ export class OverlayView implements OnDestroy {
       },
       authorAvatarUrl: message.authorAvatarUrl,
     };
-    return this.richText.buildSegments(chatMessage);
+
+    const segments = this.richText.buildSegments(chatMessage);
+    this.messageSegmentsCache.set(message.id, { text: message.text, segments });
+    return segments;
   }
 
   messagesContainerClasses(): string {
@@ -656,6 +819,14 @@ export class OverlayView implements OnDestroy {
       minute: "2-digit",
       second: "2-digit",
     });
+  }
+
+  private channelAvatarCacheKey(message: OverlayChatMessage): string {
+    return `${message.platform}:${message.sourceChannelId ?? ""}`;
+  }
+
+  private userAvatarCacheKey(message: OverlayChatMessage): string {
+    return `${message.platform}:${message.sourceChannelId ?? ""}:${message.author.trim().toLowerCase()}`;
   }
 }
 
