@@ -10,7 +10,6 @@ import {
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
-import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
@@ -21,6 +20,9 @@ import { ChatMessage } from "@models/chat.model";
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatSearchService, SearchResult } from "@services/ui/chat-search.service";
+
+/* components */
+import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
 @Component({
   selector: "app-chat-search",
   standalone: true,
@@ -29,9 +31,9 @@ import { ChatSearchService, SearchResult } from "@services/ui/chat-search.servic
     MatIconModule,
     MatButtonModule,
     MatInputModule,
-    MatCheckboxModule,
     MatProgressSpinnerModule,
     DatePipe,
+    CheckboxComponent,
   ],
   templateUrl: "./chat-search.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,

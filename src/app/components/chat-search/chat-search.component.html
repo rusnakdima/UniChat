@@ -94,24 +94,16 @@
 
     <!-- Options -->
     <div class="flex gap-4">
-      <label class="flex items-center gap-2 text-xs cursor-pointer">
-        <input
-          type="checkbox"
-          [(ngModel)]="isRegex"
-          class="peer"
-        />
-        <span class="checkmark"></span>
-        <span>Regex</span>
-      </label>
-      <label class="flex items-center gap-2 text-xs cursor-pointer">
-        <input
-          type="checkbox"
-          [(ngModel)]="caseSensitive"
-          class="peer"
-        />
-        <span class="checkmark"></span>
-        <span>Case sensitive</span>
-      </label>
+      <app-checkbox
+        [(checked)]="isRegex"
+        label="Regex"
+        labelClass="text-xs"
+      />
+      <app-checkbox
+        [(checked)]="caseSensitive"
+        label="Case sensitive"
+        labelClass="text-xs"
+      />
     </div>
   </div>
 
@@ -147,8 +139,17 @@
               </div>
               <p
                 class="line-clamp-2 text-xs text-slate-700 dark:text-slate-300"
-                [innerHTML]="result.highlightedText"
-              ></p>
+              >
+                @for (seg of result.highlightedSegments; track $index) {
+                  @if (seg.isMatch) {
+                    <mark class="rounded bg-emerald-100 px-0.5 text-emerald-700">
+                      {{ seg.text }}
+                    </mark>
+                  } @else {
+                    <span>{{ seg.text }}</span>
+                  }
+                }
+              </p>
               <div class="flex items-center gap-2 text-[10px] text-slate-400">
                 <span>{{ result.message.platform }}</span>
                 <span>·</span>
