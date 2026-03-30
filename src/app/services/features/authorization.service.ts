@@ -156,16 +156,16 @@ export class AuthorizationService {
   }
 
   private ensureChannelForAuthorizedAccount(account: AuthAccountPayload): void {
-    if (account.platform !== "twitch") {
+    if (account.platform !== "twitch" && account.platform !== "youtube") {
       return;
     }
 
     const existing = this.chatListService
-      .getChannels("twitch")
+      .getChannels(account.platform)
       .some((channel) => channel.channelName.toLowerCase() === account.username.toLowerCase());
     if (!existing) {
       this.chatListService.addChannel(
-        "twitch",
+        account.platform,
         account.username,
         account.username,
         account.id,

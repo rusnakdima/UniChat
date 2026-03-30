@@ -89,7 +89,15 @@ export class YouTubeChatService extends BaseChatProviderService {
     this.pollAbortByChannel.set(storageKey, abortController);
 
     try {
-      const videoId = this.normalizeVideoId(storageKey);
+      // Try to get video ID - either from storage key (if it's already a video ID)
+      // or by fetching from channel name (if connected via OAuth)
+      let videoId: string | null = this.normalizeVideoId(storageKey);
+      
+      // If not a valid video ID, try to fetch from channel name
+      if (!videoId) {
+        videoId = await this.fetchVideoIdFromChannelName(storageKey);
+      }
+      
       if (!videoId) {
         this.errorService.reportChannelNotFound(storageKey, "youtube");
         return;
@@ -100,6 +108,46 @@ export class YouTubeChatService extends BaseChatProviderService {
       this.errorService.reportNetworkError(storageKey, "Failed to start chat session", true);
     } finally {
       this.pollAbortByChannel.delete(storageKey);
+    }
+  }
+
+  private async fetchVideoIdFromChannelName(channelName: string): Promise<string | null> {
+    try {
+      // Try to get from authorized account
+      const account = this.authorizationService.getPrimaryAccount("youtube");
+      if (account?.accessToken) {
+        // Fetch current live video ID from channel using OAuth
+        const videoId = await invoke<string>("youtubeFetchLiveVideoId", {
+          channelName,
+          accessToken: account.accessToken,
+        });
+        if (videoId) {
+          return videoId;
+        }
+      }
+      
+      // Fallback: try API key method
+      const apiKey = this.getApiKey();
+      if (apiKey) {
+        const videoId = await invoke<string>("youtubeFetchLiveVideoIdByApiKey", {
+          channelName,
+          apiKey,
+        });
+        if (videoId) {
+          return videoId;
+        }
+      }
+    } catch {
+      // Failed to fetch video ID
+    }
+    return null;
+  }
+
+  private getApiKey(): string | null {
+    try {
+      return localStorage.getItem("unichat-youtube-api-key") || null;
+    } catch {
+      return null;
     }
   }
 
