@@ -1,93 +1,21 @@
 <div
-  class="flex h-screen w-full min-h-0 flex-col bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
+  class="flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
 >
-  <header
-    class="flex w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900"
-    role="banner"
-  >
-    <div class="flex items-center gap-4">
-      <h1 class="text-lg font-semibold tracking-tight">UniChat</h1>
-      <div class="flex items-center gap-2">
-        <span
-          class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
-          aria-label="Current feed mode: {{ getFeedMode() }}"
-        >
-          {{ getFeedMode() === "mixed" ? "Mixed" : "Split" }}
-        </span>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-2" role="navigation" aria-label="Dashboard controls">
-      <!-- Search Button -->
-      <button
-        type="button"
-        (click)="toggleSearch()"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-        title="Search messages (Ctrl+K)"
-        aria-label="Search messages"
-        aria-keyshortcuts="Ctrl+K"
-      >
-        <mat-icon class="!h-4 !w-4">search</mat-icon>
-        <span aria-hidden="true">Search</span>
-      </button>
-
-      <!-- Pinned Messages Button -->
-      <button
-        type="button"
-        (click)="togglePinned()"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-        title="Pinned messages"
-        aria-label="Pinned messages"
-        aria-keyshortcuts="Ctrl+P"
-      >
-        <mat-icon class="!h-4 !w-4">push_pin</mat-icon>
-        @if (pinnedCount() > 0) {
-          <span class="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-            {{ pinnedCount() }}
-          </span>
-        }
-        <span aria-hidden="true">Pinned</span>
-      </button>
-
-      @if (getFeedMode() === "split") {
-        <button
-          type="button"
-          (click)="resetSplitSizes()"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-          title="Reset all block sizes to default"
-          aria-label="Reset split view sizes"
-        >
-          <mat-icon class="!h-4 !w-4">restart_alt</mat-icon>
-          <span aria-hidden="true">Reset sizes</span>
-        </button>
-      }
-      <div
-        class="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-white/5"
-        role="group"
-        aria-label="Feed mode toggle"
-      >
-        @for (feedMode of feedModes; track feedMode) {
-          <button
-            type="button"
-            (click)="setFeedMode(feedMode)"
-            class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
-            [class]="
-              dashboardPreferencesService.preferences().feedMode === feedMode
-                ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
-                : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
-            "
-            [attr.aria-pressed]="dashboardPreferencesService.preferences().feedMode === feedMode"
-            [attr.aria-label]="'Switch to ' + (feedMode === 'mixed' ? 'mixed' : 'split') + ' view'"
-          >
-            {{ feedMode === "mixed" ? "Mixed" : "Split" }}
-          </button>
-        }
-      </div>
-    </div>
-  </header>
+  <app-dashboard-header
+    [feedMode]="getFeedMode()"
+    [pinnedCount]="pinnedCount()"
+    [showSearch]="showSearch()"
+    [showPinned]="showPinned()"
+    [showShortcuts]="showShortcuts()"
+    (toggleSearch)="toggleSearch()"
+    (togglePinned)="togglePinned()"
+    (toggleShortcuts)="toggleShortcuts()"
+    (setFeedMode)="setFeedMode($event)"
+    (resetSizes)="resetSplitSizes()"
+  />
 
   <main
-    class="flex min-h-0 flex-1 flex-col overflow-hidden"
+    class="flex min-h-0 flex-1 flex-col overflow-y-auto"
     role="main"
     aria-label="Chat dashboard"
   >

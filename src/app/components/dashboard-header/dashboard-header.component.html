@@ -1,0 +1,84 @@
+<header
+  class="sticky top-0 z-40 flex w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-white/10 dark:bg-slate-900/80"
+  role="banner"
+>
+  <div class="flex items-center gap-4">
+    <h1 class="text-lg font-semibold tracking-tight">UniChat</h1>
+    <div class="flex items-center gap-2">
+      <span
+        class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
+        [attr.aria-label]="'Current feed mode: ' + (feedMode() === 'mixed' ? 'Mixed' : 'Split')"
+      >
+        {{ feedMode() === "mixed" ? "Mixed" : "Split" }}
+      </span>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2" role="navigation" aria-label="Dashboard controls">
+    <!-- Search Button -->
+    <button
+      type="button"
+      (click)="toggleSearch.emit()"
+      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+      title="Search messages (Ctrl+K)"
+      aria-label="Search messages"
+      aria-keyshortcuts="Ctrl+K"
+    >
+      <mat-icon class="!h-4 !w-4">search</mat-icon>
+      <span aria-hidden="true">Search</span>
+    </button>
+
+    <!-- Pinned Messages Button -->
+    <button
+      type="button"
+      (click)="togglePinned.emit()"
+      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+      title="Pinned messages"
+      aria-label="Pinned messages"
+      aria-keyshortcuts="Ctrl+P"
+    >
+      <mat-icon class="!h-4 !w-4">push_pin</mat-icon>
+      @if (pinnedCount() > 0) {
+        <span class="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          {{ pinnedCount() }}
+        </span>
+      }
+      <span aria-hidden="true">Pinned</span>
+    </button>
+
+    @if (feedMode() === "split") {
+      <button
+        type="button"
+        (click)="resetSizes.emit()"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+        title="Reset all block sizes to default"
+        aria-label="Reset split view sizes"
+      >
+        <mat-icon class="!h-4 !w-4">restart_alt</mat-icon>
+        <span aria-hidden="true">Reset sizes</span>
+      </button>
+    }
+    <div
+      class="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-white/5"
+      role="group"
+      aria-label="Feed mode toggle"
+    >
+      @for (mode of feedModes; track mode) {
+        <button
+          type="button"
+          (click)="setFeedMode.emit(mode)"
+          class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+          [class]="
+            feedMode() === mode
+              ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
+              : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
+          "
+          [attr.aria-pressed]="feedMode() === mode"
+          [attr.aria-label]="'Switch to ' + (mode === 'mixed' ? 'mixed' : 'split') + ' view'"
+        >
+          {{ mode === "mixed" ? "Mixed" : "Split" }}
+        </button>
+      }
+    </div>
+  </div>
+</header>

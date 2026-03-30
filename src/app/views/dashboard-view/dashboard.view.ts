@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  effect,
   inject,
   signal,
   viewChild,
@@ -12,24 +11,21 @@ import { MatIconModule } from "@angular/material/icon";
 import { Router } from "@angular/router";
 
 /* models */
-import { FeedMode, PlatformType, ChatMessage } from "@models/chat.model";
+import { FeedMode, ChatMessage } from "@models/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
-import { ChatStateManagerService } from "@services/data/chat-state-manager.service";
 import { ChatStateService } from "@services/data/chat-state.service";
 import { DashboardChatInteractionService } from "@services/ui/dashboard-chat-interaction.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
-import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
-import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.service";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
 import { PinnedMessagesService } from "@services/ui/pinned-messages.service";
-import { buildChannelRef } from "@utils/channel-ref.util";
 
 /* components */
 import { ChatSearchComponent } from "@components/chat-search/chat-search.component";
+import { DashboardHeaderComponent } from "@components/dashboard-header/dashboard-header.component";
 import { DashboardMixedFeedComponent } from "@components/dashboard-mixed-feed/dashboard-mixed-feed.component";
 import { DashboardSplitFeedComponent } from "@components/dashboard-split-feed/dashboard-split-feed.component";
 import { KeyboardShortcutsHelpComponent } from "@components/keyboard-shortcuts-help/keyboard-shortcuts-help.component";
@@ -39,6 +35,7 @@ import { UserProfilePopoverComponent } from "@components/user-profile-popover/us
   selector: "app-dashboard-view",
   standalone: true,
   imports: [
+    DashboardHeaderComponent,
     DashboardSplitFeedComponent,
     DashboardMixedFeedComponent,
     UserProfilePopoverComponent,
@@ -53,11 +50,8 @@ import { UserProfilePopoverComponent } from "@components/user-profile-popover/us
 export class DashboardView {
   readonly chatListService = inject(ChatListService);
   readonly dashboardPreferencesService = inject(DashboardPreferencesService);
-  readonly chatProviderCoordinator = inject(ChatProviderCoordinatorService);
   readonly dashboardStateService = inject(DashboardStateService);
   readonly overlaySourceBridge = inject(OverlaySourceBridgeService);
-  private readonly feedData = inject(DashboardFeedDataService);
-  private readonly chatStateManager = inject(ChatStateManagerService);
   private readonly chatStateService = inject(ChatStateService);
   private readonly interactions = inject(DashboardChatInteractionService);
   private readonly pinnedMessagesService = inject(PinnedMessagesService);
@@ -78,21 +72,6 @@ export class DashboardView {
     const featured = this.dashboardStateService.featuredWidget();
     const port = featured?.port ?? 1421;
     void this.overlaySourceBridge.ensureConnected(port);
-
-    // Track channel connections using global state from ChatStateManagerService.
-    // This prevents re-connecting channels when navigating back from settings.
-    effect(() => {
-      const channels = this.feedData.allVisibleChannels();
-
-      // Only connect channels that aren't already connected globally
-      for (const ch of channels) {
-        const channelRef = buildChannelRef(ch.platform, ch.channelId);
-        if (!this.chatStateManager.isChannelConnected(channelRef)) {
-          this.chatProviderCoordinator.connectChannel(ch.channelId, ch.platform);
-          this.chatStateManager.markChannelAsConnected(channelRef);
-        }
-      }
-    });
 
     const cleanups = [
       this.keyboardShortcutsService.registerAction("open-search", () => this.toggleSearch()),
