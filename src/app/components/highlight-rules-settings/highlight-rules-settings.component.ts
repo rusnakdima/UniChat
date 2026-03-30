@@ -2,7 +2,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
-import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
 
@@ -11,10 +10,13 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { HighlightNotificationService } from "@services/ui/highlight-notification.service";
 import { HighlightRulesService, HighlightRule } from "@services/ui/highlight-rules.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
+
+/* components */
+import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
 @Component({
   selector: "app-highlight-rules-settings",
   standalone: true,
-  imports: [FormsModule, MatIconModule, MatButtonModule, MatInputModule, MatCheckboxModule],
+  imports: [FormsModule, MatIconModule, MatButtonModule, MatInputModule, CheckboxComponent],
   templateUrl: "./highlight-rules-settings.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

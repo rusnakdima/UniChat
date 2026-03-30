@@ -10,38 +10,28 @@
   <div class="mt-4 space-y-4">
     <!-- Format Selection -->
     <div class="flex gap-4">
-      <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="radio"
-          [(ngModel)]="format"
-          [value]="'json'"
-          class="peer"
-        />
-        <span class="radio-mark"></span>
-        <span>JSON</span>
-      </label>
-      <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="radio"
-          [(ngModel)]="format"
-          [value]="'csv'"
-          class="peer"
-        />
-        <span class="radio-mark"></span>
-        <span>CSV</span>
-      </label>
+      <app-radio
+        [value]="format()"
+        (valueChange)="format.set($event)"
+        radioValue="'json'"
+        label="JSON"
+        labelClass="text-sm"
+      />
+      <app-radio
+        [value]="format()"
+        (valueChange)="format.set($event)"
+        radioValue="'csv'"
+        label="CSV"
+        labelClass="text-sm"
+      />
     </div>
 
     <!-- Include Metadata -->
-    <label class="flex items-center gap-2 text-sm cursor-pointer">
-      <input
-        type="checkbox"
-        [(ngModel)]="includeMetadata"
-        class="peer"
-      />
-      <span class="checkmark"></span>
-      <span>Include metadata (message IDs, user IDs, etc.)</span>
-    </label>
+    <app-checkbox
+      [(checked)]="includeMetadata"
+      label="Include metadata (message IDs, user IDs, etc.)"
+      labelClass="text-sm"
+    />
 
     <!-- Platform Filter -->
     <div>

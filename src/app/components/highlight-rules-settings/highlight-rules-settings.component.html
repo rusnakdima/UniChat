@@ -17,25 +17,17 @@
       permission from the browser / OS).
     </p>
     <div class="mt-3 flex flex-wrap items-center gap-4">
-      <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
-          [checked]="highlightNotifications.prefs().enabled"
-          (change)="highlightNotifications.setEnabled($any($event.target).checked)"
-          class="peer"
-        />
-        <span>Notify on highlight</span>
-      </label>
-      <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
-          [checked]="highlightNotifications.prefs().onlyWhenBackground"
-          [disabled]="!highlightNotifications.prefs().enabled"
-          (change)="highlightNotifications.setOnlyWhenBackground($any($event.target).checked)"
-          class="peer"
-        />
-        <span>Only when window is in background</span>
-      </label>
+      <app-checkbox
+        [checked]="highlightNotifications.prefs().enabled"
+        (checkedChange)="highlightNotifications.setEnabled($event)"
+        label="Notify on highlight"
+      />
+      <app-checkbox
+        [checked]="highlightNotifications.prefs().onlyWhenBackground"
+        [disabled]="!highlightNotifications.prefs().enabled"
+        (checkedChange)="highlightNotifications.setOnlyWhenBackground($event)"
+        label="Only when window is in background"
+      />
     </div>
   </div>
 
@@ -91,16 +83,14 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-4">
-          <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" [(ngModel)]="newIsRegex" class="peer" />
-            <span class="checkmark"></span>
-            <span>Regex pattern</span>
-          </label>
-          <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" [(ngModel)]="newIsGlobal" class="peer" />
-            <span class="checkmark"></span>
-            <span>Apply to all channels</span>
-          </label>
+          <app-checkbox
+            [(checked)]="newIsRegex"
+            label="Regex pattern"
+          />
+          <app-checkbox
+            [(checked)]="newIsGlobal"
+            label="Apply to all channels"
+          />
         </div>
 
         <!-- Color Selection -->
@@ -182,16 +172,14 @@
               />
             </div>
             <div class="flex flex-wrap items-center gap-4">
-              <label class="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" [(ngModel)]="editingIsRegex" class="peer" />
-                <span class="checkmark"></span>
-                <span>Regex</span>
-              </label>
-              <label class="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" [(ngModel)]="editingIsGlobal" class="peer" />
-                <span class="checkmark"></span>
-                <span>All channels</span>
-              </label>
+              <app-checkbox
+                [(checked)]="editingIsRegex"
+                label="Regex"
+              />
+              <app-checkbox
+                [(checked)]="editingIsGlobal"
+                label="All channels"
+              />
               @if (!editingIsGlobal()) {
                 <span class="text-xs text-slate-500">
                   {{ editingChannelIds().length }} channel(s) selected

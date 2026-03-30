@@ -2,7 +2,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
-import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
 
@@ -10,10 +9,13 @@ import { MatInputModule } from "@angular/material/input";
 import { ChatListService } from "@services/data/chat-list.service";
 import { BlockedWordsService, BlockedWordRule } from "@services/ui/blocked-words.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
+
+/* components */
+import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
 @Component({
   selector: "app-blocked-words-settings",
   standalone: true,
-  imports: [FormsModule, MatIconModule, MatButtonModule, MatInputModule, MatCheckboxModule],
+  imports: [FormsModule, MatIconModule, MatButtonModule, MatInputModule, CheckboxComponent],
   templateUrl: "./blocked-words-settings.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

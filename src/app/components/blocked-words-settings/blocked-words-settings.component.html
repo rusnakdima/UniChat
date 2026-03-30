@@ -63,24 +63,8 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-4">
-          <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              [(ngModel)]="newIsRegex"
-              class="peer"
-            />
-            <span class="checkmark"></span>
-            <span>Regex pattern</span>
-          </label>
-          <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              [(ngModel)]="newIsGlobal"
-              class="peer"
-            />
-            <span class="checkmark"></span>
-            <span>Apply to all channels</span>
-          </label>
+          <app-checkbox [(checked)]="newIsRegex" label="Regex pattern" />
+          <app-checkbox [(checked)]="newIsGlobal" label="Apply to all channels" />
         </div>
 
         @if (!newIsGlobal()) {
@@ -147,24 +131,8 @@
               </select>
             </div>
             <div class="flex flex-wrap items-center gap-4">
-              <label class="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  [(ngModel)]="editingIsRegex"
-                  class="peer"
-                />
-                <span class="checkmark"></span>
-                <span>Regex</span>
-              </label>
-              <label class="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  [(ngModel)]="editingIsGlobal"
-                  class="peer"
-                />
-                <span class="checkmark"></span>
-                <span>All channels</span>
-              </label>
+              <app-checkbox [(checked)]="editingIsRegex" label="Regex" />
+              <app-checkbox [(checked)]="editingIsGlobal" label="All channels" />
               @if (!editingIsGlobal()) {
                 <span class="text-xs text-slate-500">
                   {{ editingChannelIds().length }} channel(s) selected
