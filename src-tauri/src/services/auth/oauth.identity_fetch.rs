@@ -18,10 +18,63 @@ pub async fn fetch_identity(
 ) -> Result<(String, String), String> {
   match platform {
     PlatformTypeModel::Kick => {
-      // Kick doesn't have a standard userinfo endpoint
-      // User info should be fetched from the token response or via a separate API call
-      // For now, we need to fetch from Kick's user API
-      fetch_kick_identity(http, &token.access_token).await
+      // Use Kick's official API to fetch user identity
+      // Endpoint: GET https://api.kick.com/public/v1/users (without id param = current user)
+      // Required scope: user:read
+      // Response format: { "data": [{ "user_id": 123, "name": "username", ... }], "message": "OK" }
+      let response = http
+        .get("https://api.kick.com/public/v1/users")
+        .bearer_auth(&token.access_token)
+        .send()
+        .await
+        .map_err(|e| format!("Kick identity request failed: {e}"))?;
+
+      let status = response.status();
+      
+      // Debug: log the raw response
+      let raw_body = response.text().await.unwrap_or_default();
+      println!("[Kick OAuth] Identity response status: {}", status);
+      println!("[Kick OAuth] Identity response body: {}", raw_body);
+      
+      if !status.is_success() {
+        // If identity fetch fails, return placeholder - frontend will prompt user
+        println!("[Kick OAuth] Identity fetch failed with status {}, using placeholder", status);
+        return Ok(("kick-user".to_string(), "kick-unknown".to_string()));
+      }
+
+      let payload: Value = serde_json::from_str(&raw_body)
+        .map_err(|e| format!("Kick identity parse failed: {e}"))?;
+
+      println!("[Kick OAuth] Identity parsed JSON: {:?}", payload);
+
+      // Extract username and user ID from response
+      // Response format: { "data": [{ "user_id": 123, "name": "username", ... }] }
+      let data_array = payload["data"].as_array();
+      
+      if let Some(users) = data_array {
+        if let Some(first_user) = users.first() {
+          let username = first_user["name"]
+            .as_str()
+            .or_else(|| first_user["username"].as_str())
+            .unwrap_or("kick-user")
+            .to_string();
+          
+          let user_id = first_user["user_id"]
+            .as_u64()
+            .map(|id| id.to_string())
+            .or_else(|| first_user["id"].as_u64().map(|id| id.to_string()))
+            .or_else(|| first_user["user_id"].as_str().map(|s| s.to_string()))
+            .or_else(|| first_user["id"].as_str().map(|s| s.to_string()))
+            .unwrap_or("unknown".to_string());
+
+          println!("[Kick OAuth] Identity fetched: username={}, user_id={}", username, user_id);
+          return Ok((username, user_id));
+        }
+      }
+
+      // Fallback if structure unexpected
+      println!("[Kick OAuth] Could not parse user data from response");
+      Ok(("kick-user".to_string(), "kick-unknown".to_string()))
     }
     _ => {
       // Standard OAuth userinfo endpoint for Twitch and YouTube
@@ -66,72 +119,8 @@ pub async fn fetch_identity(
           let user_id = payload["id"].as_str().unwrap_or("unknown").to_string();
           Ok((username, user_id))
         }
-        PlatformTypeModel::Kick => {
-          // Already handled above, but keep as fallback
-          let username = payload["username"]
-            .as_str()
-            .or_else(|| payload["name"].as_str())
-            .unwrap_or("kick-user")
-            .to_string();
-          let user_id = if let Some(id) = payload["id"].as_str() {
-            id.to_string()
-          } else if let Some(id) = payload["id"].as_i64() {
-            id.to_string()
-          } else {
-            "unknown".to_string()
-          };
-          Ok((username, user_id))
-        }
+        _ => unreachable!(),
       }
     }
   }
-}
-
-/// Fetch Kick user identity from the access token
-/// Kick requires using the chat token to get user info
-async fn fetch_kick_identity(
-  http: &Client,
-  access_token: &str,
-) -> Result<(String, String), String> {
-  // Try to get user info from Kick's chat token endpoint
-  // Kick's OAuth token should contain user info, but we need to decode it
-  // Alternatively, use the access token to fetch user profile
-
-  let response = http
-    .get("https://kick.com/api/v1/user")
-    .header("Authorization", format!("Bearer {}", access_token))
-    .header("Accept", "application/json")
-    .send()
-    .await
-    .map_err(|e| format!("Kick user info request failed: {e}"))?;
-
-  let status = response.status();
-  let payload: Value = response
-    .json()
-    .await
-    .map_err(|e| format!("Kick userinfo parse failed: {e}"))?;
-
-  if !status.is_success() {
-    return Err(format!(
-      "Kick userinfo request failed ({}): {}",
-      status, payload
-    ));
-  }
-
-  // Extract user info from Kick's response
-  let username = payload["username"]
-    .as_str()
-    .or_else(|| payload["name"].as_str())
-    .unwrap_or("kick-user")
-    .to_string();
-
-  let user_id = if let Some(id) = payload["id"].as_str() {
-    id.to_string()
-  } else if let Some(id) = payload["id"].as_i64() {
-    id.to_string()
-  } else {
-    "unknown".to_string()
-  };
-
-  Ok((username, user_id))
 }

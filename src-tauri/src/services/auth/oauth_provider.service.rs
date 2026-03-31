@@ -113,9 +113,21 @@ impl OAuthProviderService {
     let session = self.oauth_state_service.consume_session(state)?;
     let config = get_oauth_provider_config(&platform)?;
 
+    println!("[Kick OAuth] Callback params: {:?}", params);
+    println!("[Kick OAuth] Platform: {:?}", platform);
+
     let token =
       exchange_code_for_token(&self.http, &platform, code, &session.code_verifier, &config).await?;
+    
+    println!("[Kick OAuth] Token response: access_token={}, refresh_token={}", 
+      if token.access_token.is_empty() { "empty" } else { "***" },
+      if token.refresh_token.as_ref().map_or(true, |s| s.is_empty()) { "none" } else { "***" }
+    );
+    
     let (username, user_id) = fetch_identity(&self.http, &platform, &token, &config).await?;
+    
+    println!("[Kick OAuth] Identity fetched: username={}, user_id={}", username, user_id);
+    
     let expires_at = token
       .expires_in_seconds
       .map(|seconds| (Utc::now() + Duration::seconds(seconds)).to_rfc3339());
@@ -236,8 +248,13 @@ impl OAuthProviderService {
       .await
       .map_err(|e| format!("Validation request failed: {e}"))?;
 
-    if !response.status().is_success() {
-      return Err(format!("Token validation failed: {}", response.status()));
+    let status = response.status();
+    println!("[Auth Validate] {} token validation status: {}", platform.as_key(), status);
+
+    if !status.is_success() {
+      let body = response.text().await.unwrap_or_default();
+      println!("[Auth Validate] {} validation response: {}", platform.as_key(), body);
+      return Err(format!("Token validation failed: {} - {}", status, body));
     }
 
     Ok(())
