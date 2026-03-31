@@ -88,23 +88,30 @@ export class YouTubeChatService extends BaseChatProviderService {
     const abortController = new AbortController();
     this.pollAbortByChannel.set(storageKey, abortController);
 
+    console.log("[YouTube] Starting session for:", storageKey);
+
     try {
       // Try to get video ID - either from storage key (if it's already a video ID)
       // or by fetching from channel name (if connected via OAuth)
       let videoId: string | null = this.normalizeVideoId(storageKey);
+      console.log("[YouTube] Normalized video ID:", videoId || "none");
 
       // If not a valid video ID, try to fetch from channel name
       if (!videoId) {
+        console.log("[YouTube] Fetching video ID from channel name:", storageKey);
         videoId = await this.fetchVideoIdFromChannelName(storageKey);
       }
 
       if (!videoId) {
+        console.error("[YouTube] Could not find video ID for:", storageKey);
         this.errorService.reportChannelNotFound(storageKey, "youtube");
         return;
       }
 
+      console.log("[YouTube] Starting chat polling for video:", videoId);
       await this.drainLiveChat(videoId, storageKey, abortController.signal);
-    } catch {
+    } catch (error) {
+      console.error("[YouTube] Session error:", error);
       this.errorService.reportNetworkError(storageKey, "Failed to start chat session", true);
     } finally {
       this.pollAbortByChannel.delete(storageKey);
@@ -112,16 +119,20 @@ export class YouTubeChatService extends BaseChatProviderService {
   }
 
   private async fetchVideoIdFromChannelName(channelName: string): Promise<string | null> {
+    console.log("[YouTube] Fetching video ID for channel:", channelName);
+
     try {
       // Try to get from authorized account
       const account = this.authorizationService.getPrimaryAccount("youtube");
       if (account?.accessToken) {
+        console.log("[YouTube] Using OAuth authentication");
         // Fetch current live video ID from channel using OAuth
         const videoId = await invoke<string>("youtubeFetchLiveVideoId", {
           channelName,
           accessToken: account.accessToken,
         });
         if (videoId) {
+          console.log("[YouTube] Found video ID via OAuth:", videoId);
           return videoId;
         }
       }
@@ -129,24 +140,35 @@ export class YouTubeChatService extends BaseChatProviderService {
       // Fallback: try API key method
       const apiKey = this.getApiKey();
       if (apiKey) {
+        console.log("[YouTube] Using API key authentication");
         const videoId = await invoke<string>("youtubeFetchLiveVideoIdByApiKey", {
           channelName,
           apiKey,
         });
         if (videoId) {
+          console.log("[YouTube] Found video ID via API key:", videoId);
           return videoId;
         }
+      } else {
+        console.warn("[YouTube] No API key configured. Please add your YouTube Data API key in Settings.");
       }
-    } catch {
-      // Failed to fetch video ID
+    } catch (error) {
+      console.error("[YouTube] Error fetching video ID:", error);
     }
     return null;
   }
 
   private getApiKey(): string | null {
     try {
-      return localStorage.getItem("unichat-youtube-api-key") || null;
-    } catch {
+      const key = localStorage.getItem("unichat-youtube-api-key") || null;
+      if (key) {
+        console.log("[YouTube] API key found (length:", key.length, ")");
+      } else {
+        console.log("[YouTube] No API key found in localStorage");
+      }
+      return key;
+    } catch (error) {
+      console.error("[YouTube] Error getting API key:", error);
       return null;
     }
   }
@@ -170,13 +192,20 @@ export class YouTubeChatService extends BaseChatProviderService {
       lastRetryAt: 0,
     });
 
+    console.log("[YouTube] Starting live chat polling for video:", videoId);
+
     while (this.connectedChannels.has(storageKey) && !signal.aborted) {
       try {
         const stored = this.nextPageTokenByChannel.get(storageKey);
         const pageToken = stored && stored !== "" ? stored : undefined;
+
+        console.log("[YouTube] Fetching chat messages, pageToken:", pageToken || "initial");
+
+        const apiKey = this.getApiKey();
         const responseJson = await invoke<string>("youtubeFetchChatMessages", {
           videoId,
           pageToken,
+          apiKey: apiKey || undefined,
         });
         const response = JSON.parse(responseJson) as YouTubeChatApiResponse;
 
@@ -190,6 +219,9 @@ export class YouTubeChatService extends BaseChatProviderService {
           state.backoffMs = 2000;
           this.rateLimitState.set(storageKey, state);
         }
+
+        const messageCount = response.items?.length ?? 0;
+        console.log(`[YouTube] Received ${messageCount} messages`);
 
         for (const item of response.items ?? []) {
           const sourceMessageId = item.id;
@@ -237,9 +269,11 @@ export class YouTubeChatService extends BaseChatProviderService {
         }
 
         const waitMillis = Number(response.pollingIntervalMillis ?? 2000);
+        console.log("[YouTube] Waiting", waitMillis, "ms before next poll");
         await this.delay(Math.max(500, waitMillis), signal);
       } catch (error: unknown) {
         consecutiveErrors++;
+        console.error("[YouTube] Error fetching chat messages:", error);
 
         // Check for rate limit (429)
         const isRateLimited = this.isRateLimitError(error);
@@ -275,6 +309,7 @@ export class YouTubeChatService extends BaseChatProviderService {
       }
     }
 
+    console.log("[YouTube] Stopping live chat polling for:", storageKey);
     // Clean up rate limit state
     this.rateLimitState.delete(storageKey);
   }
@@ -303,8 +338,10 @@ export class YouTubeChatService extends BaseChatProviderService {
   sendMessage(channelId: string, text: string, accountId?: string): boolean {
     const account = this.authorizationService.getAccountById(accountId);
     if (account?.authStatus !== "authorized" || !account.accessToken) {
+      console.warn("[YouTube] Cannot send message: account not authorized or no access token");
       return false;
     }
+    console.log("[YouTube] Sending message to channel:", channelId);
     void this.sendMessageAsync(channelId, text, account.accessToken);
     return true;
   }
@@ -312,8 +349,10 @@ export class YouTubeChatService extends BaseChatProviderService {
   async deleteMessage(channelId: string, messageId: string, accountId?: string): Promise<boolean> {
     const account = this.authorizationService.getAccountById(accountId);
     if (account?.authStatus !== "authorized" || !account.accessToken) {
+      console.warn("[YouTube] Cannot delete message: account not authorized or no access token");
       return false;
     }
+    console.log("[YouTube] Deleting message:", messageId, "from channel:", channelId);
     return this.deleteMessageAsync(channelId, messageId, account.accessToken);
   }
 
@@ -324,31 +363,38 @@ export class YouTubeChatService extends BaseChatProviderService {
   ): Promise<boolean> {
     const trimmed = text.trim();
     if (!trimmed) {
+      console.warn("[YouTube] Cannot send empty message");
       return false;
     }
 
     try {
       const videoId = this.normalizeVideoId(channelId);
       if (!videoId) {
+        console.error("[YouTube] Invalid video ID:", channelId);
         return false;
       }
 
+      console.log("[YouTube] Fetching live chat ID for video:", videoId);
       const liveChatId = await invoke<string>("youtubeFetchLiveChatId", {
         videoId,
         accessToken,
       });
       if (!liveChatId) {
+        console.error("[YouTube] No live chat ID returned");
         return false;
       }
 
+      console.log("[YouTube] Sending message to chat:", liveChatId);
       await invoke<string>("youtubeSendMessage", {
         liveChatId,
         messageText: trimmed,
         accessToken,
       });
 
+      console.log("[YouTube] Message sent successfully");
       return true;
-    } catch {
+    } catch (error) {
+      console.error("[YouTube] Error sending message:", error);
       return false;
     }
   }
@@ -361,24 +407,30 @@ export class YouTubeChatService extends BaseChatProviderService {
     try {
       const videoId = this.normalizeVideoId(channelId);
       if (!videoId) {
+        console.error("[YouTube] Invalid video ID:", channelId);
         return false;
       }
 
+      console.log("[YouTube] Fetching live chat ID for video:", videoId);
       const liveChatId = await invoke<string>("youtubeFetchLiveChatId", {
         videoId,
         accessToken,
       });
       if (!liveChatId) {
+        console.error("[YouTube] No live chat ID returned");
         return false;
       }
 
+      console.log("[YouTube] Deleting message:", messageId);
       await invoke<string>("youtubeDeleteMessage", {
         messageId,
         accessToken,
       });
 
+      console.log("[YouTube] Message deleted successfully");
       return true;
-    } catch {
+    } catch (error) {
+      console.error("[YouTube] Error deleting message:", error);
       return false;
     }
   }

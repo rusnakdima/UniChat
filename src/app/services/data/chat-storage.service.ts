@@ -11,11 +11,11 @@ import { MessageTypeDetectorService } from "@services/ui/message-type-detector.s
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
 
 /* helpers */
-import { sortMessagesByRecency, groupByPlatform } from "@helpers/chat.helper";
+import { sortMessagesChronological, groupByPlatform } from "@helpers/chat.helper";
 
 /* config */
 import { APP_CONFIG } from "@config/app.constants";
-import { buildChannelRef } from "@utils/channel-ref.util";
+import { buildChannelRef, parseChannelRef } from "@utils/channel-ref.util";
 const channelMessagesStorageKey = "unichat.channelMessages.v1";
 
 /**
@@ -80,7 +80,7 @@ export class ChatStorageService {
       allMessages.push(...messages);
     }
 
-    return sortMessagesByRecency(allMessages);
+    return sortMessagesChronological(allMessages);
   });
 
   readonly messagesByPlatform = computed(() => {
@@ -93,13 +93,52 @@ export class ChatStorageService {
   }
 
   isChannelLoaded(channelId: string): boolean {
-    return this.loadedChannels().has(channelId);
+    // Accept both full channelRef format (e.g., "kick:dmitriy363") and legacy format ("dmitriy363")
+    // Also handle case sensitivity (providers use lowercase)
+    const loaded = this.loadedChannels();
+    const normalizedInput = channelId.toLowerCase();
+
+    // Check direct match (case-insensitive)
+    for (const stored of loaded) {
+      if (stored.toLowerCase() === normalizedInput) {
+        return true;
+      }
+    }
+
+    // Also check legacy format
+    const parsed = parseChannelRef(channelId);
+    if (parsed) {
+      // Check if we have the provider channel ID (lowercase)
+      const providerIdLower = parsed.providerChannelId.toLowerCase();
+      for (const stored of loaded) {
+        if (stored.toLowerCase() === providerIdLower) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   markChannelAsLoaded(channelId: string): void {
     this.loadedChannels.update((set) => {
       const newSet = new Set(set);
-      newSet.add(channelId);
+      // If already contains the channel, don't add again
+      if (set.has(channelId)) {
+        return set;
+      }
+      // Parse and check if it's in full format or needs normalization
+      const parts = channelId.split(":");
+      if (
+        parts.length === 2 &&
+        (parts[0] === "twitch" || parts[0] === "kick" || parts[0] === "youtube")
+      ) {
+        // Full format - add to set
+        newSet.add(channelId);
+      } else {
+        // Single part (legacy) - add as-is
+        newSet.add(channelId);
+      }
       return newSet;
     });
   }
@@ -124,9 +163,13 @@ export class ChatStorageService {
   }
 
   addMessage(channelId: string, message: ChatMessage): void {
+    // Use platform:channelId format to prevent cross-platform collision
+    // (e.g., kick:dmitriy363 vs twitch:dmitriy363)
+    const storageKey = buildChannelRef(message.platform, channelId);
+
     const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
       message.text,
-      channelId
+      storageKey
     );
     if (wasFiltered) {
       message.text = filtered;
@@ -136,63 +179,14 @@ export class ChatStorageService {
     message.messageType = type;
     message.messageTypeReason = reason;
 
-    const q = this.pendingBatches.get(channelId);
+    const q = this.pendingBatches.get(storageKey);
     if (q) {
       q.push(message);
     } else {
-      this.pendingBatches.set(channelId, [message]);
+      this.pendingBatches.set(storageKey, [message]);
     }
     this.messageTypeDetector.updateLastMessageTime(message);
     this.scheduleBatchFlush();
-  }
-
-  addMessages(channelId: string, messages: ChatMessage[]): void {
-    this.flushPendingBatchesNow();
-
-    // Sort messages chronologically (oldest first) for correct type detection
-    const sortedMessages = [...messages].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    // Apply blocked words filtering and detect message types
-    for (const message of sortedMessages) {
-      const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
-        message.text,
-        channelId
-      );
-      if (wasFiltered) {
-        message.text = filtered;
-      }
-      const { type, reason } = this.messageTypeDetector.detectMessageType(message);
-      message.messageType = type;
-      message.messageTypeReason = reason;
-    }
-
-    this.channelMessagesSignal.update((store) => {
-      const channelMessages = store[channelId] ?? [];
-      const messageMap = new Map(channelMessages.map((msg) => [msg.id, msg]));
-
-      for (const message of messages) {
-        messageMap.set(message.id, message);
-      }
-
-      return {
-        ...store,
-        [channelId]: this.limitMessages(sortMessagesByRecency(Array.from(messageMap.values()))),
-      };
-    });
-    this.persistChannelMessages();
-
-    // Update last message times after adding (in chronological order)
-    for (const message of sortedMessages) {
-      this.messageTypeDetector.updateLastMessageTime(message);
-    }
-
-    // Forward messages in original order for display
-    for (const message of messages) {
-      this.highlightNotifications.maybeNotify(message);
-      this.overlayBridge.forwardMessage(message);
-    }
   }
 
   prependMessages(channelId: string, messages: ChatMessage[]): void {
@@ -203,11 +197,15 @@ export class ChatStorageService {
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
+    // Use platform:channelId format to prevent cross-platform collision
+    const platform = messages.length > 0 ? messages[0].platform : "twitch";
+    const storageKey = buildChannelRef(platform, channelId);
+
     // Apply blocked words filtering and detect message types
     for (const message of sortedMessages) {
       const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
         message.text,
-        channelId
+        storageKey
       );
       if (wasFiltered) {
         message.text = filtered;
@@ -218,17 +216,17 @@ export class ChatStorageService {
     }
 
     this.channelMessagesSignal.update((store) => {
-      const channelMessages = store[channelId] ?? [];
+      const channelMessages = store[storageKey] ?? [];
       const messageMap = new Map(channelMessages.map((msg) => [msg.id, msg]));
 
       for (const message of messages) {
         messageMap.set(message.id, message);
       }
 
-      const sortedMessages = sortMessagesByRecency(Array.from(messageMap.values()));
+      const sortedMessages = sortMessagesChronological(Array.from(messageMap.values()));
       return {
         ...store,
-        [channelId]: this.limitMessages(sortedMessages),
+        [storageKey]: this.limitMessages(sortedMessages),
       };
     });
     this.persistChannelMessages();
@@ -334,7 +332,9 @@ export class ChatStorageService {
         }
         next = {
           ...next,
-          [channelId]: this.limitMessages(sortMessagesByRecency(Array.from(messageMap.values()))),
+          [channelId]: this.limitMessages(
+            sortMessagesChronological(Array.from(messageMap.values()))
+          ),
         };
       }
       return next;
@@ -385,7 +385,7 @@ export class ChatStorageService {
         const safeRows = rows.filter(
           (row) => row !== null && typeof row === "object"
         ) as ChatMessage[];
-        out[channelId] = this.limitMessages(sortMessagesByRecency(safeRows));
+        out[channelId] = this.limitMessages(sortMessagesChronological(safeRows));
       }
       return out;
     } catch {

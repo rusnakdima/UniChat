@@ -570,31 +570,7 @@ export class TwitchChatService extends BaseChatProviderService {
           entry.channelName.toLowerCase() === normalizedChannel
       );
 
-    console.log("[TwitchChat] Resolving account for channel:", channelName);
-    console.log(
-      "[TwitchChat] Channel entry:",
-      channel
-        ? {
-            id: channel.id,
-            channelId: channel.channelId,
-            channelName: channel.channelName,
-            accountId: channel.accountId,
-            isAuthorized: channel.isAuthorized,
-          }
-        : "Channel not found in list"
-    );
-
     const account = this.authorizationService.getAccountById(channel?.accountId);
-    console.log(
-      "[TwitchChat] Account from ID:",
-      account
-        ? {
-            id: account.id,
-            username: account.username,
-            authStatus: account.authStatus,
-          }
-        : "No account found"
-    );
 
     return account;
   }

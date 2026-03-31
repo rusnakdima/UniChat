@@ -27,12 +27,15 @@ export class KickChatEventMapper {
 
   mapChatEventPayload(payload: Record<string, unknown>): KickMappedChatEvent | null {
     const sender = (payload["sender"] as Record<string, unknown> | undefined) ?? {};
+
     const author = String(sender["username"] ?? "KickUser");
     const sourceUserId = String(sender["id"] ?? author);
     const content = String(payload["content"] ?? "");
+
     if (!content.trim()) {
       return null;
     }
+
     const sourceMessageId = String(
       payload["id"] ?? `kick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     );
@@ -61,7 +64,7 @@ export class KickChatEventMapper {
 
     const authorAvatarUrl = sender["profile_pic"] as string | undefined;
 
-    return {
+    const result = {
       author,
       sourceUserId,
       content,
@@ -72,5 +75,7 @@ export class KickChatEventMapper {
       emotes,
       previewBase,
     };
+
+    return result;
   }
 }

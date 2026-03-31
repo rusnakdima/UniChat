@@ -160,6 +160,10 @@ export class ChatProviderCoordinatorService {
     switch (platform) {
       case "twitch":
         return this.twitchService.deleteMessageAsync(channel?.channelName ?? channelId, messageId);
+      case "kick": {
+        const channel = this.resolveChannel(channelId, platform);
+        return this.kickService.deleteMessage(messageId, channel?.accountId);
+      }
       case "youtube": {
         const channel = this.resolveChannel(channelId, platform);
         return this.youtubeService.deleteMessage(
