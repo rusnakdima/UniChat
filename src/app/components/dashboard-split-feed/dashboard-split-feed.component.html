@@ -9,7 +9,7 @@
     </p>
   </div>
 } @else {
-  <div class="flex h-full w-full flex-col overflow-hidden">
+  <div class="flex flex-col w-full overflow-hidden" style="height: calc(100vh - 62px)">
     <!-- Single Row Container for resizable blocks -->
     <div
       #gridContainer
@@ -17,7 +17,7 @@
       [cdkDropListData]="visiblePlatforms()"
       cdkDropListOrientation="horizontal"
       (cdkDropListDropped)="onPlatformDrop($event)"
-      class="relative flex h-full w-full flex-row items-stretch gap-1 overflow-hidden p-1"
+      class="relative fle flex-row items-stretch p-1 gap-1 w-full h-full overflow-hidden"
     >
       <!-- Resize tracker line - only show during resize, not drag -->
       @if (isResizing() && !isReorderingChannels()) {
@@ -38,7 +38,7 @@
           [style.min-width]="'100px'"
         >
           <div
-            class="flex h-full w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
+            class="flex flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900 w-full h-full overflow-hidden"
           >
             <!-- Resize Handle - Only show if NOT the last item (between blocks) -->
             @if (!last) {
@@ -106,11 +106,11 @@
                     (cdkDragEnded)="onChannelDragEnded()"
                     [attr.aria-checked]="isChannelActive(platform, ch)"
                     (click)="onChannelClick(platform, ch); loadChannelImage(ch)"
-                    class="cursor-move inline-flex max-w-full min-w-0 items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:max-w-[14rem]"
+                    class="cursor-move inline-flex max-w-full min-w-0 items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:max-w-56"
                     [class]="
                       isChannelActive(platform, ch)
                         ? 'border-slate-800 bg-slate-800 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:shadow-none'
-                        : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/12 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-white/18 dark:hover:bg-white/[0.1]'
+                        : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/12 dark:bg-white/6 dark:text-slate-200 dark:hover:border-white/18 dark:hover:bg-white/10'
                     "
                   >
                     @if (hasChannelImage(ch)) {
@@ -133,7 +133,7 @@
               </div>
             </div>
 
-            <div class="relative flex min-h-0 flex-1 flex-col overflow-visible">
+            <div class="relative flex flex-1 flex-col overflow-hidden">
               @if (activeChannelId(platform); as cid) {
                 <!-- Connection Error Banner -->
                 @if (connectionStateService.hasError(channelRefFor(platform, cid))) {
@@ -156,7 +156,7 @@
                   [scrollToken]="feedData.scrollTokenForChannel(platform, cid)"
                   [messages]="colMsgs"
                 >
-                  <div class="flex flex-col gap-y-2 px-2 py-2">
+                  <div class="flex flex-col gap-y-2 px-2 py-2 min-h-screen">
                     @for (message of colMsgs; track message.id) {
                       <app-chat-message-card
                         [message]="message"

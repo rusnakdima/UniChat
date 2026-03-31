@@ -1,4 +1,4 @@
-<div class="flex h-full w-full flex-col overflow-hidden bg-white dark:bg-slate-900">
+<div class="flex flex-col bg-white dark:bg-slate-900 w-full h-full min-h-full overflow-hidden">
   @if (orderedVisibleChannels().length === 0) {
     <div
       class="flex h-full w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center dark:border-white/15 dark:bg-slate-900/40"
@@ -10,110 +10,112 @@
       </p>
     </div>
   } @else {
-    <div
-      class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
-    >
-      <span
-        class="text-xs font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400"
-      >
-        Filter:
-      </span>
+    <div class="flex flex-col overflow-hidden" style="height: calc(100vh - 62px)">
       <div
-        cdkDropList
-        [cdkDropListData]="orderedVisibleChannelIds()"
-        (cdkDropListDropped)="onMixedChannelDrop($event)"
-        cdkDropListOrientation="horizontal"
-        class="flex flex-1 flex-wrap items-center gap-2"
+        class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
       >
-        @for (channel of orderedVisibleChannels(); track channel.id) {
-          <button
-            type="button"
-            cdkDrag
-            [cdkDragData]="channel.id"
-            (cdkDragStarted)="onMixedChannelDragStarted()"
-            (cdkDragEnded)="onMixedChannelDragEnded()"
-            (click)="toggleChannelFilter(channelRefFor(channel)); loadChannelImage(channel)"
-            class="cursor-move inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
-            [class]="
-              isChannelDisabled(channelRefFor(channel))
-                ? 'border-slate-300/90 bg-slate-100 text-slate-500 line-through opacity-90 dark:border-white/10 dark:bg-black/25 dark:text-slate-500'
-                : 'border-slate-800 bg-slate-800 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:shadow-none'
-            "
-          >
-            <img
-              [src]="presentation.platformIconUrl(channel.platform)"
-              [alt]="presentation.platformLabel(channel.platform)"
-              [title]="presentation.platformLabel(channel.platform)"
-              class="h-4 w-4 shrink-0 object-contain"
-              loading="lazy"
-            />
-            @if (hasChannelImage(channel)) {
+        <span
+          class="text-xs font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400"
+        >
+          Filter:
+        </span>
+        <div
+          cdkDropList
+          [cdkDropListData]="orderedVisibleChannelIds()"
+          (cdkDropListDropped)="onMixedChannelDrop($event)"
+          cdkDropListOrientation="horizontal"
+          class="flex flex-1 flex-wrap items-center gap-2"
+        >
+          @for (channel of orderedVisibleChannels(); track channel.id) {
+            <button
+              type="button"
+              cdkDrag
+              [cdkDragData]="channel.id"
+              (cdkDragStarted)="onMixedChannelDragStarted()"
+              (cdkDragEnded)="onMixedChannelDragEnded()"
+              (click)="toggleChannelFilter(channelRefFor(channel)); loadChannelImage(channel)"
+              class="cursor-move inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
+              [class]="
+                isChannelDisabled(channelRefFor(channel))
+                  ? 'border-slate-300/90 bg-slate-100 text-slate-500 line-through opacity-90 dark:border-white/10 dark:bg-black/25 dark:text-slate-500'
+                  : 'border-slate-800 bg-slate-800 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:shadow-none'
+              "
+            >
               <img
-                [src]="getCachedChannelImage(channel)!"
-                [alt]="channel.channelName"
-                class="h-4 w-4 rounded-full object-cover"
+                [src]="presentation.platformIconUrl(channel.platform)"
+                [alt]="presentation.platformLabel(channel.platform)"
+                [title]="presentation.platformLabel(channel.platform)"
+                class="h-4 w-4 shrink-0 object-contain"
                 loading="lazy"
               />
-            } @else {
-              <div
-                class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-              >
-                {{ channel.channelName.charAt(0) }}
-              </div>
-            }
-            {{ channel.channelName }}
-          </button>
-        }
-      </div>
-      <div class="ml-auto flex gap-2">
-        @if (disabledChannels().size > 0) {
-          <button
-            type="button"
-            (click)="enableAllChannels()"
-            class="text-xs text-slate-700 underline decoration-slate-400 underline-offset-2 hover:text-slate-900 dark:text-slate-300 dark:decoration-slate-500 dark:hover:text-white"
-          >
-            Enable all
-          </button>
-        }
-        @if (disabledChannels().size < visibleChannelCount()) {
-          <button
-            type="button"
-            (click)="disableAllChannels()"
-            class="text-xs text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-          >
-            Disable all
-          </button>
-        }
-      </div>
-    </div>
-
-    <div class="relative flex min-h-0 flex-1 flex-col overflow-visible">
-      <!-- Connection Error Banners for all channels with errors -->
-      @for (channel of orderedVisibleChannels(); track channel.id) {
-        @if (connectionStateService.hasError(channelRefFor(channel))) {
-          <div class="shrink-0 px-3 pt-2">
-            <app-connection-error-banner
-              [channelId]="channel.channelId"
-              [platform]="channel.platform"
-            />
-          </div>
-        }
-      }
-      <app-chat-history-header #historyHeader (loadHistory)="onLoadHistory($event)" />
-      @let mixedMsgs = mixedMessages();
-      <app-chat-scroll-region [scrollToken]="feedData.mixedScrollToken()" [messages]="mixedMsgs">
-        <div class="flex flex-col gap-y-2 px-3 py-3 sm:px-4">
-          @for (message of mixedMsgs; track message.id) {
-            <app-chat-message-card
-              [message]="message"
-              [channelLabel]="
-                chatListService.getChannelDisplayName(message.platform, message.sourceChannelId)
-              "
-              [highlighted]="interactions.isHighlightedMessage(message.id)"
-            />
+              @if (hasChannelImage(channel)) {
+                <img
+                  [src]="getCachedChannelImage(channel)!"
+                  [alt]="channel.channelName"
+                  class="h-4 w-4 rounded-full object-cover"
+                  loading="lazy"
+                />
+              } @else {
+                <div
+                  class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                >
+                  {{ channel.channelName.charAt(0) }}
+                </div>
+              }
+              {{ channel.channelName }}
+            </button>
           }
         </div>
-      </app-chat-scroll-region>
+        <div class="ml-auto flex gap-2">
+          @if (disabledChannels().size > 0) {
+            <button
+              type="button"
+              (click)="enableAllChannels()"
+              class="text-xs text-slate-700 underline decoration-slate-400 underline-offset-2 hover:text-slate-900 dark:text-slate-300 dark:decoration-slate-500 dark:hover:text-white"
+            >
+              Enable all
+            </button>
+          }
+          @if (disabledChannels().size < visibleChannelCount()) {
+            <button
+              type="button"
+              (click)="disableAllChannels()"
+              class="text-xs text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              Disable all
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <!-- Connection Error Banners for all channels with errors -->
+        @for (channel of orderedVisibleChannels(); track channel.id) {
+          @if (connectionStateService.hasError(channelRefFor(channel))) {
+            <div class="shrink-0 px-3 pt-2">
+              <app-connection-error-banner
+                [channelId]="channel.channelId"
+                [platform]="channel.platform"
+              />
+            </div>
+          }
+        }
+        <app-chat-history-header #historyHeader (loadHistory)="onLoadHistory($event)" />
+        @let mixedMsgs = mixedMessages();
+        <app-chat-scroll-region [scrollToken]="feedData.mixedScrollToken()" [messages]="mixedMsgs">
+          <div class="flex flex-col gap-y-2 px-3 py-3 sm:px-4">
+            @for (message of mixedMsgs; track message.id) {
+              <app-chat-message-card
+                [message]="message"
+                [channelLabel]="
+                  chatListService.getChannelDisplayName(message.platform, message.sourceChannelId)
+                "
+                [highlighted]="interactions.isHighlightedMessage(message.id)"
+              />
+            }
+          </div>
+        </app-chat-scroll-region>
+      </div>
     </div>
   }
 </div>
