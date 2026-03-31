@@ -8,6 +8,7 @@ import { AuthStatus, ChatAccount, PlatformType } from "@models/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
+import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
 interface AuthAccountPayload {
   id: string;
   platform: PlatformType;
@@ -34,6 +35,7 @@ interface AuthCommandResultPayload {
 export class AuthorizationService {
   private readonly accountsSignal = signal<ChatAccount[]>([]);
   private readonly chatListService = inject(ChatListService);
+  private readonly feedData = inject(DashboardFeedDataService);
   private accountsLoaded = false;
 
   readonly accounts = this.accountsSignal.asReadonly();
@@ -99,10 +101,53 @@ export class AuthorizationService {
     if (result.authUrl) {
       await openUrl(result.authUrl);
       const completed = await invoke<AuthCommandResultPayload>("authAwaitCallback", { platform });
+
       if (completed.account) {
+        console.log("[Kick OAuth] Initial account from backend:", completed.account);
+
+        // For Kick, the backend now fetches the real username from the OAuth identity
+        // No need to prompt user for username anymore
+        if (platform === "kick") {
+          console.log("[Kick OAuth] Account created with username:", completed.account.username);
+        }
+
         this.upsertAccount(completed.account);
         this.ensureChannelForAuthorizedAccount(completed.account);
       }
+    }
+  }
+
+  /**
+   * Update Kick account username by fetching from channel info
+   * Called when connecting to a channel to get real username
+   */
+  async updateKickUsernameFromChannel(accountId: string, channelName: string): Promise<void> {
+    try {
+      const response = await fetch(`https://kick.com/api/v1/channels/${channelName}`);
+      if (!response.ok) {
+        return; // Silently fail - not critical
+      }
+
+      const data = (await response.json()) as any;
+      const username = data.user?.username || data.username;
+      const userId = String(data.user?.id || data.id || "");
+
+      if (username && userId) {
+        // Update account in memory
+        const accounts = this.accountsSignal();
+        const accountIndex = accounts.findIndex((acc) => acc.id === accountId);
+
+        if (accountIndex >= 0) {
+          const updatedAccount = { ...accounts[accountIndex], username, userId };
+          const newAccounts = [...accounts];
+          newAccounts[accountIndex] = updatedAccount;
+          this.accountsSignal.set(newAccounts);
+
+          console.log("[Kick OAuth] Updated username from channel:", username);
+        }
+      }
+    } catch (error) {
+      // Silently fail - username update is nice-to-have
     }
   }
 
@@ -337,7 +382,11 @@ export class AuthorizationService {
   }
 
   private ensureChannelForAuthorizedAccount(account: AuthAccountPayload): void {
-    if (account.platform !== "twitch" && account.platform !== "youtube") {
+    if (
+      account.platform !== "twitch" &&
+      account.platform !== "kick" &&
+      account.platform !== "youtube"
+    ) {
       return;
     }
 
@@ -345,6 +394,14 @@ export class AuthorizationService {
     const matchingChannel = channels.find(
       (channel) => channel.channelName.toLowerCase() === account.username.toLowerCase()
     );
+
+    console.log("[Authorization] ensureChannelForAuthorizedAccount:", {
+      platform: account.platform,
+      username: account.username,
+      accountId: account.id,
+      hasMatchingChannel: !!matchingChannel,
+      matchingChannelAccountId: matchingChannel?.accountId,
+    });
 
     if (matchingChannel) {
       // Channel exists but might not have the account linked - update it!
@@ -357,15 +414,26 @@ export class AuthorizationService {
         });
         this.chatListService.updateChannelAccount(matchingChannel.id, account.id);
       }
+      // Ensure channel messages are loaded
+      console.log(
+        "[Authorization] Loading messages for existing channel:",
+        matchingChannel.channelId
+      );
+      this.feedData.loadChannelMessages(account.platform, matchingChannel.channelId);
     } else {
       // No channel exists, create a new one
+      console.log("[Authorization] Creating new channel for account:", account.username);
+      const providerChannelId = account.username.toLowerCase();
       this.chatListService.addChannel(
         account.platform,
         account.username,
-        account.username,
+        providerChannelId,
         account.id,
         account.username
       );
+      // Ensure new channel messages are loaded
+      console.log("[Authorization] Loading messages for new channel:", providerChannelId);
+      this.feedData.loadChannelMessages(account.platform, providerChannelId);
     }
   }
 }

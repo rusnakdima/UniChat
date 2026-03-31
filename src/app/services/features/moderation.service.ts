@@ -8,6 +8,7 @@ import { PlatformType } from "@models/chat.model";
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
+import { KickChatService } from "@services/providers/kick-chat.service";
 
 /**
  * Moderation action types
@@ -96,6 +97,7 @@ export const DEFAULT_MODERATION_MACROS: ModerationMacro[] = [
 export class ModerationService {
   private readonly chatList = inject(ChatListService);
   private readonly authorization = inject(AuthorizationService);
+  private readonly kickChat = inject(KickChatService);
 
   /**
    * Execute a moderation action
@@ -191,16 +193,46 @@ export class ModerationService {
     channelId: string,
     targetUser: string,
     action: ModerationAction,
-    options?: { duration?: number; reason?: string }
+    options?: { duration?: number; reason?: string; messageId?: string }
   ): Promise<ModerationResult> {
+    // Handle delete message action
+    if (action === "delete" && options?.messageId) {
+      const account = this.authorization.accounts().find(
+        acc => acc.platform === "kick" && acc.authStatus === "authorized"
+      );
+      
+      if (!account) {
+        return {
+          success: false,
+          action,
+          platform: "kick",
+          channel: channelId,
+          targetUser,
+          error: "No authorized Kick account found",
+        };
+      }
+
+      const deleted = await this.kickChat.deleteMessage(options.messageId, account.id);
+      
+      return {
+        success: deleted,
+        action,
+        platform: "kick",
+        channel: channelId,
+        targetUser,
+        reason: options.reason,
+        error: deleted ? undefined : "Failed to delete message",
+      };
+    }
+
+    // Other moderation actions (timeout, ban, etc.) - not yet implemented
     return {
-      success: true,
+      success: false,
       action,
       platform: "kick",
       channel: channelId,
       targetUser,
-      reason: options?.reason,
-      duration: options?.duration,
+      error: `Action '${action}' not yet implemented for Kick`,
     };
   }
 
