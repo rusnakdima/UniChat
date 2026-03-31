@@ -1,6 +1,6 @@
 @if (isOpen()) {
   <div
-    class="absolute bottom-full right-0 z-50 mb-2 w-80 rounded-xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-900"
+    class="absolute right-0 bottom-full z-50 mb-2 w-80 rounded-xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-900"
   >
     <!-- Header -->
     <div
@@ -12,7 +12,7 @@
         (click)="closePicker.emit()"
         class="rounded p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
       >
-        <mat-icon [fontIcon]="'close'" class="w-5! h-5!" />
+        <mat-icon [fontIcon]="'close'" class="h-5! w-5!" />
       </button>
     </div>
 
@@ -21,7 +21,7 @@
       <div class="relative">
         <mat-icon
           [fontIcon]="'search'"
-          class="absolute left-2 top-1/2 w-5! h-5! -translate-y-1/2 text-slate-400"
+          class="absolute top-1/2 left-2 h-5! w-5! -translate-y-1/2 text-slate-400"
         />
         <input
           #searchInput
@@ -29,7 +29,7 @@
           placeholder="Search emotes..."
           [(ngModel)]="searchQuery"
           (keydown)="onSearchKeydown($event)"
-          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-8 pr-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+          class="w-full rounded-lg border border-slate-200 bg-white py-2 pr-3 pl-8 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
         />
       </div>
     </div>
@@ -90,7 +90,7 @@
               @if (emote.category === "favorites") {
                 <mat-icon
                   [fontIcon]="'star'"
-                  class="absolute right-0.5 top-0.5 h-3! w-3! text-amber-500"
+                  class="absolute top-0.5 right-0.5 h-3! w-3! text-amber-500"
                 />
               }
             </button>
@@ -107,7 +107,7 @@
           (click)="toggleAddEmoteForm()"
           class="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 py-2 text-xs font-medium text-slate-600 transition hover:border-emerald-500 hover:text-emerald-600 dark:border-white/10 dark:text-slate-400"
         >
-          <mat-icon [fontIcon]="'add'" class="w-5! h-5!" />
+          <mat-icon [fontIcon]="'add'" class="h-5! w-5!" />
           Add Custom Emote
         </button>
       } @else {
@@ -117,13 +117,13 @@
             type="text"
             placeholder="Emote code (e.g., :myemote:)"
             [(ngModel)]="newEmoteCode"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
           />
           <input
             type="url"
             placeholder="Emote image URL"
             [(ngModel)]="newEmoteUrl"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
           />
           <div class="flex gap-2">
             <button

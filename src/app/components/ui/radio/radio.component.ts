@@ -1,22 +1,22 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 
 @Component({
-  selector: 'app-radio',
+  selector: "app-radio",
   standalone: true,
   imports: [FormsModule],
-  templateUrl: './radio.component.html',
+  templateUrl: "./radio.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RadioComponent {
   @Input() value: any;
   @Input() radioValue: any;
   @Input() disabled: boolean = false;
-  @Input() label: string = '';
-  @Input() labelClass: string = '';
-  @Input() inputClass: string = '';
-  @Input() labelTextClass: string = '';
-  
+  @Input() label: string = "";
+  @Input() labelClass: string = "";
+  @Input() inputClass: string = "";
+  @Input() labelTextClass: string = "";
+
   @Output() valueChange = new EventEmitter<any>();
   @Output() change = new EventEmitter<Event>();
   @Output() click = new EventEmitter<Event>();

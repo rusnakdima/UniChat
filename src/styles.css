@@ -2,7 +2,8 @@
 @import "@material-icons/font/css/all.css";
 
 /* Full height reset for proper flex layout */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -32,16 +33,16 @@ input[type="checkbox"].peer + .checkmark {
 
 input[type="checkbox"].peer + .checkmark::before {
   content: "";
-  @apply h-5 w-5 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent transition-all duration-200;
+  @apply h-5 w-5 rounded border border-zinc-300 bg-transparent transition-all duration-200 dark:border-zinc-700;
 }
 
 input[type="checkbox"].peer:checked + .checkmark::before {
-  @apply bg-blue-600 border-blue-500;
+  @apply border-blue-500 bg-blue-600;
 }
 
 input[type="checkbox"].peer:checked + .checkmark::after {
   content: "";
-  @apply absolute h-2.5 w-2.5 bg-white rounded-sm top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+  @apply absolute top-1/2 left-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 transform rounded-sm bg-white;
 }
 
 input[type="checkbox"].peer:focus + .checkmark::before {
@@ -49,7 +50,7 @@ input[type="checkbox"].peer:focus + .checkmark::before {
 }
 
 input[type="checkbox"].peer:disabled + .checkmark::before {
-  @apply bg-zinc-400 border-zinc-400 cursor-not-allowed dark:bg-zinc-600 dark:border-zinc-600;
+  @apply cursor-not-allowed border-zinc-400 bg-zinc-400 dark:border-zinc-600 dark:bg-zinc-600;
 }
 
 /* ===== Custom Radio Button ===== */
@@ -63,16 +64,16 @@ input[type="radio"].peer + .radio-mark {
 
 input[type="radio"].peer + .radio-mark::before {
   content: "";
-  @apply h-5 w-5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-transparent transition-all duration-200;
+  @apply h-5 w-5 rounded-full border border-zinc-300 bg-transparent transition-all duration-200 dark:border-zinc-700;
 }
 
 input[type="radio"].peer:checked + .radio-mark::before {
-  @apply bg-blue-600 border-blue-500;
+  @apply border-blue-500 bg-blue-600;
 }
 
 input[type="radio"].peer:checked + .radio-mark::after {
   content: "";
-  @apply absolute h-2 w-2 bg-white rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+  @apply absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-white;
 }
 
 input[type="radio"].peer:focus + .radio-mark::before {
@@ -80,7 +81,7 @@ input[type="radio"].peer:focus + .radio-mark::before {
 }
 
 input[type="radio"].peer:disabled + .radio-mark::before {
-  @apply bg-red-700 border-red-700 cursor-not-allowed;
+  @apply cursor-not-allowed border-red-700 bg-red-700;
 }
 
 /* ===== Chat Emote Styling ===== */

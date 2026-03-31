@@ -10,10 +10,7 @@ import { ChatStorageService } from "@services/data/chat-storage.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 
 /* helpers */
-import {
-  groupChannelsByPlatform,
-  sortMessagesChronological,
-} from "@helpers/chat.helper";
+import { groupChannelsByPlatform, sortMessagesChronological } from "@helpers/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
 @Injectable({
   providedIn: "root",

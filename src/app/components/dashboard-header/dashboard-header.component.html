@@ -24,7 +24,7 @@
       aria-label="Search messages"
       aria-keyshortcuts="Ctrl+K"
     >
-      <mat-icon [fontIcon]="'search'" class="w-5! h-5! text-lg!" />
+      <mat-icon [fontIcon]="'search'" class="h-5! w-5! text-lg!" />
       <span aria-hidden="true">Search</span>
     </button>
 
@@ -37,7 +37,7 @@
       aria-label="Pinned messages"
       aria-keyshortcuts="Ctrl+P"
     >
-      <mat-icon [fontIcon]="'push_pin'" class="w-5! h-5! text-lg!" />
+      <mat-icon [fontIcon]="'push_pin'" class="h-5! w-5! text-lg!" />
       @if (pinnedCount() > 0) {
         <span class="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
           {{ pinnedCount() }}
@@ -54,7 +54,7 @@
         title="Reset all block sizes to default"
         aria-label="Reset split view sizes"
       >
-        <mat-icon [fontIcon]="'restart_alt'" class="w-5! h-5! text-lg!" />
+        <mat-icon [fontIcon]="'restart_alt'" class="h-5! w-5! text-lg!" />
         <span aria-hidden="true">Reset sizes</span>
       </button>
     }

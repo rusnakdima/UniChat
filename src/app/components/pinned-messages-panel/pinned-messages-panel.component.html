@@ -6,7 +6,10 @@
     class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-slate-900/50"
   >
     <div class="flex items-center gap-2">
-      <mat-icon [fontIcon]="'push_pin'" class="w-5! h-6! text-xl! text-amber-600 dark:text-amber-400" />
+      <mat-icon
+        [fontIcon]="'push_pin'"
+        class="h-6! w-5! text-xl! text-amber-600 dark:text-amber-400"
+      />
       <h3 class="text-sm font-semibold">Pinned Messages</h3>
       <span
         class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
@@ -22,7 +25,7 @@
           class="rounded-lg p-1 text-slate-500 transition hover:bg-slate-200 dark:hover:bg-white/10"
           title="Export pinned messages"
         >
-          <mat-icon [fontIcon]="'download'" class="w-5! h-5!" />
+          <mat-icon [fontIcon]="'download'" class="h-5! w-5!" />
         </button>
         <button
           type="button"
@@ -30,7 +33,7 @@
           class="rounded-lg p-1 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20"
           title="Unpin all"
         >
-          <mat-icon [fontIcon]="'clear_all'" class="w-5! h-5!" />
+          <mat-icon [fontIcon]="'clear_all'" class="h-5! w-5!" />
         </button>
       }
       <button
@@ -39,7 +42,7 @@
         class="rounded-lg p-1 text-slate-500 transition hover:bg-slate-200 dark:hover:bg-white/10"
         aria-label="Close"
       >
-        <mat-icon [fontIcon]="'close'" class="w-5! h-5!" />
+        <mat-icon [fontIcon]="'close'" class="h-5! w-5!" />
       </button>
     </div>
   </div>
@@ -168,10 +171,10 @@
                 <button
                   type="button"
                   (click)="unpin(pin.id)"
-                  class="rounded-lg p-1 text-slate-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                  class="rounded-lg p-1 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                   title="Unpin"
                 >
-                  <mat-icon [fontIcon]="'push_pin'" class="w-5! h-5!" />
+                  <mat-icon [fontIcon]="'push_pin'" class="h-5! w-5!" />
                 </button>
               </div>
             </div>

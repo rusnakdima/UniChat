@@ -271,7 +271,7 @@ export class SettingsPageView {
   getAccountIcon(accountId: string): string {
     const account = this.getChannelManagementAccounts().find((item) => item.id === accountId);
     if (!account) {
-      return '';
+      return "";
     }
     // Return a default avatar or profile image URL if available
     // For now, return a placeholder based on username

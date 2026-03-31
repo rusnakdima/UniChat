@@ -20,7 +20,7 @@
               class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
               title="Collapse all sections"
             >
-              <mat-icon [fontIcon]="'unfold_less'" class="w-6! h-7! text-xl!" />
+              <mat-icon [fontIcon]="'unfold_less'" class="h-7! w-6! text-xl!" />
               <span class="ml-1">Collapse All</span>
             </button>
             <button
@@ -29,7 +29,7 @@
               class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
               title="Expand all sections"
             >
-              <mat-icon [fontIcon]="'unfold_more'" class="w-6! h-7! text-xl!" />
+              <mat-icon [fontIcon]="'unfold_more'" class="h-7! w-6! text-xl!" />
               <span class="ml-1">Expand All</span>
             </button>
           </div>
@@ -107,7 +107,7 @@
                           <button
                             type="button"
                             (click)="removeAuthorizedAccount(account)"
-                            class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400"
+                            class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30"
                             title="Remove this account"
                           >
                             Remove
@@ -191,7 +191,7 @@
                         <button
                           type="button"
                           (click)="removeAuthorizedAccount(account)"
-                          class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400"
+                          class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30"
                           title="Remove this account"
                         >
                           Remove
@@ -220,7 +220,7 @@
                     (input)="youtubeApiKey = $any($event.target).value"
                     (blur)="saveYoutubeApiKey()"
                     placeholder="AIzaSy..."
-                    class="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-500"
+                    class="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-500"
                   />
                   <button
                     type="button"
@@ -247,7 +247,7 @@
                 class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-black/20"
               >
                 <p
-                  class="text-xs font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400"
+                  class="text-xs font-medium tracking-[0.15em] text-slate-500 uppercase dark:text-slate-400"
                 >
                   Authorized Accounts
                 </p>
@@ -278,7 +278,7 @@
               />
               <select
                 [(ngModel)]="selectedPlatform"
-                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
               >
                 @for (platform of platforms; track platform) {
                   <option [value]="platform">{{ getPlatformLbl(platform) }}</option>
@@ -286,7 +286,7 @@
               </select>
               <select
                 [(ngModel)]="selectedAccountId"
-                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
               >
                 <option value="">Watch-only</option>
                 @for (account of getAuthorizedAccounts(selectedPlatform); track account.id) {
@@ -297,7 +297,7 @@
                 type="text"
                 [(ngModel)]="newChannelName"
                 [placeholder]="getChannelNamePlaceholder()"
-                class="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-500"
+                class="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 transition outline-none placeholder:text-slate-400 focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-500"
                 (keydown.enter)="addChannel()"
               />
               <button
@@ -321,7 +321,7 @@
                         type="text"
                         [(ngModel)]="editingChannelName"
                         [placeholder]="channel.channelName"
-                        class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+                        class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
                         (keydown.enter)="saveEditChannel()"
                         (keydown.escape)="cancelEditChannel()"
                         autofocus
@@ -332,7 +332,7 @@
                         class="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-500/20 dark:text-emerald-400"
                         title="Save"
                       >
-                        <mat-icon [fontIcon]="'check'" class="w-5! h-6! text-xl!" />
+                        <mat-icon [fontIcon]="'check'" class="h-6! w-5! text-xl!" />
                       </button>
                       <button
                         type="button"
@@ -340,7 +340,7 @@
                         class="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-300 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20"
                         title="Cancel"
                       >
-                        <mat-icon [fontIcon]="'close'" class="w-5! h-6! text-xl!" />
+                        <mat-icon [fontIcon]="'close'" class="h-6! w-5! text-xl!" />
                       </button>
                     </div>
                   } @else {
@@ -374,7 +374,7 @@
                       <select
                         [ngModel]="channel.accountId ?? ''"
                         (ngModelChange)="updateChannelAccount(channel.id, $event)"
-                        class="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+                        class="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
                       >
                         <option value="">Watch-only</option>
                         @for (
@@ -396,13 +396,13 @@
                           "
                           title="Edit channel name"
                         >
-                          <mat-icon [fontIcon]="'edit'" class="w-5! h-6! text-xl!" />
+                          <mat-icon [fontIcon]="'edit'" class="h-6! w-5! text-xl!" />
                         </button>
                       }
                       <button
                         type="button"
                         (click)="removeChannel(channel.id)"
-                        class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400"
+                        class="rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30"
                       >
                         Remove
                       </button>
@@ -505,7 +505,7 @@
                   >
                   <select
                     [(ngModel)]="exportFormat"
-                    class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+                    class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
                   >
                     <option value="txt">Plain Text (TXT)</option>
                     <option value="json">JSON (Structured)</option>
@@ -558,7 +558,7 @@
                   >
                   <select
                     [(ngModel)]="selectedExportChannelId"
-                    class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+                    class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
                   >
                     <option value="">-- Select a channel --</option>
                     @for (channel of channels(); track channel.id) {

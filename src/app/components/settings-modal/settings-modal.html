@@ -32,7 +32,7 @@
         <div class="space-y-8">
           <section>
             <h3
-              class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400"
+              class="text-sm font-semibold tracking-[0.2em] text-slate-500 uppercase dark:text-slate-400"
             >
               Authorization
             </h3>
@@ -56,7 +56,7 @@
                         <img
                           [src]="presentation.platformIconUrl(platform)"
                           [alt]="getPlatformLbl(platform)"
-                          class="h-6 w-6 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
+                          class="h-6 w-6 shrink-0 rounded-full bg-white/90 object-contain p-1 shadow-sm dark:bg-slate-950/80"
                         />
                       </span>
                       @if (authorizationService.isAuthorized(platform)) {
@@ -122,7 +122,7 @@
 
           <section>
             <h3
-              class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400"
+              class="text-sm font-semibold tracking-[0.2em] text-slate-500 uppercase dark:text-slate-400"
             >
               YouTube live chat
             </h3>
@@ -134,7 +134,7 @@
 
           <section>
             <h3
-              class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400"
+              class="text-sm font-semibold tracking-[0.2em] text-slate-500 uppercase dark:text-slate-400"
             >
               Channel Management
             </h3>
@@ -162,7 +162,7 @@
                 class="mt-4 rounded-2xl border border-slate-900/10 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5"
               >
                 <p
-                  class="text-xs font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400"
+                  class="text-xs font-medium tracking-[0.15em] text-slate-500 uppercase dark:text-slate-400"
                 >
                   Authorized Accounts
                 </p>
@@ -175,7 +175,7 @@
                         [src]="presentation.platformIconUrl(account.platform)"
                         [alt]="getPlatformLbl(account.platform)"
                         [title]="getPlatformLbl(account.platform)"
-                        class="h-5 w-5 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
+                        class="h-5 w-5 shrink-0 rounded-full bg-white/90 object-contain p-1 shadow-sm dark:bg-slate-950/80"
                       />
                       {{ account.username }}
                     </span>
@@ -194,12 +194,12 @@
                 <img
                   [src]="presentation.platformIconUrl(selectedPlatform)"
                   [alt]="getPlatformLbl(selectedPlatform)"
-                  class="h-6 w-6 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
+                  class="h-6 w-6 shrink-0 rounded-full bg-white/90 object-contain p-1 shadow-sm dark:bg-slate-950/80"
                 />
               </span>
               <select
                 [(ngModel)]="selectedPlatform"
-                class="rounded-xl border border-slate-900/10 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
+                class="rounded-xl border border-slate-900/10 bg-white px-4 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
               >
                 @for (platform of platforms; track platform) {
                   <option [value]="platform">{{ getPlatformLbl(platform) }}</option>
@@ -207,7 +207,7 @@
               </select>
               <select
                 [(ngModel)]="selectedAccountId"
-                class="rounded-xl border border-slate-900/10 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
+                class="rounded-xl border border-slate-900/10 bg-white px-4 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
               >
                 <option value="">Watch-only</option>
                 @for (account of getAuthorizedAccounts(selectedPlatform); track account.id) {
@@ -218,7 +218,7 @@
                 type="text"
                 [(ngModel)]="newChannelName"
                 [placeholder]="getChannelNamePlaceholder()"
-                class="flex-1 rounded-xl border border-slate-900/10 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500"
+                class="flex-1 rounded-xl border border-slate-900/10 bg-white px-4 py-2 text-sm text-slate-900 transition outline-none placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500"
                 (keydown.enter)="addChannel()"
               />
               <button
@@ -242,7 +242,7 @@
                         type="text"
                         [(ngModel)]="editingChannelName"
                         [placeholder]="channel.channelName"
-                        class="flex-1 rounded-lg border border-slate-900/10 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
+                        class="flex-1 rounded-lg border border-slate-900/10 bg-white px-3 py-1.5 text-sm text-slate-900 transition outline-none focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
                         (keydown.enter)="saveEditChannel()"
                         (keydown.escape)="cancelEditChannel()"
                         autofocus
@@ -253,7 +253,7 @@
                         class="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-500/20 dark:text-emerald-400"
                         title="Save"
                       >
-                        <mat-icon [fontIcon]="'check'" class="w-5! h-5!" />
+                        <mat-icon [fontIcon]="'check'" class="h-5! w-5!" />
                       </button>
                       <button
                         type="button"
@@ -261,7 +261,7 @@
                         class="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-300 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20"
                         title="Cancel"
                       >
-                        <mat-icon [fontIcon]="'close'" class="w-5! h-5!" />
+                        <mat-icon [fontIcon]="'close'" class="h-5! w-5!" />
                       </button>
                     </div>
                   } @else {
@@ -276,7 +276,7 @@
                         <img
                           [src]="presentation.platformIconUrl(channel.platform)"
                           [alt]="getPlatformLbl(channel.platform)"
-                          class="h-5 w-5 shrink-0 rounded-full bg-white/90 p-1 object-contain shadow-sm dark:bg-slate-950/80"
+                          class="h-5 w-5 shrink-0 rounded-full bg-white/90 object-contain p-1 shadow-sm dark:bg-slate-950/80"
                         />
                       </span>
                       <span class="text-sm font-medium text-slate-900 dark:text-white">
@@ -299,7 +299,7 @@
                       <select
                         [ngModel]="channel.accountId ?? ''"
                         (ngModelChange)="updateChannelAccount(channel.id, $event)"
-                        class="rounded-lg border border-slate-900/10 bg-white px-2 py-1.5 text-xs text-slate-900 outline-none transition focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
+                        class="rounded-lg border border-slate-900/10 bg-white px-2 py-1.5 text-xs text-slate-900 transition outline-none focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
                       >
                         <option value="">Watch-only</option>
                         @for (
@@ -321,7 +321,7 @@
                           "
                           title="Edit channel name"
                         >
-                          <mat-icon [fontIcon]="'edit'" class="w-5! h-5!" />
+                          <mat-icon [fontIcon]="'edit'" class="h-5! w-5!" />
                         </button>
                       }
                       <button

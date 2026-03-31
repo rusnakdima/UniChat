@@ -17,7 +17,11 @@ import { AuthorizationService } from "@services/features/authorization.service";
 
 /* helpers */
 import { getChannelAccountCapabilities } from "@helpers/chat.helper";
-import { buildChannelRef, findChannelByRef, migrateLegacyChannelRefs } from "@utils/channel-ref.util";
+import {
+  buildChannelRef,
+  findChannelByRef,
+  migrateLegacyChannelRefs,
+} from "@utils/channel-ref.util";
 /**
  * Connection State Service - Channel Connection Status
  *

@@ -56,7 +56,9 @@ export class ChatScrollRegionComponent {
   private readonly distanceFromBottomValue = signal(0);
 
   readonly showJumpButton = computed(() => this.distanceFromBottomValue() > 10);
-  readonly showUnreadCount = computed(() => this.distanceFromBottomValue() > 10 && this.pendingNewCount() > 0);
+  readonly showUnreadCount = computed(
+    () => this.distanceFromBottomValue() > 10 && this.pendingNewCount() > 0
+  );
 
   // Virtual scroll configuration
   readonly virtualScrollItemSize = ChatScrollRegionComponent.messageItemHeight;
@@ -84,7 +86,7 @@ export class ChatScrollRegionComponent {
     afterNextRender(() => {
       const node = this.getViewportNode();
       if (!node) return;
-      
+
       this.prevTotalHeight = node.scrollHeight;
       fromEvent(node, "scroll", { passive: true })
         .pipe(throttleTime(16), takeUntilDestroyed(this.destroyRef))

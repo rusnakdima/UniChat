@@ -12,7 +12,7 @@
       class="rounded-lg p-1 text-slate-500 transition hover:bg-slate-200 dark:hover:bg-white/10"
       aria-label="Close search"
     >
-      <mat-icon [fontIcon]="'close'" class="w-5! h-5!" />
+      <mat-icon [fontIcon]="'close'" class="h-5! w-5!" />
     </button>
   </div>
 
@@ -25,16 +25,16 @@
           type="text"
           [(ngModel)]="searchQuery"
           placeholder="Search messages..."
-          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+          class="w-full rounded-lg border border-slate-200 bg-white py-2 pr-10 pl-3 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
           (keydown.enter)="onSearch()"
         />
         @if (searchQuery()) {
           <button
             type="button"
             (click)="onClear()"
-            class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            class="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
           >
-            <mat-icon [fontIcon]="'clear'" class="w-5! h-5!" />
+            <mat-icon [fontIcon]="'clear'" class="h-5! w-5!" />
           </button>
         }
       </div>
@@ -42,9 +42,9 @@
         type="button"
         (click)="onSearch()"
         [disabled]="!searchQuery().trim() || isSearching()"
-        class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <mat-icon [fontIcon]="'search'" class="w-5! h-5!" />
+        <mat-icon [fontIcon]="'search'" class="h-5! w-5!" />
       </button>
     </div>
 

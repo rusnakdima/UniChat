@@ -27,7 +27,7 @@ export class OverlaySourceBridgeService {
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 10; // Increased from 5
   private readonly reconnectDelay = 2000; // Increased from 1000ms
-  private connectionState: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
+  private connectionState: "disconnected" | "connecting" | "connected" = "disconnected";
   private messageQueue: ChatMessage[] = []; // Queue messages when disconnected
   private connectionPromise: Promise<void> | null = null; // Track connection promise
 

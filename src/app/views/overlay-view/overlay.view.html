@@ -1,5 +1,5 @@
 <section
-  class="flex flex-col min-h-0 w-screen h-screen overflow-hidden"
+  class="flex h-screen min-h-0 w-screen flex-col overflow-hidden"
   [ngStyle]="{ 'background-color': backgroundColor() }"
   [style.background]="transparentBg() ? 'transparent !important' : ''"
 >
@@ -8,19 +8,19 @@
 
   <!-- Messages Container -->
   @if (orderedMessages().length === 0) {
-    <div class="flex flex-col items-center justify-center h-screen">
+    <div class="flex h-screen flex-col items-center justify-center">
       <mat-icon
         [fontIcon]="'chat_bubble_outline'"
-        class="mx-auto w-16! h-16! text-6xl! opacity-50"
+        class="mx-auto h-16! w-16! text-6xl! opacity-50"
       />
-      <p class="mt-4 text-sm uppercase tracking-[0.2em] opacity-50">Waiting for messages</p>
+      <p class="mt-4 text-sm tracking-[0.2em] uppercase opacity-50">Waiting for messages</p>
     </div>
   } @else {
-    <div class="flex flex-col gap-2 items-start justify-start" [class]="messagesContainerClasses()">
+    <div class="flex flex-col items-start justify-start gap-2" [class]="messagesContainerClasses()">
       @for (message of orderedMessages(); track message.id) {
         @let channelImg = getChannelImageUrl(message);
         @let userImg = getUserImageUrl(message);
-        <article class="flex items-center gap-2 message-item">
+        <article class="message-item flex items-center gap-2">
           <!-- Platform Icon (show when multiple channels are selected) -->
           @if (shouldShowPlatformIcon()) {
             <img
@@ -82,7 +82,7 @@
                     [src]="segment.emote.url"
                     [alt]="segment.emote.code"
                     [title]="segment.emote.code"
-                    class="mx-0.5 inline align-middle overlay-emote"
+                    class="overlay-emote mx-0.5 inline align-middle"
                     [class.overlay-emote-dynamic]="
                       !segment.emote.url.includes('static-cdn.jtvnw.net')
                     "

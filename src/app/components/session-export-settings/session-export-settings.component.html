@@ -102,7 +102,7 @@
         <input
           type="datetime-local"
           [(ngModel)]="startTime"
-          class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+          class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
         />
       </div>
       <div>
@@ -112,7 +112,7 @@
         <input
           type="datetime-local"
           [(ngModel)]="endTime"
-          class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
+          class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white"
         />
       </div>
     </div>
@@ -143,10 +143,10 @@
       type="button"
       (click)="export()"
       [disabled]="preview().count === 0"
-      class="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span class="flex items-center justify-center gap-2">
-        <mat-icon [fontIcon]="'download'" class="w-5! h-5!" />
+        <mat-icon [fontIcon]="'download'" class="h-5! w-5!" />
         Export {{ format() | uppercase }} ({{ preview().count }} messages)
       </span>
     </button>

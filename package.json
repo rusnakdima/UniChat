@@ -57,7 +57,8 @@
     "@angular/compiler-cli": "^20.1.4",
     "@tauri-apps/cli": "^2",
     "@types/tmi.js": "^1.8.6",
-    "prettier": "3.5.3",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript": "~5.8.3"
   }
 }

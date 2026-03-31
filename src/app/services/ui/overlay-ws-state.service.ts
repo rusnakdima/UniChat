@@ -51,7 +51,7 @@ export class OverlayWsStateService {
   private readonly maxReconnectAttempts = 10; // Increased from 5 for better reliability
   private readonly reconnectDelay = 2000; // Increased from 1000ms for stability
   private pendingOptions: OverlayConnectOptions | null = null;
-  private connectionState: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
+  private connectionState: "disconnected" | "connecting" | "connected" = "disconnected";
 
   private readonly messagesSignal = signal<OverlayChatMessage[]>([]);
   readonly messages = this.messagesSignal.asReadonly();
@@ -155,7 +155,9 @@ export class OverlayWsStateService {
    * Set messages directly (used when polling from backend)
    */
   setMessages(messages: OverlayChatMessage[]): void {
-    const sorted = [...messages].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const sorted = [...messages].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
     this.messagesSignal.set(this.maxQueueSize > 0 ? sorted.slice(0, this.maxQueueSize) : sorted);
   }
 

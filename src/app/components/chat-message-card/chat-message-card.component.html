@@ -28,7 +28,7 @@
             />
           } @else {
             <div
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
             >
               {{ channelLabel()!.charAt(0) }}
             </div>
@@ -38,7 +38,7 @@
         <!-- User Profile Image -->
         <button
           type="button"
-          class="shrink-0 outline-none transition focus-visible:ring-2 focus-visible:ring-sky-500/60 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
+          class="shrink-0 transition outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
           (click)="onUsernameClick($event); loadUserImage(); loadChannelImage()"
           [title]="'View profile · ' + message().author"
         >
@@ -52,7 +52,7 @@
             />
           } @else {
             <div
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
               [class]="presentation.usernameColorClasses(message().author)"
             >
               {{ message().author.charAt(0) }}
@@ -75,7 +75,7 @@
         <!-- Username -->
         <button
           type="button"
-          class="max-w-full truncate text-left text-sm font-semibold outline-none transition hover:underline focus-visible:ring-2 focus-visible:ring-sky-500/60 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
+          class="max-w-full truncate text-left text-sm font-semibold transition outline-none hover:underline focus-visible:ring-2 focus-visible:ring-sky-500/60 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
           [class]="presentation.usernameColorClasses(message().author)"
           (click)="onUsernameClick($event)"
           [title]="'View profile · ' + message().author"
@@ -103,7 +103,7 @@
       <div class="flex shrink-0 items-center gap-2">
         <!-- Action Buttons (hover only) -->
         <div
-          class="flex items-center gap-0.5 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-x-0 opacity-0 -translate-x-2"
+          class="flex -translate-x-2 items-center gap-0.5 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
           role="group"
           aria-label="Message actions"
         >
@@ -111,14 +111,14 @@
           <button
             type="button"
             (click)="togglePin(); $event.stopPropagation()"
-            class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/20 dark:text-slate-400 dark:hover:text-amber-400"
+            class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-amber-100 hover:text-amber-600 dark:text-slate-400 dark:hover:bg-amber-500/20 dark:hover:text-amber-400"
             [title]="isPinned ? 'Unpin message' : 'Pin message'"
             [aria-label]="isPinned ? 'Unpin message' : 'Pin message'"
             [aria-pressed]="isPinned"
           >
             <mat-icon
               [fontIcon]="'push_pin'"
-              class="w-5! h-6! text-xl! text-xl! leading-none"
+              class="h-6! w-5! text-xl! leading-none"
               [class.opacity-70]="!isPinned"
             />
           </button>
@@ -126,22 +126,22 @@
             <button
               type="button"
               (click)="interactions.onReplyClick(message().id)"
-              class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-white/10 dark:text-slate-400 dark:hover:text-white"
+              class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
               title="Reply"
               aria-label="Reply to message"
             >
-              <mat-icon [fontIcon]="'reply'" class="w-5! h-6! text-xl! text-xl! leading-none" />
+              <mat-icon [fontIcon]="'reply'" class="h-6! w-5! text-xl! leading-none" />
             </button>
           }
           @if (message().actions.delete.status === "available") {
             <button
               type="button"
               (click)="interactions.deleteMessage(message().id)"
-              class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/20 dark:text-slate-400 dark:hover:text-red-400"
+              class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-red-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-500/20 dark:hover:text-red-400"
               title="Delete message"
               aria-label="Delete message"
             >
-              <mat-icon [fontIcon]="'delete'" class="w-5! h-6! text-xl! text-xl! leading-none" />
+              <mat-icon [fontIcon]="'delete'" class="h-6! w-5! text-xl! leading-none" />
             </button>
           }
         </div>
@@ -174,14 +174,14 @@
     }
 
     <!-- Message Text -->
-    <p class="break-words text-sm text-slate-700 dark:text-slate-300">
+    <p class="text-sm break-words text-slate-700 dark:text-slate-300">
       @for (segment of richText.buildSegments(message()); track $index) {
         @if (segment.type === "text") {
           <span>{{ segment.value }}</span>
         } @else if (segment.type === "link") {
           <button
             type="button"
-            class="inline max-w-full break-all text-left text-sky-600 underline decoration-sky-500/35 underline-offset-2 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300"
+            class="inline max-w-full text-left break-all text-sky-600 underline decoration-sky-500/35 underline-offset-2 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300"
             (click)="onLinkClick(segment, $event)"
           >
             {{ segment.value }}
@@ -191,7 +191,7 @@
             [src]="segment.emote.url"
             [alt]="segment.emote.code"
             [title]="segment.emote.code"
-            class="mx-0.5 inline align-middle chat-emote"
+            class="chat-emote mx-0.5 inline align-middle"
             [class.chat-emote-dynamic]="!segment.emote.url.includes('static-cdn.jtvnw.net')"
             loading="lazy"
             (error)="onEmoteImageError($event)"

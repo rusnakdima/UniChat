@@ -60,7 +60,9 @@ export class SessionExportService {
     // Filter by channels
     if (options.channels && options.channels.length > 0) {
       const channelSet = new Set(options.channels);
-      messages = messages.filter((m) => channelSet.has(buildChannelRef(m.platform, m.sourceChannelId)));
+      messages = messages.filter((m) =>
+        channelSet.has(buildChannelRef(m.platform, m.sourceChannelId))
+      );
     }
 
     // Filter by platforms

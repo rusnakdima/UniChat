@@ -1,4 +1,4 @@
-<div class="flex flex-col bg-white dark:bg-slate-900 w-full h-full min-h-full overflow-hidden">
+<div class="flex h-full min-h-full w-full flex-col overflow-hidden bg-white dark:bg-slate-900">
   @if (orderedVisibleChannels().length === 0) {
     <div
       class="flex h-full w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center dark:border-white/15 dark:bg-slate-900/40"
@@ -15,7 +15,7 @@
         class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
       >
         <span
-          class="text-xs font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400"
+          class="text-xs font-medium tracking-[0.15em] text-slate-500 uppercase dark:text-slate-400"
         >
           Filter:
         </span>
@@ -34,7 +34,7 @@
               (cdkDragStarted)="onMixedChannelDragStarted()"
               (cdkDragEnded)="onMixedChannelDragEnded()"
               (click)="toggleChannelFilter(channelRefFor(channel)); loadChannelImage(channel)"
-              class="cursor-move inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
+              class="inline-flex cursor-move items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
               [class]="
                 isChannelDisabled(channelRefFor(channel))
                   ? 'border-slate-300/90 bg-slate-100 text-slate-500 line-through opacity-90 dark:border-white/10 dark:bg-black/25 dark:text-slate-500'
@@ -57,7 +57,7 @@
                 />
               } @else {
                 <div
-                  class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
                 >
                   {{ channel.channelName.charAt(0) }}
                 </div>

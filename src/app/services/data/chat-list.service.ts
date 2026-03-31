@@ -149,7 +149,7 @@ export class ChatListService {
     // Iterate through all localStorage keys to find overlay channel configurations
     // Pattern: unichat-overlay-channel-ids:{widgetId}
     const overlayChannelIdsPattern = /^unichat-overlay-channel-ids:/;
-    
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && overlayChannelIdsPattern.test(key)) {
@@ -231,12 +231,14 @@ export class ChatListService {
     try {
       const parsed = JSON.parse(stored) as ChatChannel[];
       let needsSave = false;
-      
+
       const migrated = parsed
         .map((channel) => {
           // Migrate YouTube channels
           if (channel.platform === "youtube") {
-            const normalizedChannelId = normalizeYouTubeProviderInput(channel.channelId || channel.channelName);
+            const normalizedChannelId = normalizeYouTubeProviderInput(
+              channel.channelId || channel.channelName
+            );
             if (normalizedChannelId !== channel.channelId) {
               channel.channelId = normalizedChannelId;
               needsSave = true;
@@ -249,7 +251,7 @@ export class ChatListService {
       if (needsSave) {
         this.saveChannels(migrated);
       }
-      
+
       return migrated;
     } catch {
       return [];

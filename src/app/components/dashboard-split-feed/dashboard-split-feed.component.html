@@ -9,7 +9,7 @@
     </p>
   </div>
 } @else {
-  <div class="flex flex-col w-full overflow-hidden" style="height: calc(100vh - 62px)">
+  <div class="flex w-full flex-col overflow-hidden" style="height: calc(100vh - 62px)">
     <!-- Single Row Container for resizable blocks -->
     <div
       #gridContainer
@@ -17,12 +17,12 @@
       [cdkDropListData]="visiblePlatforms()"
       cdkDropListOrientation="horizontal"
       (cdkDropListDropped)="onPlatformDrop($event)"
-      class="relative fle flex-row items-stretch p-1 gap-1 w-full h-full overflow-hidden"
+      class="fle relative h-full w-full flex-row items-stretch gap-1 overflow-hidden p-1"
     >
       <!-- Resize tracker line - only show during resize, not drag -->
       @if (isResizing() && !isReorderingChannels()) {
         <div
-          class="pointer-events-none absolute bottom-0 top-0 z-50 w-px bg-emerald-500 shadow-lg"
+          class="pointer-events-none absolute top-0 bottom-0 z-50 w-px bg-emerald-500 shadow-lg"
           [style.left.px]="resizeTrackerX() - getContainerLeft()"
         ></div>
       }
@@ -38,7 +38,7 @@
           [style.min-width]="'100px'"
         >
           <div
-            class="flex flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900 w-full h-full overflow-hidden"
+            class="flex h-full w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
           >
             <!-- Resize Handle - Only show if NOT the last item (between blocks) -->
             @if (!last) {
@@ -85,7 +85,7 @@
               [attr.aria-label]="'Channels: ' + presentation.platformLabel(platform)"
             >
               <span
-                class="w-full text-[10px] font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 sm:w-auto"
+                class="w-full text-[10px] font-medium tracking-[0.15em] text-slate-500 uppercase sm:w-auto dark:text-slate-400"
               >
                 Channels:
               </span>
@@ -106,7 +106,7 @@
                     (cdkDragEnded)="onChannelDragEnded()"
                     [attr.aria-checked]="isChannelActive(platform, ch)"
                     (click)="onChannelClick(platform, ch); loadChannelImage(ch)"
-                    class="cursor-move inline-flex max-w-full min-w-0 items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:max-w-56"
+                    class="inline-flex max-w-full min-w-0 cursor-move items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:max-w-56"
                     [class]="
                       isChannelActive(platform, ch)
                         ? 'border-slate-800 bg-slate-800 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:shadow-none'
@@ -122,7 +122,7 @@
                       />
                     } @else {
                       <div
-                        class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                        class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
                       >
                         {{ ch.channelName.charAt(0) }}
                       </div>
@@ -156,7 +156,7 @@
                   [scrollToken]="feedData.scrollTokenForChannel(platform, cid)"
                   [messages]="colMsgs"
                 >
-                  <div class="flex flex-col gap-y-2 px-2 py-2 min-h-screen">
+                  <div class="flex flex-col gap-y-2 px-2 py-2">
                     @for (message of colMsgs; track message.id) {
                       <app-chat-message-card
                         [message]="message"
@@ -181,7 +181,7 @@
                     >
                     <div class="min-w-0 flex-1">
                       <p
-                        class="text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300"
+                        class="text-[10px] font-semibold tracking-wide text-emerald-800 uppercase dark:text-emerald-300"
                       >
                         Replying to
                       </p>
@@ -208,7 +208,7 @@
                   type="text"
                   [attr.data-unichat-composer]="platform"
                   [placeholder]="composerPlaceholder(platform)"
-                  class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500"
+                  class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 transition outline-none placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500"
                   #sendInput
                   (keydown)="onComposerKeydown($event, platform, sendInput)"
                 />

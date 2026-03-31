@@ -92,12 +92,12 @@ export class YouTubeChatService extends BaseChatProviderService {
       // Try to get video ID - either from storage key (if it's already a video ID)
       // or by fetching from channel name (if connected via OAuth)
       let videoId: string | null = this.normalizeVideoId(storageKey);
-      
+
       // If not a valid video ID, try to fetch from channel name
       if (!videoId) {
         videoId = await this.fetchVideoIdFromChannelName(storageKey);
       }
-      
+
       if (!videoId) {
         this.errorService.reportChannelNotFound(storageKey, "youtube");
         return;
@@ -125,7 +125,7 @@ export class YouTubeChatService extends BaseChatProviderService {
           return videoId;
         }
       }
-      
+
       // Fallback: try API key method
       const apiKey = this.getApiKey();
       if (apiKey) {

@@ -29,9 +29,7 @@ export class ConnectionErrorBannerComponent {
   readonly platform = input.required<PlatformType>();
 
   readonly error = computed(() =>
-    this.connectionStateService.getChannelError(
-      buildChannelRef(this.platform(), this.channelId())
-    )
+    this.connectionStateService.getChannelError(buildChannelRef(this.platform(), this.channelId()))
   );
 
   readonly retryConnection = output<void>();

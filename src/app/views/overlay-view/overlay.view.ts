@@ -113,10 +113,7 @@ export class OverlayView implements OnDestroy {
     void this.initializeOverlayRuntime(widget);
 
     // Same-tab updates (management page saves in the same window).
-    window.addEventListener(
-      "unichat-overlay-config-changed",
-      this.onOverlayConfigChangedHandler
-    );
+    window.addEventListener("unichat-overlay-config-changed", this.onOverlayConfigChangedHandler);
 
     // Auto-trigger change detection when config signals change
     effect(() => {
@@ -156,7 +153,7 @@ export class OverlayView implements OnDestroy {
     }
 
     // 2. Wait for server to be ready (prevent race condition)
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     // 3. Load config from backend BEFORE WebSocket connect
     await this.loadAndApplyConfigFromBackend();
@@ -460,9 +457,7 @@ export class OverlayView implements OnDestroy {
    * Get channel profile image URL for overlay messages
    * Currently supports Twitch multi-chat channels
    */
-  private ensureAvatarCachesForMessages(
-    messages: readonly OverlayChatMessage[]
-  ): boolean {
+  private ensureAvatarCachesForMessages(messages: readonly OverlayChatMessage[]): boolean {
     let changed = false;
 
     for (const message of messages) {
@@ -513,7 +508,10 @@ export class OverlayView implements OnDestroy {
         }
       }
 
-      if (!this.avatarCache.hasUserAvatar(userCacheKey) && !isSafeRemoteImageUrl(message.authorAvatarUrl)) {
+      if (
+        !this.avatarCache.hasUserAvatar(userCacheKey) &&
+        !isSafeRemoteImageUrl(message.authorAvatarUrl)
+      ) {
         if (!this.pendingUserAvatarLoads.has(userCacheKey)) {
           this.pendingUserAvatarLoads.add(userCacheKey);
           if (message.platform === "twitch") {

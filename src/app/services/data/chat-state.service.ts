@@ -129,7 +129,10 @@ export class ChatStateService {
       },
     };
 
-    this.chatStorageService.addMessage(buildChannelRef(message.platform, message.sourceChannelId), replyMessage);
+    this.chatStorageService.addMessage(
+      buildChannelRef(message.platform, message.sourceChannelId),
+      replyMessage
+    );
     this.refreshMessageCapabilities();
   }
 
@@ -231,16 +234,16 @@ export class ChatStateService {
       buildChannelRef(message.platform, message.sourceChannelId),
       messageId,
       {
-      text: "Message removed from view.",
-      isDeleted: true,
-      actions: {
-        ...message.actions,
-        delete: createMessageActionState(
-          "delete",
-          "disabled",
-          "Already deleted in the local session."
-        ),
-      },
+        text: "Message removed from view.",
+        isDeleted: true,
+        actions: {
+          ...message.actions,
+          delete: createMessageActionState(
+            "delete",
+            "disabled",
+            "Already deleted in the local session."
+          ),
+        },
       }
     );
   }
@@ -265,18 +268,18 @@ export class ChatStateService {
         buildChannelRef(message.platform, message.sourceChannelId),
         message.id,
         {
-        actions: {
-          reply: createMessageActionState(
-            "reply",
-            capabilities.canReply ? "available" : "disabled",
-            capabilities.canReply ? undefined : "This channel is watch-only for replies."
-          ),
-          delete: createMessageActionState(
-            "delete",
-            capabilities.canDelete ? "available" : "disabled",
-            capabilities.canDelete ? undefined : "This channel cannot delete messages."
-          ),
-        },
+          actions: {
+            reply: createMessageActionState(
+              "reply",
+              capabilities.canReply ? "available" : "disabled",
+              capabilities.canReply ? undefined : "This channel is watch-only for replies."
+            ),
+            delete: createMessageActionState(
+              "delete",
+              capabilities.canDelete ? "available" : "disabled",
+              capabilities.canDelete ? undefined : "This channel cannot delete messages."
+            ),
+          },
         }
       );
     }

@@ -156,9 +156,7 @@ export class BlockedWordsService {
   filterMessage(text: string, channelId: string): { filtered: string; wasFiltered: boolean } {
     const applicableRules = this.activeRules()
       .map((rule) => this.migrateChannelRefs(rule))
-      .filter(
-        (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
-      );
+      .filter((rule) => rule.isGlobal || rule.channelIds?.includes(channelId));
 
     let filtered = text;
     let wasFiltered = false;
@@ -198,9 +196,7 @@ export class BlockedWordsService {
   getRulesForChannel(channelId: string): BlockedWordRule[] {
     return this.activeRules()
       .map((rule) => this.migrateChannelRefs(rule))
-      .filter(
-        (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
-      );
+      .filter((rule) => rule.isGlobal || rule.channelIds?.includes(channelId));
   }
 
   private generateId(): string {

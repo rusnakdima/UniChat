@@ -132,12 +132,9 @@ export class TwitchChatService extends BaseChatProviderService {
       on(event: "connectionfailure", listener: () => void): tmi.Client;
     };
 
-    (client as unknown as TmiClientWithConnectionFailure).on(
-      "connectionfailure",
-      () => {
+    (client as unknown as TmiClientWithConnectionFailure).on("connectionfailure", () => {
       this.errorService.reportNetworkTimeout(normalizedChannel, "twitch");
-      }
-    );
+    });
     client.on("notice", (reason: string) => {
       if (reason.includes("ratelimit") || reason.includes("rate limit")) {
         this.errorService.reportRateLimited(normalizedChannel, "twitch");

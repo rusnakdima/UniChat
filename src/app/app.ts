@@ -30,7 +30,7 @@ export class App {
     const pathname = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
     const widgetId = searchParams.get("widgetId");
-    
+
     // Overlay routes: /overlay or /overlay-management
     return pathname === "/overlay" || pathname === "/overlay-management" || !!widgetId;
   }

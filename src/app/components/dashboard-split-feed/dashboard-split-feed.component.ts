@@ -115,7 +115,8 @@ export class DashboardSplitFeedComponent {
       });
       const activeChannelId = activeChannelIds[platform];
       const activeChannel =
-        orderedChannels.find((channel) => channel.channelId === activeChannelId) ?? orderedChannels[0];
+        orderedChannels.find((channel) => channel.channelId === activeChannelId) ??
+        orderedChannels[0];
 
       viewModels[platform] = {
         orderedChannels,

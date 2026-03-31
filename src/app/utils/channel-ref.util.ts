@@ -72,7 +72,8 @@ export function migrateLegacyChannelRefs(
 
     const exactMatches = channels.filter(
       (channel) =>
-        channel.channelId === normalized || channel.channelName.toLowerCase() === normalized.toLowerCase()
+        channel.channelId === normalized ||
+        channel.channelName.toLowerCase() === normalized.toLowerCase()
     );
 
     if (exactMatches.length === 1) {

@@ -107,8 +107,8 @@ export class ChatSearchService {
         // Apply author filter if specified
         if (options.author) {
           const authorPattern = options.caseSensitive
-              ? new RegExp(options.author)
-              : new RegExp(options.author, "i");
+            ? new RegExp(options.author)
+            : new RegExp(options.author, "i");
           if (!authorPattern.test(message.author)) {
             continue;
           }
@@ -117,7 +117,7 @@ export class ChatSearchService {
         results.push({
           message,
           matchType: textMatch && authorMatch ? "both" : textMatch ? "text" : "author",
-            highlightedSegments: this.highlightMatches(message.text, pattern),
+          highlightedSegments: this.highlightMatches(message.text, pattern),
         });
       }
     }

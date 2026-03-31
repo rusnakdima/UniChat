@@ -150,9 +150,7 @@ export class HighlightRulesService {
   getHighlightColor(text: string, author: string, channelId: string): string | null {
     const applicableRules = this.activeRules()
       .map((rule) => this.migrateChannelRefs(rule))
-      .filter(
-        (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
-      );
+      .filter((rule) => rule.isGlobal || rule.channelIds?.includes(channelId));
 
     const lowerText = text.toLowerCase();
     const lowerAuthor = author.toLowerCase();
@@ -196,9 +194,7 @@ export class HighlightRulesService {
   getRulesForChannel(channelId: string): HighlightRule[] {
     return this.activeRules()
       .map((rule) => this.migrateChannelRefs(rule))
-      .filter(
-        (rule) => rule.isGlobal || rule.channelIds?.includes(channelId)
-      );
+      .filter((rule) => rule.isGlobal || rule.channelIds?.includes(channelId));
   }
 
   private generateId(): string {
