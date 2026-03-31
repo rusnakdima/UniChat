@@ -101,7 +101,31 @@ export class DashboardSplitFeedComponent {
 
   readonly visiblePlatforms = this.feedData.platformsWithVisibleChannels;
 
+  // Signal-based messages for each platform - directly reads from storage to ensure reactivity
+  readonly platformMessages = computed(() => {
+    this.feedData.messageVersion();
+    this.feedData.channelsByPlatform();
+
+    const messagesByPlatform: Partial<Record<PlatformType, ChatMessage[]>> = {};
+    for (const platform of this.visiblePlatforms()) {
+      const activeChannelId = this.activeChannelId(platform);
+      if (activeChannelId) {
+        const channelRef = buildChannelRef(platform, activeChannelId.toLowerCase());
+        if (this.chatStorage.isChannelLoaded(channelRef)) {
+          const allMessages = this.chatStorage.channelMessages();
+          messagesByPlatform[platform] = allMessages[channelRef] ?? [];
+        } else {
+          messagesByPlatform[platform] = [];
+        }
+      }
+    }
+    return messagesByPlatform;
+  });
+
   private readonly platformViewModels = computed(() => {
+    // Force dependency on message changes via feedData's messageVersion computed
+    this.feedData.messageVersion();
+
     this.feedData.channelsByPlatform();
     this.dashboardPreferencesService.preferences();
     const activeChannelIds = this.splitUi.activeChannelIdByPlatform();
