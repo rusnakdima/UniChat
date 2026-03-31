@@ -1,5 +1,5 @@
 /* sys lib */
-import { Injectable, computed, inject } from "@angular/core";
+import { Injectable, computed, inject, signal } from "@angular/core";
 
 /* models */
 import { ChatChannel, ChatMessage, PlatformType } from "@models/chat.model";
@@ -19,6 +19,19 @@ export class DashboardFeedDataService {
   private readonly chatListService = inject(ChatListService);
   private readonly dashboardPreferencesService = inject(DashboardPreferencesService);
   private readonly chatStorageService = inject(ChatStorageService);
+
+  // Signal that updates whenever channel messages change
+  // Components can read this to force dependency on message updates
+  readonly messageVersion = computed(() => {
+    // Reading channelMessages creates dependency
+    const messages = this.chatStorageService.channelMessages();
+    // Return a version based on message count to trigger updates
+    let total = 0;
+    for (const msgs of Object.values(messages)) {
+      total += msgs.length;
+    }
+    return total;
+  });
 
   readonly orderedPlatforms = computed(
     () => this.dashboardPreferencesService.preferences().splitLayout.orderedPlatforms
@@ -76,11 +89,12 @@ export class DashboardFeedDataService {
         continue;
       }
 
-      // Providers still write some buckets with legacy plain channel ids.
-      // Canonicalize everything to `platform:providerChannelId` so dashboard
+      // Providers store messages with lowercase channel IDs.
+      // Canonicalize everything to `platform:providerChannelId` (lowercase) so dashboard
       // selectors can resolve the same channel regardless of storage key shape.
       const firstMessage = messages[0];
-      const channelRef = buildChannelRef(firstMessage.platform, firstMessage.sourceChannelId);
+      const normalizedChannelId = firstMessage.sourceChannelId?.toLowerCase() ?? "";
+      const channelRef = buildChannelRef(firstMessage.platform, normalizedChannelId);
       const existing = chronological[channelRef] ?? [];
       chronological[channelRef] = [...existing, ...messages];
 
@@ -99,9 +113,14 @@ export class DashboardFeedDataService {
   });
 
   readonly mixedFeedChronological = computed(() => {
+    // Explicitly read computed signals to create dependency on their changes
+    this.channelMessagesChronologicalByRef();
+    this.chatStorageService.channelMessages();
+
     const chronologicalByRef = this.channelMessagesChronologicalByRef();
+    // Normalize channelId to lowercase to match storage keys
     const refs = this.mixedFeedChannels().map((channel) =>
-      buildChannelRef(channel.platform, channel.channelId)
+      buildChannelRef(channel.platform, channel.channelId.toLowerCase())
     );
     const messages: ChatMessage[] = [];
 
@@ -151,15 +170,25 @@ export class DashboardFeedDataService {
   getMessagesForChannel(platform: PlatformType, channelId: string): ChatMessage[] {
     // For split feed, show all channels (no mixed filter)
     // Only return messages if channel is loaded (lazy loading)
-    const channelRef = buildChannelRef(platform, channelId);
-    if (!this.chatStorageService.isChannelLoaded(channelRef)) {
+    // Normalize channelId to lowercase for matching (providers store with lowercase keys)
+
+    // Explicitly read computed signals to create dependency on their changes
+    this.channelMessagesChronologicalByRef();
+    this.chatStorageService.channelMessages();
+
+    const normalizedChannelId = channelId.toLowerCase();
+    const channelRef = buildChannelRef(platform, normalizedChannelId);
+    const isLoaded = this.chatStorageService.isChannelLoaded(channelRef);
+    if (!isLoaded) {
       return [];
     }
     return this.channelMessagesChronologicalByRef()[channelRef] ?? [];
   }
 
   loadChannelMessages(platform: PlatformType, channelId: string): void {
-    const channelRef = buildChannelRef(platform, channelId);
+    // Normalize channelId to lowercase to match provider storage keys
+    const normalizedChannelId = channelId.toLowerCase();
+    const channelRef = buildChannelRef(platform, normalizedChannelId);
     if (this.chatStorageService.isChannelLoaded(channelRef)) {
       return; // Already loaded
     }

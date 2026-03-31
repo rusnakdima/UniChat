@@ -77,6 +77,7 @@ export class SettingsPageView {
   selectedPlatform: PlatformType = "twitch";
   selectedAccountId = "";
   youtubeApiKey = "";
+  showYoutubeApiKey = false;
 
   /** Edit mode state */
   editingChannelId: string | null = null;
