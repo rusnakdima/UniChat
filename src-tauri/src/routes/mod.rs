@@ -15,3 +15,6 @@ pub mod youtube_route;
 
 #[path = "kick.route.rs"]
 pub mod kick_route;
+
+#[path = "twitch.route.rs"]
+pub mod twitch_route;

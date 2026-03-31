@@ -17,67 +17,85 @@ pub fn get_oauth_provider_config(
   platform: &PlatformTypeModel,
 ) -> Result<OAuthProviderConfig, String> {
   match platform {
-    PlatformTypeModel::Twitch => Ok(OAuthProviderConfig {
-      client_id: read_required("TWITCH_CLIENT_ID")?,
-      client_secret: read_value("TWITCH_CLIENT_SECRET"),
-      authorize_url: "https://id.twitch.tv/oauth2/authorize".to_string(),
-      token_url: "https://id.twitch.tv/oauth2/token".to_string(),
-      userinfo_url: "https://api.twitch.tv/helix/users".to_string(),
-      revoke_url: Some("https://id.twitch.tv/oauth2/revoke".to_string()),
-      scopes: vec![
-        "chat:read".to_string(),
-        "chat:edit".to_string(),
-        "moderator:manage:banned_users".to_string(),
-      ],
-      redirect_uri: read_or_default(
-        "UNICHAT_OAUTH_REDIRECT_URI",
-        "http://localhost:3456/callback".to_string(),
-      ),
-    }),
-    PlatformTypeModel::Kick => Ok(OAuthProviderConfig {
-      client_id: read_required("KICK_CLIENT_ID")?,
-      client_secret: read_value("KICK_CLIENT_SECRET"),
-      authorize_url: read_or_default(
-        "KICK_AUTHORIZE_URL",
-        "https://id.kick.com/oauth/authorize".to_string(),
-      ),
-      token_url: read_or_default(
-        "KICK_TOKEN_URL",
-        "https://id.kick.com/oauth/token".to_string(),
-      ),
-      userinfo_url: read_or_default(
-        "KICK_USERINFO_URL",
-        "https://api.kick.com/public/v1/users".to_string(),
-      ),
-      revoke_url: Some(read_or_default(
-        "KICK_REVOKE_URL",
-        "https://id.kick.com/oauth/revoke".to_string(),
-      )),
-      scopes: vec![read_or_default(
-        "KICK_SCOPES",
-        "chat:read chat:write".to_string(),
-      )],
-      redirect_uri: read_or_default(
-        "UNICHAT_OAUTH_REDIRECT_URI",
-        "http://localhost:3456/callback".to_string(),
-      ),
-    }),
-    PlatformTypeModel::Youtube => Ok(OAuthProviderConfig {
-      client_id: read_required("YOUTUBE_CLIENT_ID")?,
-      client_secret: read_value("YOUTUBE_CLIENT_SECRET"),
-      authorize_url: "https://accounts.google.com/o/oauth2/v2/auth".to_string(),
-      token_url: "https://oauth2.googleapis.com/token".to_string(),
-      userinfo_url: "https://www.googleapis.com/oauth2/v2/userinfo".to_string(),
-      revoke_url: Some("https://oauth2.googleapis.com/revoke".to_string()),
-      scopes: vec![
-        "https://www.googleapis.com/auth/youtube.readonly".to_string(),
-        "https://www.googleapis.com/auth/youtube.force-ssl".to_string(),
-      ],
-      redirect_uri: read_or_default(
-        "UNICHAT_OAUTH_REDIRECT_URI",
-        "http://localhost:3456/callback".to_string(),
-      ),
-    }),
+    PlatformTypeModel::Twitch => {
+      let client_id = read_required("TWITCH_CLIENT_ID")
+        .map_err(|e| format!("Twitch OAuth not configured: {e}. Please set TWITCH_CLIENT_ID in your .env file or environment variables."))?;
+      let client_secret = read_value("TWITCH_CLIENT_SECRET");
+
+      Ok(OAuthProviderConfig {
+        client_id,
+        client_secret,
+        authorize_url: "https://id.twitch.tv/oauth2/authorize".to_string(),
+        token_url: "https://id.twitch.tv/oauth2/token".to_string(),
+        userinfo_url: "https://api.twitch.tv/helix/users".to_string(),
+        revoke_url: Some("https://id.twitch.tv/oauth2/revoke".to_string()),
+        scopes: vec![
+          "chat:read".to_string(),
+          "chat:edit".to_string(),
+          "moderator:manage:banned_users".to_string(),
+        ],
+        redirect_uri: read_or_default(
+          "UNICHAT_OAUTH_REDIRECT_URI",
+          "http://localhost:3456/callback".to_string(),
+        ),
+      })
+    }
+    PlatformTypeModel::Kick => {
+      let client_id = read_required("KICK_CLIENT_ID")
+        .map_err(|e| format!("Kick OAuth not configured: {e}. Please set KICK_CLIENT_ID in your .env file or environment variables."))?;
+      let client_secret = read_value("KICK_CLIENT_SECRET");
+
+      Ok(OAuthProviderConfig {
+        client_id,
+        client_secret,
+        authorize_url: read_or_default(
+          "KICK_AUTHORIZE_URL",
+          "https://id.kick.com/oauth/authorize".to_string(),
+        ),
+        token_url: read_or_default(
+          "KICK_TOKEN_URL",
+          "https://id.kick.com/oauth/token".to_string(),
+        ),
+        userinfo_url: read_or_default(
+          "KICK_USERINFO_URL",
+          "https://api.kick.com/public/v1/users".to_string(),
+        ),
+        revoke_url: Some(read_or_default(
+          "KICK_REVOKE_URL",
+          "https://id.kick.com/oauth/revoke".to_string(),
+        )),
+        scopes: vec![read_or_default(
+          "KICK_SCOPES",
+          "chat:read chat:write".to_string(),
+        )],
+        redirect_uri: read_or_default(
+          "UNICHAT_OAUTH_REDIRECT_URI",
+          "http://localhost:3456/callback".to_string(),
+        ),
+      })
+    }
+    PlatformTypeModel::Youtube => {
+      let client_id = read_required("YOUTUBE_CLIENT_ID")
+        .map_err(|e| format!("YouTube OAuth not configured: {e}. Please set YOUTUBE_CLIENT_ID in your .env file or environment variables."))?;
+      let client_secret = read_value("YOUTUBE_CLIENT_SECRET");
+
+      Ok(OAuthProviderConfig {
+        client_id,
+        client_secret,
+        authorize_url: "https://accounts.google.com/o/oauth2/v2/auth".to_string(),
+        token_url: "https://oauth2.googleapis.com/token".to_string(),
+        userinfo_url: "https://www.googleapis.com/oauth2/v2/userinfo".to_string(),
+        revoke_url: Some("https://oauth2.googleapis.com/revoke".to_string()),
+        scopes: vec![
+          "https://www.googleapis.com/auth/youtube.readonly".to_string(),
+          "https://www.googleapis.com/auth/youtube.force-ssl".to_string(),
+        ],
+        redirect_uri: read_or_default(
+          "UNICHAT_OAUTH_REDIRECT_URI",
+          "http://localhost:3456/callback".to_string(),
+        ),
+      })
+    }
   }
 }
 

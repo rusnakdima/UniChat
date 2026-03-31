@@ -222,3 +222,54 @@ pub async fn getOverlayConfig(widget_id: String) -> Result<Option<OverlayFullCon
   let configs = OVERLAY_CONFIGS.read().await;
   Ok(configs.get(&widget_id).cloned())
 }
+
+/// Parameters for getOverlayMessages command
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetOverlayMessagesParams {
+  pub widget_id: String,
+  pub limit: Option<u32>,
+  pub channel_ids: Option<Vec<String>>,
+}
+
+/// Get overlay messages for a widget (filtered by channel selection)
+#[tauri::command]
+pub async fn getOverlayMessages(
+  widget_id: String,
+  limit: Option<u32>,
+  channel_ids: Option<Vec<String>>,
+) -> Result<Vec<OverlayMessageModel>, String> {
+  let messages = OVERLAY_MESSAGES.read().await;
+  let widget_messages = messages.get(&widget_id);
+
+  if widget_messages.is_none() {
+    return Ok(Vec::new());
+  }
+
+  let mut result: Vec<OverlayMessageModel> = widget_messages.unwrap().clone();
+
+  // Apply channel filter if specified
+  if let Some(ids) = channel_ids {
+    if !ids.is_empty() {
+      result.retain(|msg| {
+        let channel_ref = format!("{}:{}", msg.platform, msg.source_channel_id);
+        ids.contains(&channel_ref)
+      });
+    }
+  }
+
+  // Sort by timestamp (newest first)
+  result.sort_by(|a, b| {
+    let a_time = a.timestamp.parse::<i64>().unwrap_or(0);
+    let b_time = b.timestamp.parse::<i64>().unwrap_or(0);
+    b_time.cmp(&a_time)
+  });
+
+  // Apply limit
+  let limit_value = limit.unwrap_or(50) as usize;
+  if result.len() > limit_value {
+    result.truncate(limit_value);
+  }
+
+  Ok(result)
+}

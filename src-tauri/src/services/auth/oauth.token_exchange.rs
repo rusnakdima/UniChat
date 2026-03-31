@@ -58,3 +58,56 @@ pub async fn exchange_code_for_token(
     expires_in_seconds: payload["expires_in"].as_i64(),
   })
 }
+
+/// Refresh an access token using a refresh token
+pub async fn refresh_access_token(
+  http: &Client,
+  _platform: &PlatformTypeModel,
+  refresh_token: &str,
+  config: &OAuthProviderConfig,
+) -> Result<OAuthTokenModel, String> {
+  let mut form: Vec<(&str, String)> = vec![
+    ("client_id", config.client_id.clone()),
+    ("grant_type", "refresh_token".to_string()),
+    ("refresh_token", refresh_token.to_string()),
+  ];
+
+  // Some providers require redirect_uri on refresh
+  form.push(("redirect_uri", config.redirect_uri.clone()));
+
+  if let Some(ref secret) = config.client_secret {
+    form.push(("client_secret", secret.clone()));
+  }
+
+  let response = http
+    .post(&config.token_url)
+    .form(&form)
+    .send()
+    .await
+    .map_err(|e| format!("token refresh request failed: {e}"))?;
+
+  let status = response.status();
+  let payload: Value = response
+    .json()
+    .await
+    .map_err(|e| format!("token refresh response parse failed: {e}"))?;
+
+  if !status.is_success() {
+    return Err(format!("token refresh failed: {payload}"));
+  }
+
+  // Some providers return a new refresh token, others don't
+  let new_refresh_token = payload["refresh_token"]
+    .as_str()
+    .map(|v| v.to_string())
+    .or_else(|| Some(refresh_token.to_string()));
+
+  Ok(OAuthTokenModel {
+    access_token: payload["access_token"]
+      .as_str()
+      .ok_or_else(|| "missing access_token in refresh response".to_string())?
+      .to_string(),
+    refresh_token: new_refresh_token,
+    expires_in_seconds: payload["expires_in"].as_i64(),
+  })
+}

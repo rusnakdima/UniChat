@@ -19,6 +19,7 @@ use crate::services::auth::oauth_identity_fetch::fetch_identity;
 use crate::services::auth::oauth_loopback_service::OAuthLoopbackService;
 use crate::services::auth::oauth_state_service::OAuthStateService;
 use crate::services::auth::oauth_token_exchange::exchange_code_for_token;
+use crate::services::auth::oauth_token_exchange::refresh_access_token;
 use crate::services::auth::token_vault_service::TokenVaultService;
 
 /// OAuth Provider Service - orchestrates OAuth flows
@@ -156,6 +157,143 @@ impl OAuthProviderService {
     }
 
     Ok(saved)
+  }
+
+  /// Validate authentication status and tokens for a platform
+  /// Returns accounts with updated auth_status if tokens are expired/invalid
+  pub async fn validate_auth_status(
+    &self,
+    platform: PlatformTypeModel,
+  ) -> Result<Vec<AuthAccountModel>, String> {
+    let mut accounts = self.get_auth_status(platform.clone())?;
+    let config = get_oauth_provider_config(&platform)?;
+    let now = chrono::Utc::now();
+
+    for account in &mut accounts {
+      // Check if token is expired
+      if let Some(expires_at_str) = &account.token_expires_at {
+        if let Ok(expires_at) = chrono::DateTime::parse_from_rfc3339(expires_at_str) {
+          if now >= expires_at {
+            // Token is expired, check if we can refresh
+            if account.refresh_token.is_some() {
+              // Mark as expired but keep account (can refresh)
+              account.auth_status = AuthStatusModel::TokenExpired;
+            } else {
+              // No refresh token, mark as expired
+              account.auth_status = AuthStatusModel::TokenExpired;
+            }
+          }
+        }
+      }
+
+      // Validate token by making a test API call
+      if account.auth_status == AuthStatusModel::Authorized {
+        match self
+          .validate_token_with_api(&platform, &account.access_token, &config)
+          .await
+        {
+          Ok(_) => {
+            // Token is valid
+            account.auth_status = AuthStatusModel::Authorized;
+          }
+          Err(_) => {
+            // Token is invalid/revoked
+            account.auth_status = AuthStatusModel::Revoked;
+          }
+        }
+      }
+
+      // Update account in store
+      let mut guard = self
+        .account_store
+        .lock()
+        .map_err(|_| "account store lock poisoned".to_string())?;
+      guard.insert(account.id.clone(), account.clone());
+    }
+
+    Ok(accounts)
+  }
+
+  /// Validate token by making a test API call to the platform
+  async fn validate_token_with_api(
+    &self,
+    platform: &PlatformTypeModel,
+    access_token: &Option<String>,
+    config: &crate::helpers::oauth_config_helper::OAuthProviderConfig,
+  ) -> Result<(), String> {
+    let token = access_token
+      .as_ref()
+      .ok_or_else(|| "No access token available".to_string())?;
+
+    let mut request = self.http.get(&config.userinfo_url).bearer_auth(token);
+
+    if matches!(platform, PlatformTypeModel::Twitch) {
+      request = request.header("Client-Id", &config.client_id);
+    }
+
+    let response = request
+      .send()
+      .await
+      .map_err(|e| format!("Validation request failed: {e}"))?;
+
+    if !response.status().is_success() {
+      return Err(format!("Token validation failed: {}", response.status()));
+    }
+
+    Ok(())
+  }
+
+  /// Refresh an expired access token using the refresh token
+  pub async fn refresh_token(
+    &self,
+    platform: &PlatformTypeModel,
+    account_id: &str,
+  ) -> Result<AuthAccountModel, String> {
+    // Get the saved token
+    let saved_token = self
+      .token_vault_service
+      .read_token(platform, account_id)?
+      .ok_or_else(|| "No saved token found".to_string())?;
+
+    // Get the refresh token
+    let refresh_token = saved_token
+      .refresh_token
+      .ok_or_else(|| "No refresh token available. Please re-authenticate.".to_string())?;
+
+    // Get config
+    let config = get_oauth_provider_config(platform)?;
+
+    // Refresh the token
+    let new_token = refresh_access_token(&self.http, platform, &refresh_token, &config).await?;
+
+    // Get the account from vault
+    let accounts = self.token_vault_service.read_accounts(platform)?;
+    let mut account = accounts
+      .into_iter()
+      .find(|acc| acc.id == account_id)
+      .ok_or_else(|| "Account not found".to_string())?;
+
+    // Update account with new token
+    let expires_at = new_token
+      .expires_in_seconds
+      .map(|seconds| (chrono::Utc::now() + chrono::Duration::seconds(seconds)).to_rfc3339());
+    account.access_token = Some(new_token.access_token.clone());
+    account.refresh_token = new_token.refresh_token.clone();
+    account.token_expires_at = expires_at;
+    account.auth_status = AuthStatusModel::Authorized;
+
+    // Save updated account and token
+    self.token_vault_service.upsert_account(&account)?;
+    self.token_vault_service.save_token(&account, &new_token)?;
+
+    // Update in-memory store
+    let mut guard = self
+      .account_store
+      .lock()
+      .map_err(|_| "account store lock poisoned".to_string())?;
+    guard.insert(account.id.clone(), account.clone());
+
+    Ok(account)
   }
 
   /// Disconnect an account and revoke tokens

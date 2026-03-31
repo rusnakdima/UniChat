@@ -72,6 +72,43 @@ pub async fn authStatus(
 }
 
 #[tauri::command]
+pub async fn authValidate(
+  state: State<'_, AppState>,
+  platform: PlatformTypeModel,
+) -> Result<AuthCommandResultModel, String> {
+  let accounts = state
+    .oauth_provider_service
+    .validate_auth_status(platform)
+    .await?;
+  Ok(AuthCommandResultModel {
+    success: true,
+    message: "Authorization validated.".to_string(),
+    auth_url: None,
+    account: None,
+    accounts: Some(accounts),
+  })
+}
+
+#[tauri::command]
+pub async fn authRefresh(
+  state: State<'_, AppState>,
+  platform: PlatformTypeModel,
+  accountId: String,
+) -> Result<AuthCommandResultModel, String> {
+  let account = state
+    .oauth_provider_service
+    .refresh_token(&platform, &accountId)
+    .await?;
+  Ok(AuthCommandResultModel {
+    success: true,
+    message: "Token refreshed successfully.".to_string(),
+    auth_url: None,
+    account: Some(account),
+    accounts: None,
+  })
+}
+
+#[tauri::command]
 pub async fn authDisconnect(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,

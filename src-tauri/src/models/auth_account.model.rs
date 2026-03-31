@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::platform_type_model::PlatformTypeModel;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum AuthStatusModel {
   Unauthorized,

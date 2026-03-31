@@ -8,14 +8,15 @@ use std::sync::Arc;
 use tauri::Manager;
 
 use crate::routes::auth_provider_route::{
-  authAwaitCallback, authComplete, authDisconnect, authStart, authStatus,
+  authAwaitCallback, authComplete, authDisconnect, authRefresh, authStart, authStatus, authValidate,
 };
 use crate::routes::icons_route::{twitchFetchChannelIcons, twitchFetchGlobalIcons};
 use crate::routes::kick_route::{kickFetchChatroomId, kickFetchRecentMessages, kickFetchUserInfo};
 use crate::routes::overlay_route::{
-  emitOverlayConfigChanged, getOverlayConfig, initOverlayConfigFromStorage, openOverlayWindow,
-  startOverlayServer, stopOverlayServer,
+  emitOverlayConfigChanged, getOverlayConfig, getOverlayMessages, initOverlayConfigFromStorage,
+  openOverlayWindow, startOverlayServer, stopOverlayServer,
 };
+use crate::routes::twitch_route::twitchDeleteMessage;
 use crate::routes::youtube_route::youtubeFetchChatMessages;
 use crate::services::auth::oauth_provider_service::OAuthProviderService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
@@ -53,15 +54,19 @@ pub fn run() {
       authAwaitCallback,
       authComplete,
       authStatus,
+      authValidate,
+      authRefresh,
       authDisconnect,
       twitchFetchGlobalIcons,
       twitchFetchChannelIcons,
+      twitchDeleteMessage,
       startOverlayServer,
       stopOverlayServer,
       openOverlayWindow,
       emitOverlayConfigChanged,
       initOverlayConfigFromStorage,
       getOverlayConfig,
+      getOverlayMessages,
       youtubeFetchChatMessages,
       kickFetchChatroomId,
       kickFetchRecentMessages,
