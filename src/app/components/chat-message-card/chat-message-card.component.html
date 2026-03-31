@@ -118,7 +118,7 @@
           >
             <mat-icon
               [fontIcon]="'push_pin'"
-              class="h-5! w-5! text-xl! leading-none"
+              class="w-5! h-6! text-xl! text-xl! leading-none"
               [class.opacity-70]="!isPinned"
             />
           </button>
@@ -130,7 +130,7 @@
               title="Reply"
               aria-label="Reply to message"
             >
-              <mat-icon [fontIcon]="'reply'" class="h-5! w-5! text-xl! leading-none" />
+              <mat-icon [fontIcon]="'reply'" class="w-5! h-6! text-xl! text-xl! leading-none" />
             </button>
           }
           @if (message().actions.delete.status === "available") {
@@ -141,7 +141,7 @@
               title="Delete message"
               aria-label="Delete message"
             >
-              <mat-icon [fontIcon]="'delete'" class="h-5! w-5! text-xl! leading-none" />
+              <mat-icon [fontIcon]="'delete'" class="w-5! h-6! text-xl! text-xl! leading-none" />
             </button>
           }
         </div>
