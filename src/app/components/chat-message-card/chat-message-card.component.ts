@@ -19,6 +19,7 @@ import { LinkPreviewService } from "@services/ui/link-preview.service";
 import { MessageTypeStylingService } from "@services/ui/message-type-styling.service";
 import { PinnedMessagesService } from "@services/ui/pinned-messages.service";
 import { UserProfilePopoverService } from "@services/ui/user-profile-popover.service";
+import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.service";
 
 /* helpers */
 import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@helpers/chat.helper";
@@ -47,6 +48,7 @@ export class ChatMessageCardComponent {
   private readonly twitchChat = inject(TwitchChatService);
   private readonly chatListService = inject(ChatListService);
   private readonly avatarCache = inject(AvatarCacheService);
+  private readonly channelImageLoader = inject(ChannelImageLoaderService);
 
   readonly isSafeRemoteImageUrl = isSafeRemoteImageUrl;
 
@@ -167,37 +169,25 @@ export class ChatMessageCardComponent {
     }
   }
 
-  /** Get channel profile image URL (loads on demand for Twitch) */
+  /** Get channel profile image URL (loads on demand for all platforms) */
   async getChannelImageUrl(): Promise<string | null> {
     const msg = this.message();
-    const cacheKey = `${msg.platform}:${msg.sourceChannelId}`;
 
-    // Check centralized cache first
-    const cached = this.avatarCache.getChannelAvatar(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    // Try to get channel info from ChatListService
+    // Try to get channel info from ChatListService first (may already have image)
     const channel = this.chatListService
       .getChannels(msg.platform)
       .find((ch) => ch.channelId === msg.sourceChannelId);
 
-    if (channel && channel.platform === "twitch") {
-      try {
-        // Fetch channel profile image from decapi.me (public API, no auth required)
-        const imageUrl = await this.twitchChat.fetchUserProfileImage(channel.channelName);
-        if (imageUrl) {
-          this.avatarCache.setChannelAvatar(cacheKey, imageUrl);
-          return imageUrl;
-        }
-      } catch {
-        // Ignore all errors - channel images are optional
-        // Public APIs may be rate limited or unavailable
-      }
+    if (channel?.channelImageUrl) {
+      return channel.channelImageUrl;
     }
 
-    return null;
+    // Load from ChannelImageLoaderService (supports all platforms)
+    return this.channelImageLoader.loadChannelImage(
+      msg.platform,
+      channel?.channelName || msg.author,
+      msg.sourceChannelId
+    );
   }
 
   /** Check if channel image is cached */

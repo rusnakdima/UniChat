@@ -29,6 +29,8 @@ import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.servi
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.service";
 import { SplitFeedUiService } from "@services/ui/split-feed-ui.service";
+import { AuthorizationService } from "@services/features/authorization.service";
+import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
 /* components */
@@ -78,7 +80,9 @@ export class DashboardSplitFeedComponent {
   private readonly chatStorage = inject(ChatStorageService);
   private readonly avatarCache = inject(AvatarCacheService);
   private readonly keyboardShortcutsService = inject(KeyboardShortcutsService);
+  private readonly authorizationService = inject(AuthorizationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly channelImageLoader = inject(ChannelImageLoaderService);
 
   // Reference to the history header component
   readonly historyHeader = viewChild<
@@ -100,6 +104,11 @@ export class DashboardSplitFeedComponent {
   blockWidthsPx = signal<Map<string, number>>(new Map());
 
   readonly visiblePlatforms = this.feedData.platformsWithVisibleChannels;
+
+  // Check if user can send messages to a platform (has authorized account)
+  readonly canSendToPlatform = computed(() => {
+    return (platform: PlatformType) => this.authorizationService.isAuthorized(platform);
+  });
 
   // Signal-based messages for each platform - directly reads from storage to ensure reactivity
   readonly platformMessages = computed(() => {
@@ -419,6 +428,11 @@ export class DashboardSplitFeedComponent {
   }
 
   sendSplitComposer(platform: PlatformType, input: HTMLInputElement): void {
+    // Block sending if not authorized for this platform
+    if (!this.canSendToPlatform()(platform)) {
+      return;
+    }
+
     const text = input.value.trim();
     if (!text) {
       return;
@@ -438,6 +452,9 @@ export class DashboardSplitFeedComponent {
   }
 
   composerPlaceholder(platform: PlatformType): string {
+    if (!this.canSendToPlatform()(platform)) {
+      return "Connect account to send messages";
+    }
     const reply = this.interactions.replyTargetMessage();
     if (this.interactions.replyTargetMessageId() && reply?.platform === platform) {
       return "Write a reply…";
@@ -463,28 +480,25 @@ export class DashboardSplitFeedComponent {
     }
   }
 
-  /** Get channel profile image URL (loads on demand for Twitch) */
+  /** Get channel profile image URL (loads on demand for all platforms) */
   async getChannelImageUrl(channel: ChatChannel): Promise<string | null> {
-    // Check centralized cache first
+    // Check if channel already has image loaded
+    if (channel.channelImageUrl) {
+      return channel.channelImageUrl;
+    }
+
+    // Check centralized cache
     const cached = this.avatarCache.getChannelAvatar(channel.channelId);
     if (cached) {
       return cached;
     }
 
-    // For Twitch channels, fetch from API
-    if (channel.platform === "twitch") {
-      try {
-        const imageUrl = await this.twitchChat.fetchChannelProfileImage(channel.channelName);
-        if (imageUrl) {
-          this.avatarCache.setChannelAvatar(channel.channelId, imageUrl);
-          return imageUrl;
-        }
-      } catch {
-        // Ignore errors, will show placeholder
-      }
-    }
-
-    return null;
+    // Load from ChannelImageLoaderService (supports all platforms)
+    return this.channelImageLoader.loadChannelImage(
+      channel.platform,
+      channel.channelName,
+      channel.channelId
+    );
   }
 
   /** Check if channel has image available (for template) */

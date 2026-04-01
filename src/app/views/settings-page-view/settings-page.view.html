@@ -86,6 +86,12 @@
                         >
                           <div class="flex min-w-0 flex-col">
                             <div class="flex items-center gap-2">
+                              <img
+                                [src]="getAccountIcon(account.id)"
+                                [alt]="account.username"
+                                [title]="account.username"
+                                class="h-6 w-6 shrink-0 rounded-full object-cover"
+                              />
                               <span
                                 class="truncate text-sm font-medium text-slate-900 dark:text-white"
                               >
@@ -170,6 +176,12 @@
                       >
                         <div class="flex min-w-0 flex-col">
                           <div class="flex items-center gap-2">
+                            <img
+                              [src]="getAccountIcon(account.id)"
+                              [alt]="account.username"
+                              [title]="account.username"
+                              class="h-6 w-6 shrink-0 rounded-full object-cover"
+                            />
                             <span
                               class="truncate text-sm font-medium text-slate-900 dark:text-white"
                             >
@@ -272,10 +284,16 @@
                       class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-white/10 dark:bg-black/20 dark:text-slate-200"
                     >
                       <img
+                        [src]="getAccountIcon(account.id)"
+                        [alt]="account.username"
+                        [title]="account.username"
+                        class="h-5 w-5 shrink-0 rounded-full object-cover"
+                      />
+                      <img
                         [src]="presentation.platformIconUrl(account.platform)"
                         [alt]="getPlatformLbl(account.platform)"
                         [title]="getPlatformLbl(account.platform)"
-                        class="h-5 w-5 shrink-0 object-contain"
+                        class="h-4 w-4 shrink-0 object-contain"
                       />
                       {{ account.username }}
                     </span>
@@ -384,19 +402,20 @@
                         (checkedChange)="toggleChannelVisibility(channel.id)"
                         inputClass="sr-only"
                       />
+                      <!-- Platform Icon -->
+                      <img
+                        [src]="presentation.platformIconUrl(channel.platform)"
+                        [alt]="getPlatformLbl(channel.platform)"
+                        [title]="getPlatformLbl(channel.platform)"
+                        class="h-5 w-5 shrink-0 object-contain"
+                      />
+                      <!-- User Avatar (when authenticated) -->
                       @if (channel.accountId) {
                         <img
                           [src]="getAccountIcon(channel.accountId)"
                           [alt]="getAccountLabelById(channel.accountId) ?? 'Account'"
                           [title]="getAccountLabelById(channel.accountId) ?? 'Account'"
                           class="h-5 w-5 shrink-0 rounded-full object-cover"
-                        />
-                      } @else {
-                        <img
-                          [src]="presentation.platformIconUrl(channel.platform)"
-                          [alt]="getPlatformLbl(channel.platform)"
-                          [title]="getPlatformLbl(channel.platform)"
-                          class="h-5 w-5 shrink-0 object-contain"
                         />
                       }
                       <span class="text-sm font-medium text-slate-900 dark:text-white">

@@ -34,6 +34,7 @@ import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChatRichTextService, ChatTextSegment } from "@services/ui/chat-rich-text.service";
 import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
+import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.service";
 import {
   buildChannelRef,
   findChannelByRef,
@@ -68,6 +69,7 @@ export class OverlayView implements OnDestroy {
   private readonly kickChat = inject(KickChatService);
   private readonly chatList = inject(ChatListService);
   private readonly avatarCache = inject(AvatarCacheService);
+  private readonly channelImageLoader = inject(ChannelImageLoaderService);
   private configPollInterval: ReturnType<typeof setInterval> | null = null;
   private lastKnownConfig: Map<string, string> = new Map();
   private readonly pendingUserAvatarLoads = new Set<string>();
@@ -569,9 +571,23 @@ export class OverlayView implements OnDestroy {
       return message.channelImageUrl!.trim();
     }
 
+    // Check cache
     const cacheKey = this.channelAvatarCacheKey(message);
+    const cached = this.avatarCache.getChannelAvatar(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
-    return this.avatarCache.getChannelAvatar(cacheKey) ?? null;
+    // Try to get from ChatListService (may already have image loaded)
+    const channel = this.chatList
+      .getChannels(message.platform)
+      .find((ch) => ch.channelId === message.sourceChannelId);
+
+    if (channel?.channelImageUrl) {
+      return channel.channelImageUrl;
+    }
+
+    return null;
   }
 
   getUserImageUrl(message: OverlayChatMessage): string | null {

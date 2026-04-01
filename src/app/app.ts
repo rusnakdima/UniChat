@@ -5,6 +5,7 @@ import { RouterOutlet } from "@angular/router";
 /* services */
 import { ThemeService } from "@services/core/theme.service";
 import { MemoryManagementService } from "@services/core/memory-management.service";
+import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 
 /* components */
 import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal";
@@ -19,6 +20,7 @@ import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-mo
 export class App {
   private readonly themeService = inject(ThemeService);
   private readonly memoryService = inject(MemoryManagementService);
+  private readonly channelImagePreloader = inject(ChannelImagePreloaderService);
 
   readonly isOverlay = signal<boolean>(this.checkIsOverlay());
 
@@ -38,5 +40,7 @@ export class App {
   constructor() {
     this.themeService.hydrateTheme();
     this.memoryService.startAutoPrune();
+    // Preload channel images in background (non-blocking)
+    void this.channelImagePreloader.preloadAllVisibleChannels();
   }
 }

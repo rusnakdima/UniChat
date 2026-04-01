@@ -18,6 +18,7 @@
         "@tauri-apps/api": "^2",
         "@tauri-apps/plugin-deep-link": "^2.4.7",
         "@tauri-apps/plugin-opener": "^2",
+        "dompurify": "^3.3.3",
         "flowbite": "^4.0.1",
         "postcss": "^8.5.8",
         "rxjs": "~7.8.2",
@@ -31,6 +32,7 @@
         "@angular/cli": "^20.1.4",
         "@angular/compiler-cli": "^20.1.4",
         "@tauri-apps/cli": "^2",
+        "@types/dompurify": "^3.2.0",
         "@types/tmi.js": "^1.8.6",
         "prettier": "^3.8.1",
         "prettier-plugin-tailwindcss": "^0.7.2",
@@ -485,11 +487,15 @@
 
     "@tufjs/models": ["@tufjs/models@4.1.0", "", { "dependencies": { "@tufjs/canonical-json": "2.0.0", "minimatch": "^10.1.1" } }, "sha512-Y8cK9aggNRsqJVaKUlEYs4s7CvQ1b1ta2DVPyAimb0I2qhzjNk+A+mxvll/klL0RlfuIUei8BF7YWiua4kQqww=="],
 
+    "@types/dompurify": ["@types/dompurify@3.2.0", "", { "dependencies": { "dompurify": "*" } }, "sha512-Fgg31wv9QbLDA0SpTOXO3MaxySc4DKGLi8sna4/Utjo4r3ZRPdCt4UQee8BWr+Q5z21yifghREPJGYaEOEIACg=="],
+
     "@types/estree": ["@types/estree@1.0.8", "", {}, "sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w=="],
 
     "@types/resolve": ["@types/resolve@1.20.2", "", {}, "sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q=="],
 
     "@types/tmi.js": ["@types/tmi.js@1.8.6", "", {}, "sha512-LVzNK7AxTMyh9qHLanAQR1o0I9XzfbIcXk85cx85igmCJHHO1Sm71sdhQ8Mj1WmRGzynPIoCXx6mVaFynWbsQw=="],
+
+    "@types/trusted-types": ["@types/trusted-types@2.0.7", "", {}, "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw=="],
 
     "@vitejs/plugin-basic-ssl": ["@vitejs/plugin-basic-ssl@2.1.0", "", { "peerDependencies": { "vite": "^6.0.0 || ^7.0.0" } }, "sha512-dOxxrhgyDIEUADhb/8OlV9JIqYLgos03YorAueTIeOUskLJSEsfwCByjbu98ctXitUN3znXKp0bYD/WHSudCeA=="],
 
@@ -594,6 +600,8 @@
     "domelementtype": ["domelementtype@2.3.0", "", {}, "sha512-OLETBj6w0OsagBwdXnPdN0cnMfF9opN69co+7ZrbfPGrdpPVNBUj02spi6B1N7wChLQiPn4CSH/zJvXw56gmHw=="],
 
     "domhandler": ["domhandler@5.0.3", "", { "dependencies": { "domelementtype": "^2.3.0" } }, "sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w=="],
+
+    "dompurify": ["dompurify@3.3.3", "", { "optionalDependencies": { "@types/trusted-types": "^2.0.7" } }, "sha512-Oj6pzI2+RqBfFG+qOaOLbFXLQ90ARpcGG6UePL82bJLtdsa6CYJD7nmiU8MW9nQNOtCHV3lZ/Bzq1X0QYbBZCA=="],
 
     "domutils": ["domutils@3.2.2", "", { "dependencies": { "dom-serializer": "^2.0.0", "domelementtype": "^2.3.0", "domhandler": "^5.0.3" } }, "sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw=="],
 

@@ -9,6 +9,7 @@ import { normalizeYouTubeProviderInput } from "@helpers/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
 import { LocalStorageService } from "../core/local-storage.service";
 import { DashboardPreferencesService } from "../ui/dashboard-preferences.service";
+import { ChannelImageLoaderService } from "../ui/channel-image-loader.service";
 const storageKey = "unichat-chat-channels";
 
 @Injectable({
@@ -21,7 +22,8 @@ export class ChatListService {
 
   constructor(
     private readonly localStorageService: LocalStorageService,
-    private readonly dashboardPreferencesService: DashboardPreferencesService
+    private readonly dashboardPreferencesService: DashboardPreferencesService,
+    private readonly channelImageLoader: ChannelImageLoaderService
   ) {}
 
   getChannels(platform?: PlatformType): ChatChannel[] {
@@ -72,6 +74,7 @@ export class ChatListService {
       platform,
       channelId: providerChannelId,
       channelName: normalizedChannelName,
+      channelImageUrl: undefined, // Will be loaded asynchronously
       isAuthorized: !!accountId,
       accountId,
       accountCapabilities: accountId
@@ -86,6 +89,9 @@ export class ChatListService {
       this.saveChannels(next);
       return next;
     });
+
+    // Auto-load channel image after adding
+    this.loadChannelImage(newChannel.id);
   }
 
   removeChannel(channelId: string): void {
@@ -205,6 +211,37 @@ export class ChatListService {
     this.channelsSignal.update((channels) => {
       const next = channels.map((channel) =>
         channel.id === channelId ? { ...channel, accountCapabilities } : channel
+      );
+      this.saveChannels(next);
+      return next;
+    });
+  }
+
+  /**
+   * Load channel profile image asynchronously
+   */
+  async loadChannelImage(channelId: string): Promise<void> {
+    const channel = this.channelsSignal().find((ch) => ch.id === channelId);
+    if (!channel) return;
+
+    const imageUrl = await this.channelImageLoader.loadChannelImage(
+      channel.platform,
+      channel.channelName,
+      channel.channelId
+    );
+
+    if (imageUrl) {
+      this.updateChannelImageUrl(channelId, imageUrl);
+    }
+  }
+
+  /**
+   * Update channel image URL in state
+   */
+  private updateChannelImageUrl(channelId: string, imageUrl: string): void {
+    this.channelsSignal.update((channels) => {
+      const next = channels.map((ch) =>
+        ch.id === channelId ? { ...ch, channelImageUrl: imageUrl } : ch
       );
       this.saveChannels(next);
       return next;

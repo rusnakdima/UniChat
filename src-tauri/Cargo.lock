@@ -5104,6 +5104,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-deep-link",
  "tauri-plugin-opener",
+ "thiserror 2.0.18",
  "tokio",
  "tokio-test",
  "tower-http 0.5.2",

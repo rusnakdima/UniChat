@@ -8,6 +8,7 @@ import {
   signal,
   viewChild,
 } from "@angular/core";
+import { MatIconModule } from "@angular/material/icon";
 
 /* models */
 import { ChatChannel } from "@models/chat.model";
@@ -16,6 +17,7 @@ import { ChatChannel } from "@models/chat.model";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
 import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
+import { ChatStateService } from "@services/data/chat-state.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
@@ -24,6 +26,8 @@ import { DashboardChatInteractionService } from "@services/ui/dashboard-chat-int
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
+import { AuthorizationService } from "@services/features/authorization.service";
+import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
 /* components */
@@ -40,6 +44,7 @@ import { ConnectionErrorBannerComponent } from "@components/connection-error-ban
   },
   imports: [
     DragDropModule,
+    MatIconModule,
     ChatScrollRegionComponent,
     ChatMessageCardComponent,
     ChatHistoryHeaderComponent,
@@ -60,6 +65,9 @@ export class DashboardMixedFeedComponent {
   private readonly chatStorage = inject(ChatStorageService);
   private readonly avatarCache = inject(AvatarCacheService);
   private readonly localStorageService = inject(LocalStorageService);
+  private readonly chatStateService = inject(ChatStateService);
+  private readonly authorizationService = inject(AuthorizationService);
+  private readonly channelImageLoader = inject(ChannelImageLoaderService);
 
   // Reference to the history header component
   readonly historyHeader = viewChild<
@@ -227,27 +235,25 @@ export class DashboardMixedFeedComponent {
     return buildChannelRef(channel.platform, channel.channelId);
   }
 
-  /** Get channel profile image URL (loads on demand for Twitch) */
+  /** Get channel profile image URL (loads on demand for all platforms) */
   async getChannelImageUrl(channel: ChatChannel): Promise<string | null> {
-    // Check centralized cache first
+    // Check if channel already has image loaded
+    if (channel.channelImageUrl) {
+      return channel.channelImageUrl;
+    }
+
+    // Check centralized cache
     const cached = this.avatarCache.getChannelAvatar(channel.id);
     if (cached) {
       return cached;
     }
 
-    if (channel.platform === "twitch") {
-      try {
-        const imageUrl = await this.twitchChat.fetchChannelProfileImage(channel.channelName);
-        if (imageUrl) {
-          this.avatarCache.setChannelAvatar(channel.id, imageUrl);
-          return imageUrl;
-        }
-      } catch {
-        // Ignore errors
-      }
-    }
-
-    return null;
+    // Load from ChannelImageLoaderService (supports all platforms)
+    return this.channelImageLoader.loadChannelImage(
+      channel.platform,
+      channel.channelName,
+      channel.channelId
+    );
   }
 
   hasChannelImage(channel: ChatChannel): boolean {
@@ -263,6 +269,77 @@ export class DashboardMixedFeedComponent {
       void this.getChannelImageUrl(channel);
     }
   };
+
+  // Check if any platform has authorized account for sending messages
+  readonly hasAnyAuthorizedPlatform = computed(() => {
+    const platforms = this.feedData.platformsWithVisibleChannels();
+    return platforms.some((p) => this.authorizationService.isAuthorized(p));
+  });
+
+  // Get list of authorized platforms with visible channels
+  readonly authorizedPlatforms = computed(() => {
+    const platforms = this.feedData.platformsWithVisibleChannels();
+    return platforms.filter((p) => this.authorizationService.isAuthorized(p));
+  });
+
+  composerPlaceholder(): string {
+    if (!this.hasAnyAuthorizedPlatform()) {
+      return "Connect an account to send messages";
+    }
+    if (this.interactions.replyTargetMessageId()) {
+      return "Write a reply…";
+    }
+    return "Send message to active channels…";
+  }
+
+  onComposerKeydown(event: KeyboardEvent, input: HTMLInputElement): void {
+    if (event.key !== "Enter") {
+      return;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      return;
+    }
+    event.preventDefault();
+    this.sendMixedComposer(input);
+  }
+
+  sendMixedComposer(input: HTMLInputElement): void {
+    // Block sending if no authorized platforms
+    if (!this.hasAnyAuthorizedPlatform()) {
+      return;
+    }
+
+    const text = input.value.trim();
+    if (!text) {
+      return;
+    }
+
+    // Handle reply if replying to a message
+    if (this.interactions.replyTargetMessageId()) {
+      this.interactions.submitReplyFromComposer(text);
+      input.value = "";
+      return;
+    }
+
+    // Send to all ENABLED channels in mixed feed (not just first visible)
+    // This ensures the sent message appears in the mixed feed view
+    // Use optimistic: false to wait for service echo instead of showing local message
+    const enabledChannels = this.enabledVisibleChannels();
+
+    for (const channel of enabledChannels) {
+      // Only send if platform is authorized for this channel
+      if (this.authorizationService.isAuthorized(channel.platform)) {
+        void this.chatStateService.sendOutgoingChatMessage(
+          channel.channelId,
+          channel.platform,
+          text,
+          false // Don't create optimistic message - wait for service echo
+        );
+      }
+    }
+
+    input.value = "";
+  }
 
   async onLoadHistory(event: { channelId: string | undefined; count: number }): Promise<void> {
     // For mixed feed, load history for all enabled channels (channelId is ignored)

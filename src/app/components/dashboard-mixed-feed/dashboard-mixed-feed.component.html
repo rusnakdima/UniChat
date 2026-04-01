@@ -116,6 +116,63 @@
           </div>
         </app-chat-scroll-region>
       </div>
+
+      <!-- Message Input Field for Mixed Mode -->
+      @if (orderedVisibleChannels().length > 0) {
+        <div
+          class="flex shrink-0 flex-col border-t border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
+        >
+          @if (interactions.replyTargetMessage(); as rt) {
+            <div
+              class="flex items-start gap-2 border-b border-emerald-200/80 bg-emerald-50/95 px-3 py-2 dark:border-emerald-500/25 dark:bg-emerald-950/50"
+            >
+              <mat-icon class="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                >reply</mat-icon
+              >
+              <div class="min-w-0 flex-1">
+                <p
+                  class="text-[10px] font-semibold tracking-wide text-emerald-800 uppercase dark:text-emerald-300"
+                >
+                  Replying to
+                </p>
+                <p class="line-clamp-2 text-xs text-slate-800 dark:text-slate-100">
+                  <span class="font-semibold">{{ rt.author }}</span>
+                  <span class="text-slate-600 dark:text-slate-400"> · </span>
+                  {{ rt.text }}
+                </p>
+              </div>
+              <button
+                type="button"
+                (click)="interactions.cancelReplyContext()"
+                class="shrink-0 rounded-lg p-1 text-slate-500 transition hover:bg-emerald-100 dark:hover:bg-white/10"
+                title="Cancel reply"
+              >
+                <mat-icon [fontIcon]="'close'" class="text-lg!" />
+              </button>
+            </div>
+          }
+
+          <div class="flex gap-2 p-2">
+            <input
+              type="text"
+              data-unichat-composer="mixed"
+              [placeholder]="composerPlaceholder()"
+              [disabled]="!hasAnyAuthorizedPlatform()"
+              class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 transition outline-none placeholder:text-slate-400 focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500"
+              #sendInput
+              (keydown)="onComposerKeydown($event, sendInput)"
+            />
+            <button
+              type="button"
+              (click)="sendMixedComposer(sendInput)"
+              [disabled]="!hasAnyAuthorizedPlatform()"
+              class="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 dark:disabled:bg-slate-600"
+            >
+              {{ interactions.replyTargetMessageId() ? "Reply" : "Send" }}
+            </button>
+          </div>
+        </div>
+      }
     </div>
   }
 </div>
