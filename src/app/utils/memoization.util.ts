@@ -72,15 +72,6 @@ export function memoizeWithTTL<T, R>(fn: (arg: T) => R, ttlMs: number): (arg: T)
 }
 
 /**
- * Clear a memoization cache
- * @param fn - Memoized function
- */
-export function clearMemoCache<T, R>(fn: (arg: T) => R): void {
-  // Note: This is a best-effort approach
-  // For proper cache clearing, use a class-based memoization
-}
-
-/**
  * Class-based memoization for methods
  */
 export class MemoCache<T, R> {

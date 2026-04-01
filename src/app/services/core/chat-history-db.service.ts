@@ -90,8 +90,8 @@ export class ChatHistoryDbService {
       };
 
       await this.requestToPromise(store.add(record));
-    } catch {
-      /* IndexedDB store failed */
+    } catch (error) {
+      console.warn("[ChatHistoryDB] Failed to store message:", error);
     }
   }
 
@@ -116,8 +116,8 @@ export class ChatHistoryDbService {
       }
 
       await this.transactionToPromise(transaction);
-    } catch {
-      /* IndexedDB batch store failed */
+    } catch (error) {
+      console.warn("[ChatHistoryDB] Failed to store messages:", error);
     }
   }
 
@@ -197,8 +197,8 @@ export class ChatHistoryDbService {
           await this.requestToPromise(store.delete(key));
         }
       };
-    } catch {
-      /* delete failed */
+    } catch (error) {
+      console.warn("[ChatHistoryDB] Failed to delete channel messages:", error);
     }
   }
 
@@ -211,8 +211,8 @@ export class ChatHistoryDbService {
       const transaction = db.transaction([STORE_NAME], "readwrite");
       const store = transaction.objectStore(STORE_NAME);
       await this.requestToPromise(store.delete(messageId));
-    } catch {
-      /* delete failed */
+    } catch (error) {
+      console.warn("[ChatHistoryDB] Failed to delete message:", error);
     }
   }
 
@@ -225,8 +225,8 @@ export class ChatHistoryDbService {
       const transaction = db.transaction([STORE_NAME], "readwrite");
       const store = transaction.objectStore(STORE_NAME);
       await this.requestToPromise(store.clear());
-    } catch {
-      /* clear failed */
+    } catch (error) {
+      console.warn("[ChatHistoryDB] Failed to clear all messages:", error);
     }
   }
 
