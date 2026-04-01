@@ -169,7 +169,10 @@ pub async fn youtube_fetch_live_video_id_by_api_key(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube search API error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube search API error ({}): {}",
+      status, error_text
+    ));
   }
 
   let search_result: YouTubeSearchResponse = response
@@ -215,7 +218,10 @@ async fn fetch_channel_id_by_name(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube channel search error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube channel search error ({}): {}",
+      status, error_text
+    ));
   }
 
   let search_result: YouTubeSearchResponse = response
@@ -255,7 +261,10 @@ pub async fn youtube_fetch_live_chat_id_by_api_key(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube videos API error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube videos API error ({}): {}",
+      status, error_text
+    ));
   }
 
   let videos_result: YouTubeVideosResponse = response
@@ -302,7 +311,10 @@ pub async fn youtube_fetch_live_chat_messages_by_api_key(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube live chat messages API error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube live chat messages API error ({}): {}",
+      status, error_text
+    ));
   }
 
   response
@@ -333,7 +345,10 @@ pub async fn youtube_fetch_live_chat_id_with_oauth(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube videos API error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube videos API error ({}): {}",
+      status, error_text
+    ));
   }
 
   let videos_result: YouTubeVideosResponse = response
@@ -386,7 +401,10 @@ pub async fn youtube_send_message_with_oauth(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube send message error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube send message error ({}): {}",
+      status, error_text
+    ));
   }
 
   let result: YouTubeSendMessageResponse = response
@@ -419,7 +437,10 @@ pub async fn youtube_delete_message_with_oauth(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube delete message error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube delete message error ({}): {}",
+      status, error_text
+    ));
   }
 
   Ok(())
@@ -457,7 +478,10 @@ pub async fn youtube_fetch_live_video_id_with_oauth(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube search API error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube search API error ({}): {}",
+      status, error_text
+    ));
   }
 
   let search_result: YouTubeSearchResponse = response
@@ -502,7 +526,10 @@ async fn fetch_channel_id_by_name_oauth(
   if !response.status().is_success() {
     let status = response.status();
     let error_text = response.text().await.unwrap_or_default();
-    return Err(format!("YouTube channel search error ({}): {}", status, error_text));
+    return Err(format!(
+      "YouTube channel search error ({}): {}",
+      status, error_text
+    ));
   }
 
   let search_result: YouTubeSearchResponse = response
@@ -519,4 +546,144 @@ async fn fetch_channel_id_by_name_oauth(
   }
 
   Err(format!("Channel not found: {}", channel_name))
+}
+
+/// Response structure for YouTube channel info
+#[derive(Debug, serde::Serialize)]
+pub struct YouTubeChannelInfo {
+  pub id: String,
+  pub title: String,
+  pub custom_url: Option<String>,
+  pub profile_image_url: Option<String>,
+  pub banner_image_url: Option<String>,
+}
+
+/// Fetch channel info including profile image URL using API key
+pub async fn youtube_fetch_channel_info_by_api_key(
+  channel_id_or_name: &str,
+  api_key: &str,
+) -> Result<YouTubeChannelInfo, String> {
+  let client = shared_client();
+
+  // Determine if input is channel ID or name
+  let (id_param, id_value) =
+    if channel_id_or_name.starts_with("UC") && channel_id_or_name.len() == 24 {
+      ("id", channel_id_or_name)
+    } else {
+      ("forUsername", channel_id_or_name)
+    };
+
+  let url = format!(
+    "https://www.googleapis.com/youtube/v3/channels?part=snippet,brandingSettings&{}={}&key={}",
+    id_param,
+    urlencoding::encode(id_value),
+    api_key
+  );
+
+  let response = client
+    .get(&url)
+    .send()
+    .await
+    .map_err(|e| format!("Failed to fetch channel info: {}", e))?;
+
+  if !response.status().is_success() {
+    let status = response.status();
+    let error_text = response.text().await.unwrap_or_default();
+    return Err(format!(
+      "YouTube channel API error ({}): {}",
+      status, error_text
+    ));
+  }
+
+  let data: serde_json::Value = response
+    .json()
+    .await
+    .map_err(|e| format!("Failed to parse channel response: {}", e))?;
+
+  let items = data["items"].as_array();
+  let items =
+    items.ok_or_else(|| format!("No items in response for channel: {}", channel_id_or_name))?;
+  if items.is_empty() {
+    return Err(format!("Channel not found: {}", channel_id_or_name));
+  }
+
+  let channel = &items[0];
+  let snippet = &channel["snippet"];
+  let branding = &channel["brandingSettings"]["channel"];
+
+  let profile_image_url = branding["profileImageUrl"].as_str().map(|s| s.to_string());
+  let banner_image_url = branding["bannerImageUrl"].as_str().map(|s| s.to_string());
+
+  Ok(YouTubeChannelInfo {
+    id: channel["id"].as_str().unwrap_or("").to_string(),
+    title: snippet["title"].as_str().unwrap_or("").to_string(),
+    custom_url: branding["customUrl"].as_str().map(|s| s.to_string()),
+    profile_image_url,
+    banner_image_url,
+  })
+}
+
+/// Fetch channel info including profile image URL using OAuth
+pub async fn youtube_fetch_channel_info_with_oauth(
+  channel_id_or_name: &str,
+  access_token: &str,
+) -> Result<YouTubeChannelInfo, String> {
+  let client = shared_client();
+
+  // Determine if input is channel ID or name
+  let (id_param, id_value) =
+    if channel_id_or_name.starts_with("UC") && channel_id_or_name.len() == 24 {
+      ("id", channel_id_or_name)
+    } else {
+      ("forUsername", channel_id_or_name)
+    };
+
+  let url = format!(
+    "https://www.googleapis.com/youtube/v3/channels?part=snippet,brandingSettings&{}={}",
+    id_param,
+    urlencoding::encode(id_value)
+  );
+
+  let response = client
+    .get(&url)
+    .header("Authorization", format!("Bearer {}", access_token))
+    .send()
+    .await
+    .map_err(|e| format!("Failed to fetch channel info: {}", e))?;
+
+  if !response.status().is_success() {
+    let status = response.status();
+    let error_text = response.text().await.unwrap_or_default();
+    return Err(format!(
+      "YouTube channel API error ({}): {}",
+      status, error_text
+    ));
+  }
+
+  let data: serde_json::Value = response
+    .json()
+    .await
+    .map_err(|e| format!("Failed to parse channel response: {}", e))?;
+
+  let items = data["items"].as_array();
+  let items =
+    items.ok_or_else(|| format!("No items in response for channel: {}", channel_id_or_name))?;
+  if items.is_empty() {
+    return Err(format!("Channel not found: {}", channel_id_or_name));
+  }
+
+  let channel = &items[0];
+  let snippet = &channel["snippet"];
+  let branding = &channel["brandingSettings"]["channel"];
+
+  let profile_image_url = branding["profileImageUrl"].as_str().map(|s| s.to_string());
+  let banner_image_url = branding["bannerImageUrl"].as_str().map(|s| s.to_string());
+
+  Ok(YouTubeChannelInfo {
+    id: channel["id"].as_str().unwrap_or("").to_string(),
+    title: snippet["title"].as_str().unwrap_or("").to_string(),
+    custom_url: branding["customUrl"].as_str().map(|s| s.to_string()),
+    profile_image_url,
+    banner_image_url,
+  })
 }

@@ -18,6 +18,7 @@ pub struct AuthAccountModel {
   pub platform: PlatformTypeModel,
   pub username: String,
   pub user_id: String,
+  pub avatar_url: Option<String>,
   pub access_token: Option<String>,
   pub refresh_token: Option<String>,
   pub auth_status: AuthStatusModel,

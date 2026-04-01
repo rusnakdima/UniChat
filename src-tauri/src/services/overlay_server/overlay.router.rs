@@ -81,13 +81,11 @@ async fn get_overlay_messages(
   use crate::models::overlay_message_model::OverlayMessageModel;
 
   let messages = OVERLAY_MESSAGES.read().await;
-  let widget_messages = messages.get(&widget_id);
-
-  if widget_messages.is_none() {
+  let Some(widget_messages) = messages.get(&widget_id) else {
     return Json(Vec::new());
-  }
+  };
 
-  let mut result: Vec<OverlayMessageModel> = widget_messages.unwrap().clone();
+  let mut result: Vec<OverlayMessageModel> = widget_messages.clone();
 
   // Apply channel filter if specified
   if let Some(ids) = query.channel_ids {

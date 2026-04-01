@@ -118,16 +118,29 @@ impl OAuthProviderService {
 
     let token =
       exchange_code_for_token(&self.http, &platform, code, &session.code_verifier, &config).await?;
-    
-    println!("[Kick OAuth] Token response: access_token={}, refresh_token={}", 
-      if token.access_token.is_empty() { "empty" } else { "***" },
-      if token.refresh_token.as_ref().map_or(true, |s| s.is_empty()) { "none" } else { "***" }
+
+    println!(
+      "[Kick OAuth] Token response: access_token={}, refresh_token={}",
+      if token.access_token.is_empty() {
+        "empty"
+      } else {
+        "***"
+      },
+      if token.refresh_token.as_ref().map_or(true, |s| s.is_empty()) {
+        "none"
+      } else {
+        "***"
+      }
     );
-    
-    let (username, user_id) = fetch_identity(&self.http, &platform, &token, &config).await?;
-    
-    println!("[Kick OAuth] Identity fetched: username={}, user_id={}", username, user_id);
-    
+
+    let (username, user_id, avatar_url) =
+      fetch_identity(&self.http, &platform, &token, &config).await?;
+
+    println!(
+      "[Kick OAuth] Identity fetched: username={}, user_id={}, avatar_url={:?}",
+      username, user_id, avatar_url
+    );
+
     let expires_at = token
       .expires_in_seconds
       .map(|seconds| (Utc::now() + Duration::seconds(seconds)).to_rfc3339());
@@ -136,6 +149,7 @@ impl OAuthProviderService {
       platform: platform.clone(),
       username,
       user_id,
+      avatar_url,
       access_token: Some(token.access_token.clone()),
       refresh_token: token.refresh_token.clone(),
       auth_status: AuthStatusModel::Authorized,
@@ -249,11 +263,19 @@ impl OAuthProviderService {
       .map_err(|e| format!("Validation request failed: {e}"))?;
 
     let status = response.status();
-    println!("[Auth Validate] {} token validation status: {}", platform.as_key(), status);
+    println!(
+      "[Auth Validate] {} token validation status: {}",
+      platform.as_key(),
+      status
+    );
 
     if !status.is_success() {
       let body = response.text().await.unwrap_or_default();
-      println!("[Auth Validate] {} validation response: {}", platform.as_key(), body);
+      println!(
+        "[Auth Validate] {} validation response: {}",
+        platform.as_key(),
+        body
+      );
       return Err(format!("Token validation failed: {} - {}", status, body));
     }
 

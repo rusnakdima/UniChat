@@ -246,7 +246,9 @@ pub async fn getOverlayMessages(
     return Ok(Vec::new());
   }
 
-  let mut result: Vec<OverlayMessageModel> = widget_messages.unwrap().clone();
+  let mut result: Vec<OverlayMessageModel> = widget_messages
+    .ok_or_else(|| "Widget messages not found".to_string())?
+    .clone();
 
   // Apply channel filter if specified
   if let Some(ids) = channel_ids {
