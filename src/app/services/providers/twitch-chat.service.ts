@@ -4,9 +4,10 @@ import { invoke } from "@tauri-apps/api/core";
 import tmi from "tmi.js";
 
 /* models */
-import { ChatMessage } from "@models/chat.model";
+import { ChatBadgeIcon, ChatMessage, ChatMessageEmote } from "@models/chat.model";
 
 /* services */
+import { LoggerService } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
@@ -40,12 +41,26 @@ export class TwitchChatService extends BaseChatProviderService {
     "https://recent-messages.robotty.de/api/v2/recent-messages";
 
   private readonly clientsByChannel = new Map<string, tmi.Client>();
+  private readonly messageListeners = new Map<
+    string,
+    (channel: string, tags: tmi.ChatUserstate, message: string, self: boolean) => void
+  >();
+  private readonly connectedListeners = new Map<string, () => void>();
+  private readonly disconnectedListeners = new Map<string, () => void>();
+  private readonly reconnectListeners = new Map<string, () => void>();
+  private readonly roomstateListeners = new Map<
+    string,
+    (channel: string, state: tmi.RoomState) => void
+  >();
+  private readonly failureListeners = new Map<string, () => void>();
+  private readonly noticeListeners = new Map<string, (reason: string) => void>();
   private readonly statusListeners = new Set<
     (channelId: string, status: TwitchConnectionStatus) => void
   >();
   private readonly iconsCatalog = inject(IconsCatalogService);
   private readonly twitchEmotes = inject(TwitchEmotesService);
   private readonly errorService = inject(ConnectionErrorService);
+  private readonly logger = inject(LoggerService);
   private readonly connectionStateService = inject(ConnectionStateService);
   private readonly reconnectionService = inject(ReconnectionService);
   private readonly viewerCard = inject(TwitchViewerCardService);
@@ -83,39 +98,51 @@ export class TwitchChatService extends BaseChatProviderService {
           : undefined,
     });
 
-    client.on(
-      "message",
-      (_channel: string, tags: tmi.ChatUserstate, message: string, self: boolean) => {
-        const messageModel = this.buildMessageFromTmiPrivmsg(
-          normalizedChannel,
-          tags,
-          message,
-          self
-        );
-        if (messageModel) {
-          messageModel.receivedAt = Date.now();
+    const messageListener = (
+      _channel: string,
+      tags: tmi.ChatUserstate,
+      message: string,
+      self: boolean
+    ) => {
+      const messageModel = this.buildMessageFromTmiPrivmsg(normalizedChannel, tags, message, self);
+      if (messageModel) {
+        messageModel.receivedAt = Date.now();
 
-          this.reconnectionService.trackMessage(normalizedChannel, messageModel, "twitch");
+        this.reconnectionService.trackMessage(normalizedChannel, messageModel, "twitch");
 
-          this.chatStorageService.addMessage(normalizedChannel, messageModel);
+        // If this is our own message (echo from Twitch), try to find and update the optimistic message
+        if (self) {
+          this.handleOwnMessageEcho(normalizedChannel, message, messageModel.id);
         }
-      }
-    );
 
-    client.on("connected", () => {
+        this.chatStorageService.addMessage(normalizedChannel, messageModel);
+      }
+    };
+    client.on("message", messageListener);
+    this.messageListeners.set(normalizedChannel, messageListener);
+
+    const connectedListener = () => {
       this.emitStatus(normalizedChannel, "connected");
       this.errorService.clearError(normalizedChannel);
       // Clear gap indicator on successful reconnect
       this.reconnectionService.clearGap(normalizedChannel);
-    });
-    client.on("disconnected", () => {
+    };
+    client.on("connected", connectedListener);
+    this.connectedListeners.set(normalizedChannel, connectedListener);
+
+    const disconnectedListener = () => {
       this.emitStatus(normalizedChannel, "disconnected");
       this.connectionStateService.clearRoomState(normalizedChannel);
-    });
-    client.on("reconnect", () => {
+    };
+    client.on("disconnected", disconnectedListener);
+    this.disconnectedListeners.set(normalizedChannel, disconnectedListener);
+
+    const reconnectListener = () => {
       this.emitStatus(normalizedChannel, "reconnecting");
-    });
-    client.on("roomstate", (channel: string, state: tmi.RoomState) => {
+    };
+    client.on("reconnect", reconnectListener);
+    this.reconnectListeners.set(normalizedChannel, reconnectListener);
+    const roomstateListener = (channel: string, state: tmi.RoomState) => {
       const slowValue = state.slow;
       const slowModeWaitTime =
         typeof slowValue === "string" ? parseInt(slowValue, 10) : slowValue ? 0 : undefined;
@@ -136,20 +163,28 @@ export class TwitchChatService extends BaseChatProviderService {
         isEmotesOnly: state["emote-only"] ?? false,
         isR9k: state.r9k ?? false,
       });
-    });
+    };
+    client.on("roomstate", roomstateListener);
+    this.roomstateListeners.set(normalizedChannel, roomstateListener);
+
     // `tmi.js` runtime emits `connectionfailure`; types may not include it.
     type TmiClientWithConnectionFailure = tmi.Client & {
       on(event: "connectionfailure", listener: () => void): tmi.Client;
     };
 
-    (client as unknown as TmiClientWithConnectionFailure).on("connectionfailure", () => {
+    const failureListener = () => {
       this.errorService.reportNetworkTimeout(normalizedChannel, "twitch");
-    });
-    client.on("notice", (reason: string) => {
+    };
+    (client as unknown as TmiClientWithConnectionFailure).on("connectionfailure", failureListener);
+    this.failureListeners.set(normalizedChannel, failureListener);
+
+    const noticeListener = (reason: string) => {
       if (reason.includes("ratelimit") || reason.includes("rate limit")) {
         this.errorService.reportRateLimited(normalizedChannel, "twitch");
       }
-    });
+    };
+    client.on("notice", noticeListener);
+    this.noticeListeners.set(normalizedChannel, noticeListener);
 
     void client.connect();
     this.clientsByChannel.set(normalizedChannel, client);
@@ -159,10 +194,46 @@ export class TwitchChatService extends BaseChatProviderService {
   override disconnect(channelId: string): void {
     const normalizedChannel = channelId.replace(/^#/, "").toLowerCase();
     const client = this.clientsByChannel.get(normalizedChannel);
+
     if (client) {
+      // Remove all event listeners to prevent memory leaks
+      const messageListener = this.messageListeners.get(normalizedChannel);
+      const connectedListener = this.connectedListeners.get(normalizedChannel);
+      const disconnectedListener = this.disconnectedListeners.get(normalizedChannel);
+      const reconnectListener = this.reconnectListeners.get(normalizedChannel);
+      const roomstateListener = this.roomstateListeners.get(normalizedChannel);
+      const failureListener = this.failureListeners.get(normalizedChannel);
+      const noticeListener = this.noticeListeners.get(normalizedChannel);
+
+      if (messageListener) client.removeListener("message", messageListener);
+      if (connectedListener) client.removeListener("connected", connectedListener);
+      if (disconnectedListener) client.removeListener("disconnected", disconnectedListener);
+      if (reconnectListener) client.removeListener("reconnect", reconnectListener);
+      if (roomstateListener) client.removeListener("roomstate", roomstateListener);
+      if (failureListener) {
+        type TmiClientWithConnectionFailure = tmi.Client & {
+          removeListener(event: "connectionfailure", listener: () => void): tmi.Client;
+        };
+        (client as unknown as TmiClientWithConnectionFailure).removeListener(
+          "connectionfailure",
+          failureListener
+        );
+      }
+      if (noticeListener) client.removeListener("notice", noticeListener);
+
+      // Clean up listener maps
+      this.messageListeners.delete(normalizedChannel);
+      this.connectedListeners.delete(normalizedChannel);
+      this.disconnectedListeners.delete(normalizedChannel);
+      this.reconnectListeners.delete(normalizedChannel);
+      this.roomstateListeners.delete(normalizedChannel);
+      this.failureListeners.delete(normalizedChannel);
+      this.noticeListeners.delete(normalizedChannel);
+
       void client.disconnect();
       this.clientsByChannel.delete(normalizedChannel);
     }
+
     this.connectedChannels.delete(normalizedChannel);
     this.emitStatus(normalizedChannel, "disconnected");
   }
@@ -264,7 +335,7 @@ export class TwitchChatService extends BaseChatProviderService {
         accessToken: account.accessToken,
       });
     } catch (error) {
-      console.error("Twitch delete message error:", error);
+      this.logger.error("TwitchChatService", "Delete message error", error);
       return false;
     }
   }
@@ -378,40 +449,88 @@ export class TwitchChatService extends BaseChatProviderService {
       .getChannels("twitch")
       .find((entry) => entry.channelName.toLowerCase() === channelName.toLowerCase());
     const account = this.authorizationService.getAccountById(channel?.accountId);
-    const badges = Object.keys(tags.badges ?? {});
-    const author = tags["display-name"] || tags.username || "Anonymous";
-    const sourceUserId = tags["user-id"] || tags.username || "unknown";
-    const sourceMessageId = tags.id || `tw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
     const normalizedText = message.trim();
     if (!normalizedText) {
       return null;
     }
-    const replyParentId = tags["reply-parent-msg-id"];
+
+    const author = tags["display-name"] || tags.username || "Anonymous";
+    const sourceUserId = tags["user-id"] || tags.username || "unknown";
+    const sourceMessageId = tags.id || `tw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    const badges = this.extractBadges(tags);
     const roomId = tags["room-id"]?.toString();
     if (roomId) {
       void this.iconsCatalog.ensureChannelLoaded(roomId);
     }
-    const emotes = this.twitchEmotes.extractEmotesForTwitchMessage(
-      normalizedText,
-      tags.emotes,
-      roomId
-    );
-    const badgeIcons = this.twitchEmotes.extractBadgeIconsForTwitchMessage(tags.badges, roomId);
 
+    const emotes = this.extractEmotes(normalizedText, tags, roomId);
+    const badgeIcons = this.extractBadgeIcons(tags, roomId);
+    const timestamp = this.extractTimestamp(tags);
     const canDelete = channel?.accountCapabilities?.canDelete === true;
+    const providerChannelId = channel?.channelId ?? channelName;
 
+    return this.constructChatMessage(
+      channelName,
+      providerChannelId,
+      sourceMessageId,
+      sourceUserId,
+      author,
+      normalizedText,
+      timestamp,
+      badges,
+      emotes,
+      badgeIcons,
+      canDelete,
+      self,
+      tags
+    );
+  }
+
+  private extractBadges(tags: tmi.ChatUserstate): string[] {
+    return Object.keys(tags.badges ?? {});
+  }
+
+  private extractEmotes(
+    text: string,
+    tags: tmi.ChatUserstate,
+    roomId?: string
+  ): ChatMessageEmote[] {
+    return this.twitchEmotes.extractEmotesForTwitchMessage(text, tags.emotes, roomId);
+  }
+
+  private extractBadgeIcons(tags: tmi.ChatUserstate, roomId?: string): ChatBadgeIcon[] {
+    return this.twitchEmotes.extractBadgeIconsForTwitchMessage(tags.badges, roomId);
+  }
+
+  private extractTimestamp(tags: tmi.ChatUserstate): string {
     const tsRaw = tags["tmi-sent-ts"];
-    let timestamp = new Date().toISOString();
     if (tsRaw !== undefined && tsRaw !== "") {
       const n = Number(tsRaw);
       if (Number.isFinite(n)) {
-        timestamp = new Date(n).toISOString();
+        return new Date(n).toISOString();
       }
     }
+    return new Date().toISOString();
+  }
 
-    const authorAvatarUrl = undefined;
-
-    const providerChannelId = channel?.channelId ?? channelName;
+  private constructChatMessage(
+    channelName: string,
+    providerChannelId: string,
+    sourceMessageId: string,
+    sourceUserId: string,
+    author: string,
+    normalizedText: string,
+    timestamp: string,
+    badges: string[],
+    emotes: ChatMessageEmote[],
+    badgeIcons: ChatBadgeIcon[],
+    canDelete: boolean,
+    self: boolean,
+    tags: tmi.ChatUserstate
+  ): ChatMessage {
+    const replyParentId = tags["reply-parent-msg-id"];
 
     return {
       id: `msg-${sourceMessageId}`,
@@ -448,7 +567,7 @@ export class TwitchChatService extends BaseChatProviderService {
         emotes,
         badgeIcons,
       },
-      authorAvatarUrl,
+      authorAvatarUrl: undefined,
     };
   }
 
@@ -570,7 +689,7 @@ export class TwitchChatService extends BaseChatProviderService {
           entry.channelName.toLowerCase() === normalizedChannel
       );
 
-    const account = this.authorizationService.getAccountById(channel?.accountId);
+    const account = this.authorizationService.getAccountByIdSync(channel?.accountId);
 
     return account;
   }
@@ -583,7 +702,7 @@ export class TwitchChatService extends BaseChatProviderService {
       return false;
     }
 
-    const account = this.authorizationService.getAccountById(accountId);
+    const account = this.authorizationService.getAccountByIdSync(accountId);
     if (!account) {
       return false;
     }
@@ -609,6 +728,60 @@ export class TwitchChatService extends BaseChatProviderService {
     }
 
     return account.authStatus === "authorized";
+  }
+
+  /**
+   * Handle echo of own message from Twitch IRC
+   * Finds the optimistic message and marks it as confirmed
+   */
+  private handleOwnMessageEcho(
+    channelId: string,
+    messageText: string,
+    echoMessageId: string
+  ): void {
+    // Find recent outgoing messages in this channel
+    const channelRef = buildChannelRef("twitch", channelId);
+    const messages = this.chatStorageService.getMessagesByChannel(channelRef);
+
+    // Look for optimistic message with matching text sent in last few seconds
+    const now = Date.now();
+    const maxAge = 5000; // 5 seconds
+
+    const optimisticMessage = messages.find((msg) => {
+      if (!msg.isOutgoing || msg.isDeleted) return false;
+      if (msg.author !== "You") return false;
+
+      // Check if text matches
+      if (msg.text !== messageText) return false;
+
+      // Check if message is recent (within 5 seconds)
+      const messageTime = new Date(msg.timestamp).getTime();
+      if (now - messageTime > maxAge) return false;
+
+      // Check if it's still in pending state
+      return msg.actions.delete.status === "pending" || msg.actions.delete.status === "available";
+    });
+
+    if (optimisticMessage) {
+      // Mark the optimistic message as confirmed by updating its actions
+      this.chatStorageService.updateMessage(channelRef, optimisticMessage.id, {
+        actions: {
+          reply: {
+            kind: "reply",
+            status: "disabled",
+            reason: "Cannot reply to own message",
+          },
+          delete: {
+            kind: "delete",
+            status: "available",
+          },
+        },
+        rawPayload: {
+          ...optimisticMessage.rawPayload,
+          providerEvent: "outgoing_sent_confirmed",
+        },
+      });
+    }
   }
 
   private emitStatus(channelId: string, status: TwitchConnectionStatus): void {

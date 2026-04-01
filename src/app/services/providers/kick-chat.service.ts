@@ -3,6 +3,7 @@ import { Injectable, inject } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 
 /* services */
+import { LoggerService } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
 import { KickChatEventMapper } from "@services/providers/kick-chat-event.mapper";
@@ -35,11 +36,13 @@ export class KickChatService extends BaseChatProviderService {
   readonly platform = "kick" as const;
 
   private readonly socketByChannel = new Map<string, WebSocket>();
-  private readonly channelInfoByChannel = new Map<string, KickChannelInfo>(); // Stores both chatroomId and broadcasterUserId
+  private readonly channelInfoByChannel = new Map<string, KickChannelInfo>();
   private readonly reconnectTimerByChannel = new Map<string, number>();
+  private readonly reconnectAttempts = new Map<string, number>();
   private readonly historyNoticeLoggedChannels = new Set<string>();
-  private readonly recentlySentMessages = new Map<string, RecentlySentMessage>(); // channel:messageKey -> info
+  private readonly recentlySentMessages = new Map<string, RecentlySentMessage>();
   private readonly errorService = inject(ConnectionErrorService);
+  private readonly logger = inject(LoggerService);
   private readonly kickChatEventMapper = inject(KickChatEventMapper);
 
   override connect(channelId: string): void {
@@ -80,31 +83,10 @@ export class KickChatService extends BaseChatProviderService {
     };
   }
 
-  private async startLiveSocket(channelSlug: string): Promise<void> {
-    try {
-      const channelInfo = await this.fetchChannelInfo(channelSlug);
-      if (!this.connectedChannels.has(channelSlug)) {
-        return;
-      }
-      this.channelInfoByChannel.set(channelSlug, channelInfo);
-      await this.fetchKickRecentMessagesRest(channelSlug, channelInfo.chatroomId);
-      if (!this.connectedChannels.has(channelSlug)) {
-        return;
-      }
-      this.openSocket(channelSlug, channelInfo.chatroomId);
-    } catch (error) {
-      this.errorService.reportNetworkError(
-        channelSlug,
-        "Failed to connect to Kick chat. Retrying...",
-        true
-      );
-      this.scheduleReconnect(channelSlug);
-    }
-  }
-
   private openSocket(channelSlug: string, chatroomId: number): void {
-    console.log(
-      "[Kick WebSocket] Opening WebSocket connection for channel:",
+    this.logger.debug(
+      "KickChatService",
+      "Opening WebSocket connection for channel",
       channelSlug,
       "chatroomId:",
       chatroomId
@@ -116,8 +98,9 @@ export class KickChatService extends BaseChatProviderService {
     this.socketByChannel.set(channelSlug, socket);
 
     socket.addEventListener("open", () => {
-      console.log(
-        "[Kick WebSocket] Connection opened, subscribing to channel:",
+      this.logger.debug(
+        "KickChatService",
+        "Connection opened, subscribing to channel",
         `chatrooms.${chatroomId}.v2`
       );
       socket.send(
@@ -219,7 +202,7 @@ export class KickChatService extends BaseChatProviderService {
       try {
         payload = JSON.parse(parsed.data) as Record<string, unknown>;
       } catch {
-        console.error("[Kick WebSocket] Failed to parse data payload");
+        this.logger.error("KickChatService", "Failed to parse data payload");
         return;
       }
     } else if (parsed.data && typeof parsed.data === "object") {
@@ -227,13 +210,13 @@ export class KickChatService extends BaseChatProviderService {
     }
 
     if (!payload) {
-      console.error("[Kick WebSocket] No payload found");
+      this.logger.error("KickChatService", "No payload found");
       return;
     }
 
-    console.log("[Kick WebSocket] Processing chat event payload:", payload);
+    this.logger.debug("KickChatService", "Processing chat event payload");
     this.ingestKickChatEventPayload(channelSlug, payload);
-    console.log("[Kick WebSocket] Message processing complete");
+    this.logger.debug("KickChatService", "Message processing complete");
   }
 
   private ingestKickChatEventPayload(channelSlug: string, payload: Record<string, unknown>): void {
@@ -243,14 +226,19 @@ export class KickChatService extends BaseChatProviderService {
       return;
     }
 
-    console.log("[Kick Chat] Processing message:", mapped.sourceMessageId, mapped.content);
+    this.logger.debug(
+      "KickChatService",
+      "Processing message",
+      mapped.sourceMessageId,
+      mapped.content
+    );
 
     // Check if this is a WebSocket echo of a recently sent message
     // Match by username + content + timestamp (within 5 seconds)
     const messageKey = `${mapped.author}:${mapped.content}`;
     const sentInfo = this.recentlySentMessages.get(`${channelSlug}:${messageKey}`);
 
-    console.log("[Kick Chat] Sent info check:", sentInfo ? "FOUND" : "NOT FOUND");
+    this.logger.debug("KickChatService", "Sent info check", sentInfo ? "FOUND" : "NOT FOUND");
 
     if (sentInfo) {
       const now = Date.now();
@@ -266,7 +254,10 @@ export class KickChatService extends BaseChatProviderService {
             m.sourceUserId === `kick-${mapped.sourceUserId}`
         );
 
-        console.log("[Kick Chat] Echo detected - updating existing message, skipping add");
+        this.logger.debug(
+          "KickChatService",
+          "Echo detected - updating existing message, skipping add"
+        );
 
         if (outgoingMessage) {
           // Update the message with the real Kick message ID
@@ -285,7 +276,7 @@ export class KickChatService extends BaseChatProviderService {
       this.recentlySentMessages.delete(`${channelSlug}:${messageKey}`);
     }
 
-    console.log("[Kick Chat] Adding new message to storage:", mapped.sourceMessageId);
+    this.logger.debug("KickChatService", "Adding new message to storage", mapped.sourceMessageId);
 
     this.chatStorageService.addMessage(
       channelSlug,
@@ -332,35 +323,83 @@ export class KickChatService extends BaseChatProviderService {
     if (!this.connectedChannels.has(channelSlug) || this.reconnectTimerByChannel.has(channelSlug)) {
       return;
     }
+
+    const attempts = this.reconnectAttempts.get(channelSlug) ?? 0;
+    const baseDelay = 1000;
+    const maxDelay = 30000;
+
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s (capped)
+    const delay = Math.min(maxDelay, baseDelay * Math.pow(2, attempts));
+
+    // Add jitter (±20%) to prevent thundering herd
+    const jitter = delay * 0.2 * (Math.random() - 0.5);
+    const finalDelay = Math.max(500, delay + jitter); // Minimum 500ms
+
+    this.logger.debug(
+      "KickChatService",
+      "Scheduling reconnect for",
+      channelSlug,
+      "attempt",
+      attempts + 1,
+      "delay",
+      Math.round(finalDelay),
+      "ms"
+    );
+
     const timerId = window.setTimeout(() => {
       this.reconnectTimerByChannel.delete(channelSlug);
       if (!this.connectedChannels.has(channelSlug)) {
         return;
       }
       void this.startLiveSocket(channelSlug);
-    }, 2500);
+    }, finalDelay);
+
     this.reconnectTimerByChannel.set(channelSlug, timerId);
   }
 
-  sendMessage(channelId: string, text: string, accountId?: string): boolean {
-    console.log("[Kick Send] sendMessage called:", { channelId, text, accountId });
+  private async startLiveSocket(channelSlug: string): Promise<void> {
+    // Reset reconnect attempts on successful connection
+    this.reconnectAttempts.set(channelSlug, 0);
 
-    const account = this.authorizationService.getAccountById(accountId);
-    console.log(
-      "[Kick Send] Account:",
-      account
-        ? {
-            id: account.id,
-            username: account.username,
-            userId: account.userId,
-            authStatus: account.authStatus,
-            hasAccessToken: !!account.accessToken,
-          }
-        : "No account"
+    try {
+      const channelInfo = await this.fetchChannelInfo(channelSlug);
+      if (!channelInfo) {
+        this.errorService.reportChannelNotFound(channelSlug, "kick");
+        return;
+      }
+      this.channelInfoByChannel.set(channelSlug, channelInfo);
+      await this.fetchKickRecentMessagesRest(channelSlug, channelInfo.chatroomId);
+      if (!this.connectedChannels.has(channelSlug)) {
+        return;
+      }
+      this.openSocket(channelSlug, channelInfo.chatroomId);
+    } catch (error) {
+      // Increment reconnect attempts for exponential backoff
+      const attempts = this.reconnectAttempts.get(channelSlug) ?? 0;
+      this.reconnectAttempts.set(channelSlug, attempts + 1);
+
+      this.errorService.reportNetworkError(
+        channelSlug,
+        "Failed to connect to Kick chat. Retrying...",
+        true
+      );
+      this.scheduleReconnect(channelSlug);
+    }
+  }
+
+  sendMessage(channelId: string, text: string, accountId?: string): boolean {
+    this.logger.debug("KickChatService", "sendMessage called", { channelId, text, accountId });
+
+    // Note: Uses sync version - assumes accounts are loaded by the time user sends messages
+    const account = this.authorizationService.getAccountByIdSync(accountId);
+    this.logger.debug(
+      "KickChatService",
+      "Account lookup",
+      account ? { id: account.id, username: account.username } : "No account"
     );
 
     if (account?.authStatus !== "authorized" || !account.accessToken) {
-      console.error("[Kick Send] Cannot send - not authorized or no token");
+      this.logger.warn("KickChatService", "Cannot send - not authorized or no token");
       return false;
     }
     void this.sendMessageAsync(channelId, text, account);
@@ -381,6 +420,14 @@ export class KickChatService extends BaseChatProviderService {
     if (!account.accessToken) {
       return false;
     }
+
+    // Track this message BEFORE API call - WebSocket echo might arrive before API returns
+    const messageKey = `${account.username}:${trimmed}`;
+    this.recentlySentMessages.set(`${normalizedChannel}:${messageKey}`, {
+      username: account.username,
+      content: trimmed,
+      timestamp: Date.now(),
+    });
 
     try {
       // Fetch channel info (includes chatroom ID and broadcaster user ID)
@@ -404,11 +451,11 @@ export class KickChatService extends BaseChatProviderService {
       return response;
     } catch (error) {
       const errorMessage = String(error ?? "");
-      console.error("[Kick Send] Failed:", error);
+      this.logger.error("KickChatService", "Send message failed", error);
 
       // Handle rate limiting
       if (errorMessage.includes("429") || errorMessage.includes("Rate limit")) {
-        console.error("[Kick Send] Rate limit exceeded");
+        this.logger.warn("KickChatService", "Rate limit exceeded");
       }
 
       return false;
@@ -426,16 +473,7 @@ export class KickChatService extends BaseChatProviderService {
     const timestamp = new Date().toISOString();
     const messageId = `kick-outgoing-${Date.now()}`;
 
-    console.log("[Kick Send] Creating outgoing message with author:", account.username);
-
-    // Track this message for WebSocket echo detection
-    // Key format: channel:username:content (use normalizedChannel for consistency)
-    const messageKey = `${account.username}:${text}`;
-    this.recentlySentMessages.set(`${normalizedChannel}:${messageKey}`, {
-      username: account.username,
-      content: text,
-      timestamp: Date.now(),
-    });
+    this.logger.debug("KickChatService", "Creating outgoing message with author", account.username);
 
     this.chatStorageService.addMessage(
       normalizedChannel,
@@ -504,10 +542,10 @@ export class KickChatService extends BaseChatProviderService {
    * @returns true if deleted successfully
    */
   async deleteMessage(messageId: string, accountId?: string): Promise<boolean> {
-    const account = this.authorizationService.getAccountById(accountId);
+    const account = await this.authorizationService.getAccountById(accountId);
 
     if (!account || account.authStatus !== "authorized" || !account.accessToken) {
-      console.error("[Kick Delete] Cannot delete - not authorized or no token");
+      this.logger.warn("KickChatService", "Cannot delete - not authorized or no token");
       return false;
     }
 
@@ -519,7 +557,10 @@ export class KickChatService extends BaseChatProviderService {
         kickMessageId = messageId.substring(4);
       } else if (messageId.startsWith("kick-outgoing-")) {
         // Outgoing messages don't have a real Kick message ID yet
-        console.warn("[Kick Delete] Cannot delete outgoing message without Kick message ID");
+        this.logger.warn(
+          "KickChatService",
+          "Cannot delete outgoing message without Kick message ID"
+        );
         return false;
       }
 
@@ -528,10 +569,10 @@ export class KickChatService extends BaseChatProviderService {
         accessToken: account.accessToken,
       });
 
-      console.log("[Kick Delete] Message deleted:", response);
+      this.logger.info("KickChatService", "Message deleted", response);
       return response;
     } catch (error) {
-      console.error("[Kick Delete] Failed:", error);
+      this.logger.error("KickChatService", "Delete message failed", error);
       return false;
     }
   }

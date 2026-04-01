@@ -61,18 +61,38 @@ export class ChatStorageService {
   private readonly pendingBatches = new Map<string, ChatMessage[]>();
   private batchRafId: number | null = null;
 
+  // Cache version for allMessages to avoid recalculation on every change
+  private readonly allMessagesVersion = signal(0);
+  private readonly allMessagesCache = signal<{ version: number; messages: ChatMessage[] }>({
+    version: 0,
+    messages: [],
+  });
+
   readonly channelMessages = this.channelMessagesSignal.asReadonly();
   readonly loadedChannelsSet = this.loadedChannels.asReadonly();
   readonly historyLoadStates = this.historyLoadState.asReadonly();
 
   constructor() {
-    // Don't load persisted messages on startup - start fresh each session
-    // Messages are only from current live chat session
-    // this.channelMessagesSignal.set(this.loadPersistedChannelMessages());
     this.channelMessagesSignal.set({});
   }
 
+  /**
+   * Increment the message version to invalidate cache
+   */
+  private incrementMessageVersion(): void {
+    this.allMessagesVersion.update((v) => v + 1);
+  }
+
   readonly allMessages = computed(() => {
+    const currentVersion = this.allMessagesVersion();
+    const cached = this.allMessagesCache();
+
+    // Return cached version if still valid
+    if (cached.version === currentVersion) {
+      return cached.messages;
+    }
+
+    // Recalculate only when version changes
     const allMessages: ChatMessage[] = [];
     const messagesByChannel = this.channelMessagesSignal();
 
@@ -80,7 +100,11 @@ export class ChatStorageService {
       allMessages.push(...messages);
     }
 
-    return sortMessagesChronological(allMessages);
+    const sorted = sortMessagesChronological(allMessages);
+
+    // Update cache
+    this.allMessagesCache.set({ version: currentVersion, messages: sorted });
+    return sorted;
   });
 
   readonly messagesByPlatform = computed(() => {
@@ -339,6 +363,10 @@ export class ChatStorageService {
       }
       return next;
     });
+
+    // Increment version to invalidate allMessages cache
+    this.incrementMessageVersion();
+
     this.persistChannelMessages();
 
     for (const incoming of snapshot.values()) {
@@ -358,39 +386,11 @@ export class ChatStorageService {
   }
 
   private persistChannelMessages(): void {
-    // Disabled: Don't persist messages to localStorage
-    // Messages are session-only and cleared on app restart
-    // try {
-    //   localStorage.setItem(channelMessagesStorageKey, JSON.stringify(this.channelMessagesSignal()));
-    // } catch {
-    //   // Ignore storage quota/runtime errors; keep in-memory behavior.
-    // }
+    // Messages are session-only and not persisted to localStorage
   }
 
   private loadPersistedChannelMessages(): Record<string, ChatMessage[]> {
-    try {
-      const raw = localStorage.getItem(channelMessagesStorageKey);
-      if (!raw) {
-        return {};
-      }
-      const parsed = JSON.parse(raw) as unknown;
-      if (!parsed || typeof parsed !== "object") {
-        return {};
-      }
-      const out: Record<string, ChatMessage[]> = {};
-      for (const [channelId, rows] of Object.entries(parsed as Record<string, unknown>)) {
-        if (!Array.isArray(rows)) {
-          continue;
-        }
-        const safeRows = rows.filter(
-          (row) => row !== null && typeof row === "object"
-        ) as ChatMessage[];
-        out[channelId] = this.limitMessages(sortMessagesChronological(safeRows));
-      }
-      return out;
-    } catch {
-      return {};
-    }
+    return {};
   }
 
   private limitMessages(messages: ChatMessage[]): ChatMessage[] {

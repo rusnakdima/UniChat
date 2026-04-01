@@ -151,6 +151,7 @@ export class BlockedWordsService {
 
   /**
    * Filter a message text, replacing blocked words
+   * Uses combined regex for O(1) pattern matching instead of O(n)
    * Returns the filtered text and whether any replacements were made
    */
   filterMessage(text: string, channelId: string): { filtered: string; wasFiltered: boolean } {
@@ -158,26 +159,43 @@ export class BlockedWordsService {
       .map((rule) => this.migrateChannelRefs(rule))
       .filter((rule) => rule.isGlobal || rule.channelIds?.includes(channelId));
 
-    let filtered = text;
-    let wasFiltered = false;
+    if (applicableRules.length === 0) {
+      return { filtered: text, wasFiltered: false };
+    }
+
+    // Build combined regex pattern for single-pass matching
+    const ruleMap = new Map<string, BlockedWordRule>();
+    const patterns: string[] = [];
 
     for (const rule of applicableRules) {
-      if (!rule.pattern.trim()) continue;
+      if (!rule.pattern?.trim()) continue;
 
-      const regex = this.compiledRegexByRuleId.get(rule.id);
-      if (!regex) continue;
-
-      try {
-        regex.lastIndex = 0;
-        const next = filtered.replace(regex, rule.replacement);
-        if (next !== filtered) {
-          wasFiltered = true;
-          filtered = next;
-        }
-      } catch {
-        // Compiled regex should be valid; ignore runtime replace errors.
+      const pattern = rule.isRegex ? rule.pattern : this.escapeRegExp(rule.pattern);
+      if (pattern) {
+        patterns.push(`(${pattern})`);
+        ruleMap.set(pattern, rule);
       }
     }
+
+    if (patterns.length === 0) {
+      return { filtered: text, wasFiltered: false };
+    }
+
+    // Single combined regex for all patterns
+    const combinedRegex = new RegExp(patterns.join("|"), "gi");
+    let wasFiltered = false;
+
+    const filtered = text.replace(combinedRegex, (match) => {
+      // Find which rule matched this pattern
+      for (const [pattern, rule] of ruleMap.entries()) {
+        const testRegex = new RegExp(`^${pattern}$`, "i");
+        if (testRegex.test(match)) {
+          wasFiltered = true;
+          return rule.replacement;
+        }
+      }
+      return match;
+    });
 
     return { filtered, wasFiltered };
   }
