@@ -4,12 +4,6 @@ import { Routes } from "@angular/router";
 /* layouts */
 import { DashboardLayoutComponent } from "@layouts/dashboard-layout.component";
 
-/* views */
-import { DashboardView } from "@views/dashboard-view/dashboard.view";
-import { OverlayManagementView } from "@views/overlay-management-view/overlay-management.view";
-import { OverlayView } from "@views/overlay-view/overlay.view";
-import { SettingsPageView } from "@views/settings-page-view/settings-page.view";
-
 /* resolvers */
 import { ChatDataResolver } from "@resolvers/chat-data.resolver";
 
@@ -21,7 +15,7 @@ export const routes: Routes = [
   },
   {
     path: "overlay",
-    component: OverlayView,
+    loadComponent: () => import("@views/overlay-view/overlay.view").then((m) => m.OverlayView),
   },
   {
     path: "",
@@ -29,16 +23,21 @@ export const routes: Routes = [
     children: [
       {
         path: "dashboard",
-        component: DashboardView,
+        loadComponent: () =>
+          import("@views/dashboard-view/dashboard.view").then((m) => m.DashboardView),
         resolve: { chatData: ChatDataResolver },
       },
       {
         path: "overlay-management",
-        component: OverlayManagementView,
+        loadComponent: () =>
+          import("@views/overlay-management-view/overlay-management.view").then(
+            (m) => m.OverlayManagementView
+          ),
       },
       {
         path: "settings",
-        component: SettingsPageView,
+        loadComponent: () =>
+          import("@views/settings-page-view/settings-page.view").then((m) => m.SettingsPageView),
       },
     ],
   },

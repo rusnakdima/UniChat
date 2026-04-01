@@ -4,6 +4,9 @@
     [title]="isOpen() ? 'Close emotes' : 'Insert emote'"
     (click)="toggle()"
     class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-white/10"
+    [attr.aria-label]="isOpen() ? 'Close emote picker' : 'Open emote picker'"
+    [attr.aria-expanded]="isOpen()"
+    aria-haspopup="dialog"
   >
     <mat-icon [fontIcon]="'emoji_emotions'" class="h-6! w-5! text-xl!" />
   </button>
@@ -113,11 +116,45 @@
         }
 
         @if (platform() === "kick") {
-          <p class="mt-1 px-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-            Kick native emotes use
-            <code class="rounded bg-slate-100 px-1 dark:bg-white/10">[emote:id:name]</code>
-            in messages. Add shortcuts under Custom in settings, or type tokens manually.
-          </p>
+          @if (kickEmotesError()) {
+            <p
+              class="mb-2 rounded bg-amber-500/10 px-2 py-1 text-[11px] text-amber-800 dark:text-amber-200"
+            >
+              {{ kickEmotesError() }}
+            </p>
+          }
+          @if (!loading() && kickList().length > 0) {
+            <p
+              class="mb-1.5 px-1 text-[10px] font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400"
+            >
+              Kick Channel Emotes
+            </p>
+            <div class="grid grid-cols-6 gap-1 sm:grid-cols-8">
+              @for (emote of kickList(); track emote.id) {
+                <button
+                  type="button"
+                  [title]="emote.code"
+                  (click)="pickKick(emote)"
+                  class="flex aspect-square flex-col items-center justify-center rounded-md border border-slate-100 bg-slate-50 p-0.5 hover:bg-emerald-50 dark:border-white/5 dark:bg-white/5 dark:hover:bg-emerald-900/20"
+                >
+                  <img
+                    [src]="emote.url"
+                    [alt]="emote.code"
+                    class="max-h-6 max-w-full object-contain"
+                    loading="lazy"
+                  />
+                  <span
+                    class="mt-0.5 max-w-full truncate px-0.5 text-[9px] text-slate-600 dark:text-slate-400"
+                    >{{ emote.code }}</span
+                  >
+                </button>
+              }
+            </div>
+          } @else if (!loading() && kickList().length === 0 && !kickEmotesError()) {
+            <p class="px-1 py-2 text-slate-500 dark:text-slate-400">
+              No emotes found for this channel.
+            </p>
+          }
         }
 
         @if (platform() === "youtube") {

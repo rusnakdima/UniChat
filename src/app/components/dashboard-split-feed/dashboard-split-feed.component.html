@@ -36,6 +36,8 @@
           class="relative flex h-full flex-col"
           [style.flex]="getBlockFlex(platform)"
           [style.min-width]="'100px'"
+          [attr.aria-label]="platform + ' chat panel'"
+          role="region"
         >
           <div
             class="flex h-full w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
@@ -48,6 +50,9 @@
                 [class.dark-bg-slate-600]="isResizing() && resizeData()?.platform === platform"
                 (mousedown)="onResizeStart(platform, $event); $event.stopPropagation()"
                 role="separator"
+                [attr.aria-label]="'Resize ' + platform + ' panel'"
+                [attr.aria-orientation]="'vertical'"
+                tabindex="0"
               >
                 <div class="flex h-full w-px flex-col items-center justify-center gap-1">
                   <div class="h-3 w-px rounded-full bg-slate-400 dark:bg-slate-500"></div>
@@ -210,7 +215,8 @@
                       type="text"
                       [attr.data-unichat-composer]="platform"
                       [placeholder]="composerPlaceholder(platform)"
-                      class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 transition outline-none placeholder:text-slate-400 focus:border-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500"
+                      [disabled]="!canSendToPlatform()(platform)"
+                      class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 transition outline-none placeholder:text-slate-400 focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:placeholder:text-slate-500 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500"
                       #sendInput
                       (keydown)="onComposerKeydown($event, platform, sendInput)"
                     />
@@ -222,7 +228,8 @@
                     <button
                       type="button"
                       (click)="sendSplitComposer(platform, sendInput)"
-                      class="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                      [disabled]="!canSendToPlatform()(platform)"
+                      class="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 dark:disabled:bg-slate-600"
                     >
                       {{
                         interactions.replyTargetMessageId() &&
