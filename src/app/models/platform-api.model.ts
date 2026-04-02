@@ -46,7 +46,11 @@ export interface TwitchUserInfo {
   id: string;
   login: string;
   display_name: string;
+  description: string;
   profile_image_url: string;
+  offline_image_url?: string;
+  banner?: string | null;
+  created_at: string;
 }
 
 /**
