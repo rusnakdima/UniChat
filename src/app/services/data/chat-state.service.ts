@@ -83,7 +83,10 @@ export class ChatStateService {
 
     // Reply is currently disabled for all platforms (tmi.js limitation for Twitch)
     // This method is kept for future implementation
-    this.logger.warn("ChatStateService", "Reply functionality is currently unavailable for this platform.");
+    this.logger.warn(
+      "ChatStateService",
+      "Reply functionality is currently unavailable for this platform."
+    );
 
     this.updateMessageAction(messageId, "reply", {
       status: "disabled",
@@ -179,7 +182,7 @@ export class ChatStateService {
       isSupporter: false,
       isOutgoing: true,
       isDeleted: false,
-      canRenderInOverlay: true,
+      canRenderInOverlay: false, // Don't show optimistic messages in overlay
       actions: {
         reply: createMessageActionState("reply", "pending"),
         delete: createMessageActionState("delete", "pending"),

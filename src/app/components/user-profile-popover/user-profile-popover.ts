@@ -12,13 +12,12 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 /* models */
 import { ChatBadgeIcon } from "@models/chat.model";
+import { KickUserInfo, TwitchUserInfo } from "@models/platform-api.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
 import { KickChatService } from "@services/providers/kick-chat.service";
-import { KickUserInfo } from "@services/providers/kick-chat.service";
 import { TwitchViewerCardService } from "@services/providers/twitch-viewer-card.service";
-import type { TwitchUserInfo } from "@services/providers/twitch-viewer-card.service";
 import { YouTubeChatService } from "@services/providers/youtube-chat.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { UserProfilePopoverService } from "@services/ui/user-profile-popover.service";

@@ -67,7 +67,9 @@ export function rawIrcTagsToUserstate(
 
   const displayName = raw["display-name"];
   const login =
-    raw["login"]?.trim() || normalizeChannelId("twitch", fallbackNick) || displayName?.toLowerCase();
+    raw["login"]?.trim() ||
+    normalizeChannelId("twitch", fallbackNick) ||
+    displayName?.toLowerCase();
 
   return {
     "display-name": displayName,

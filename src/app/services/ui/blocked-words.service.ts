@@ -216,8 +216,4 @@ export class BlockedWordsService {
   private generateId(): string {
     return `bw-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
-
-  private escapeRegExp(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
 }
