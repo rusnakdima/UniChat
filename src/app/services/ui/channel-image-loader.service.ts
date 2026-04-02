@@ -77,7 +77,12 @@ export class ChannelImageLoaderService {
         return imageUrl;
       }
     } catch (error) {
-      this.logger.warn("ChannelImageLoaderService", "Failed to load Twitch channel image for", channelName, error);
+      this.logger.warn(
+        "ChannelImageLoaderService",
+        "Failed to load Twitch channel image for",
+        channelName,
+        error
+      );
     }
     return null;
   }
@@ -100,7 +105,12 @@ export class ChannelImageLoaderService {
         return result.profile_pic_url;
       }
     } catch (error) {
-      this.logger.warn("ChannelImageLoaderService", "Failed to load Kick channel image for", channelName, error);
+      this.logger.warn(
+        "ChannelImageLoaderService",
+        "Failed to load Kick channel image for",
+        channelName,
+        error
+      );
     }
     return null;
   }
@@ -127,7 +137,12 @@ export class ChannelImageLoaderService {
           return result.thumbnailUrl;
         }
       } catch (error) {
-        this.logger.warn("ChannelImageLoaderService", "Failed to load YouTube channel image (API key) for", channelName, error);
+        this.logger.warn(
+          "ChannelImageLoaderService",
+          "Failed to load YouTube channel image (API key) for",
+          channelName,
+          error
+        );
       }
     }
 

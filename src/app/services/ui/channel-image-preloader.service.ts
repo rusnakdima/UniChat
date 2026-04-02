@@ -36,7 +36,12 @@ export class ChannelImagePreloaderService {
       return;
     }
 
-    this.logger.info("ChannelImagePreloaderService", "Preloading images for", channels.length, "channels");
+    this.logger.info(
+      "ChannelImagePreloaderService",
+      "Preloading images for",
+      channels.length,
+      "channels"
+    );
 
     // Load in batches to avoid rate limits
     const BATCH_SIZE = 5;

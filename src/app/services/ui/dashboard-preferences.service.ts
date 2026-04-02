@@ -255,11 +255,17 @@ export class DashboardPreferencesService {
 
             if (hasVisibleKick && hiddenPlatforms.includes("kick")) {
               hiddenPlatforms = hiddenPlatforms.filter((p) => p !== "kick");
-              this.logger.info("DashboardPreferencesService", "Migration: Unhid Kick platform (user has visible Kick channels)");
+              this.logger.info(
+                "DashboardPreferencesService",
+                "Migration: Unhid Kick platform (user has visible Kick channels)"
+              );
             }
             if (hasVisibleYoutube && hiddenPlatforms.includes("youtube")) {
               hiddenPlatforms = hiddenPlatforms.filter((p) => p !== "youtube");
-              this.logger.info("DashboardPreferencesService", "Migration: Unhid YouTube platform (user has visible YouTube channels)");
+              this.logger.info(
+                "DashboardPreferencesService",
+                "Migration: Unhid YouTube platform (user has visible YouTube channels)"
+              );
             }
           }
         } catch {
