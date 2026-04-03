@@ -17,7 +17,7 @@ jobs:
             -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
             -H "Content-Type: application/json" \
             --data '{
-              "name": "🚀 UniChat (release ${{ github.event.release.tag_name }})",
+              "name": "🚀 UniChat (Beta release ${{ github.event.release.tag_name }})",
               "auto_archive_duration": 4320,
               "message": {
                 "content": "**🚀 New Release Available!**\n\n📦 **Version:** ${{ github.event.release.tag_name }}\n🔗 **Download:** ${{ github.event.release.html_url }}\n\n---\n\n**🇷🇺 Русский перевод**\n**🚀 Новая версия доступна!**\n\n📦 **Версия:** ${{ github.event.release.tag_name }}\n🔗 **Скачать:** ${{ github.event.release.html_url }}"
