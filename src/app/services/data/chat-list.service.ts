@@ -1,8 +1,11 @@
 /* sys lib */
-import { Injectable, inject, signal } from "@angular/core";
+import { Injectable, inject, signal, Injector } from "@angular/core";
 
 /* models */
 import { ChannelAccountCapabilities, ChatChannel, PlatformType } from "@models/chat.model";
+
+/* services */
+import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.service";
 
 /* helpers */
 import { normalizeYouTubeProviderInput } from "@helpers/chat.helper";
@@ -18,6 +21,11 @@ const storageKey = "unichat-chat-channels";
 export class ChatListService {
   private readonly localStorageService = inject(LocalStorageService);
   private readonly dashboardPreferencesService = inject(DashboardPreferencesService);
+  private readonly injector = inject(Injector);
+
+  private get channelImageLoader(): ChannelImageLoaderService {
+    return this.injector.get(ChannelImageLoaderService);
+  }
 
   private readonly channelsSignal = signal<ChatChannel[]>(this.loadChannels());
 
@@ -221,10 +229,7 @@ export class ChatListService {
     const channel = this.channelsSignal().find((ch) => ch.id === channelId);
     if (!channel) return;
 
-    // Lazy import to avoid circular dependency with ChatStorageService
-    const { ChannelImageLoaderService } = await import("../ui/channel-image-loader.service");
-    const channelImageLoader = inject(ChannelImageLoaderService);
-    const imageUrl = await channelImageLoader.loadChannelImage(
+    const imageUrl = await this.channelImageLoader.loadChannelImage(
       channel.platform,
       channel.channelName,
       channel.channelId
