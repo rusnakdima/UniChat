@@ -14,8 +14,10 @@ app-overlay-management-view {
 }
 
 @import "tailwindcss";
+@import "flowbite/src/themes/default";
+@plugin "flowbite/plugin";
 @source "../node_modules/flowbite";
-@custom-variant dark (&:where(.dark, .dark *));
+@variant dark (&:where(.dark, .dark *));
 
 /* Custom Checkbox & Radio Styling (TaskFlow-inspired) */
 
