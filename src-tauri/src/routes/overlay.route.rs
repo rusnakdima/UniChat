@@ -104,15 +104,16 @@ pub async fn openOverlayWindow(
 
   #[cfg(desktop)]
   {
-    builder = builder.title("UniChat Overlay Preview");
+    builder = builder
+      .title("UniChat Overlay Preview")
+      .inner_size(500.0, 700.0)
+      .resizable(true)
+      .decorations(!transparent_bg)
+      .always_on_top(true)
+      .visible(true);
   }
 
   builder
-    .inner_size(500.0, 700.0)
-    .resizable(true)
-    .decorations(!transparent_bg)
-    .always_on_top(true)
-    .visible(true)
     .build()
     .map_err(|e: tauri::Error| e.to_string())?;
 
