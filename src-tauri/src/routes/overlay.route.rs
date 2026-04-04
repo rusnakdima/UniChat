@@ -84,12 +84,15 @@ pub async fn openOverlayWindow(
 
   // Check if window already exists
   if let Some(existing) = app.get_webview_window(&window_label) {
-    existing.set_focus().map_err(|e| e.to_string())?;
+    #[cfg(desktop)]
+    {
+      let _ = existing.set_focus();
+    }
     return Ok(());
   }
 
   // Create new overlay window
-  let _window = WebviewWindowBuilder::new(
+  let mut builder = WebviewWindowBuilder::new(
     &app,
     &window_label,
     WebviewUrl::External(
@@ -97,15 +100,21 @@ pub async fn openOverlayWindow(
         .parse()
         .map_err(|e| format!("Invalid overlay URL: {}", e))?,
     ),
-  )
-  .title("UniChat Overlay Preview")
-  .inner_size(500.0, 700.0)
-  .resizable(true)
-  .decorations(!transparent_bg)
-  .always_on_top(true)
-  .visible(true)
-  .build()
-  .map_err(|e: tauri::Error| e.to_string())?;
+  );
+
+  #[cfg(desktop)]
+  {
+    builder = builder.title("UniChat Overlay Preview");
+  }
+
+  builder
+    .inner_size(500.0, 700.0)
+    .resizable(true)
+    .decorations(!transparent_bg)
+    .always_on_top(true)
+    .visible(true)
+    .build()
+    .map_err(|e: tauri::Error| e.to_string())?;
 
   Ok(())
 }
