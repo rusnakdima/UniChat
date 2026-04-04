@@ -280,13 +280,13 @@ export class AuthorizationService {
         // Link channel to account if it doesn't have one yet
         // This allows sending to any channel, not just your own
         if (!channel.accountId) {
-          this.logger.debug(
-            "AuthorizationService",
-            "Linking channel to account",
-            channel.channelName,
-            account.username
-          );
-          this.chatListService.updateChannelAccount(channel.id, account.id);
+        this.logger.debug(
+          "AuthorizationService",
+          "Linking channel to account",
+          channel.channelName,
+          account.username
+        );
+          this.chatListService.updateChannelAccount(channel.id, account.id, account.username);
         }
       }
     }
@@ -516,7 +516,11 @@ export class AuthorizationService {
           "Linking existing channel to account",
           matchingChannel.channelName
         );
-        this.chatListService.updateChannelAccount(matchingChannel.id, account.id);
+        this.chatListService.updateChannelAccount(
+          matchingChannel.id,
+          account.id,
+          account.username
+        );
       }
 
       // Ensure channel messages are loaded

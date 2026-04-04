@@ -31,6 +31,21 @@ export class ChatListService {
 
   readonly channels = this.channelsSignal.asReadonly();
 
+  constructor() {
+    // Defer image preloading until after DI finishes constructing the service graph.
+    queueMicrotask(() => this.loadMissingChannelImages());
+  }
+
+  private loadMissingChannelImages(): void {
+    const channels = this.channelsSignal();
+    for (const channel of channels) {
+      if (!channel.channelImageUrl) {
+        // Trigger async image loading - don't await, fire and forget
+        this.loadChannelImage(channel.id);
+      }
+    }
+  }
+
   getChannels(platform?: PlatformType): ChatChannel[] {
     const allChannels = this.channelsSignal();
     return platform ? allChannels.filter((ch) => ch.platform === platform) : allChannels;
@@ -168,45 +183,68 @@ export class ChatListService {
   }
 
   updateChannelName(channelId: string, newName: string): void {
+    let shouldReloadImage = false;
+
     this.channelsSignal.update((channels) => {
-      const next = channels.map((ch) =>
-        ch.id === channelId
-          ? {
-              ...ch,
-              channelName: newName,
-              channelId: this.resolveProviderChannelId(ch.platform, newName),
-              accountCapabilities: ch.accountId
-                ? this.createInitialAccountCapabilities(ch.platform, newName)
-                : ch.accountCapabilities,
-            }
-          : ch
-      );
+      const next = channels.map((ch) => {
+        if (ch.id !== channelId) {
+          return ch;
+        }
+
+        shouldReloadImage = true;
+
+        return {
+          ...ch,
+          channelName: newName,
+          channelId: this.resolveProviderChannelId(ch.platform, newName),
+          channelImageUrl: undefined,
+          accountCapabilities: ch.accountId
+            ? this.createInitialAccountCapabilities(ch.platform, newName)
+            : ch.accountCapabilities,
+        };
+      });
+
       this.saveChannels(next);
       return next;
     });
+
+    if (shouldReloadImage) {
+      void this.loadChannelImage(channelId);
+    }
   }
 
   updateChannelAccount(channelId: string, accountId?: string, accountUsername?: string): void {
+    let shouldReloadImage = false;
+
     this.channelsSignal.update((channels) => {
-      const next = channels.map((channel) =>
-        channel.id === channelId
-          ? {
-              ...channel,
-              accountId,
-              isAuthorized: !!accountId,
-              accountCapabilities: accountId
-                ? this.createInitialAccountCapabilities(
-                    channel.platform,
-                    channel.channelName,
-                    accountUsername
-                  )
-                : undefined,
-            }
-          : channel
-      );
+      const next = channels.map((channel) => {
+        if (channel.id !== channelId) {
+          return channel;
+        }
+
+        shouldReloadImage = !channel.channelImageUrl;
+
+        return {
+          ...channel,
+          accountId,
+          isAuthorized: !!accountId,
+          accountCapabilities: accountId
+            ? this.createInitialAccountCapabilities(
+                channel.platform,
+                channel.channelName,
+                accountUsername
+              )
+            : undefined,
+        };
+      });
+
       this.saveChannels(next);
       return next;
     });
+
+    if (shouldReloadImage) {
+      void this.loadChannelImage(channelId);
+    }
   }
 
   updateChannelCapabilities(
@@ -245,9 +283,13 @@ export class ChatListService {
    */
   private updateChannelImageUrl(channelId: string, imageUrl: string): void {
     this.channelsSignal.update((channels) => {
-      const next = channels.map((ch) =>
-        ch.id === channelId ? { ...ch, channelImageUrl: imageUrl } : ch
-      );
+      const next = channels.map((ch) => {
+        if (ch.id !== channelId || ch.channelImageUrl === imageUrl) {
+          return ch;
+        }
+
+        return { ...ch, channelImageUrl: imageUrl };
+      });
       this.saveChannels(next);
       return next;
     });
