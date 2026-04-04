@@ -218,6 +218,21 @@
                           [title]="presentation.platformLabel(channel.platform)"
                           class="h-5 w-5 shrink-0 rounded-sm object-contain"
                         />
+                        @if (channelAvatars.getChannelImageForChannel(channel); as channelImage) {
+                          <img
+                            [src]="channelImage"
+                            [alt]="channel.channelName"
+                            [title]="channel.channelName"
+                            class="h-5 w-5 shrink-0 rounded-full object-cover"
+                          />
+                        } @else {
+                          <div
+                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold uppercase text-slate-700 dark:bg-white/10 dark:text-slate-200"
+                            [title]="channel.channelName"
+                          >
+                            {{ channelAvatars.getChannelInitial(channel.channelName) }}
+                          </div>
+                        }
                         <span class="truncate text-sm font-medium">{{ channel.channelName }}</span>
                       </div>
                     </label>

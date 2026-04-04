@@ -25,6 +25,7 @@ import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
+import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
 import { findChannelByRef, migrateLegacyChannelRefs, toChannelRef } from "@utils/channel-ref.util";
 
 /* components */
@@ -75,6 +76,7 @@ export class OverlayManagementView {
   private readonly chatList = inject(ChatListService);
   private readonly localStorageService = inject(LocalStorageService);
   readonly presentation = inject(ChatMessagePresentationService);
+  readonly channelAvatars = inject(ChannelAvatarService);
 
   readonly saveSuccess = signal<boolean>(false);
 
@@ -111,6 +113,12 @@ export class OverlayManagementView {
   );
 
   constructor() {
+    effect(() => {
+      for (const channel of this.availableChannels()) {
+        this.channelAvatars.ensureChannelImageForChannel(channel);
+      }
+    });
+
     const w = this.widget;
     if (!w) {
       return;

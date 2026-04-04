@@ -409,14 +409,21 @@
                         [title]="getPlatformLbl(channel.platform)"
                         class="h-5 w-5 shrink-0 object-contain"
                       />
-                      <!-- User Avatar (when authenticated) -->
-                      @if (channel.accountId) {
+                      <!-- Channel Avatar -->
+                      @if (channelAvatars.getChannelImageForChannel(channel); as channelImage) {
                         <img
-                          [src]="getAccountIcon(channel.accountId)"
-                          [alt]="getAccountLabelById(channel.accountId) ?? 'Account'"
-                          [title]="getAccountLabelById(channel.accountId) ?? 'Account'"
+                          [src]="channelImage"
+                          [alt]="channel.channelName"
+                          [title]="channel.channelName"
                           class="h-5 w-5 shrink-0 rounded-full object-cover"
                         />
+                      } @else {
+                        <div
+                          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold uppercase text-slate-700 dark:bg-white/10 dark:text-slate-200"
+                          [title]="channel.channelName"
+                        >
+                          {{ channelAvatars.getChannelInitial(channel.channelName) }}
+                        </div>
                       }
                       <span class="text-sm font-medium text-slate-900 dark:text-white">
                         {{ channel.channelName }}
@@ -436,16 +443,14 @@
                           <option [value]="account.id">{{ account.username }}</option>
                         }
                       </select>
-                      @if (!channel.isAuthorized) {
-                        <button
-                          type="button"
-                          (click)="startEditChannel(channel.id, channel.channelName)"
-                          class="rounded-md bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30"
-                          title="Edit channel name"
-                        >
-                          <mat-icon [fontIcon]="'edit'" class="h-6! w-5! text-xl!" />
-                        </button>
-                      }
+                      <button
+                        type="button"
+                        (click)="startEditChannel(channel.id, channel.channelName)"
+                        class="rounded-md bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30"
+                        title="Edit channel name"
+                      >
+                        <mat-icon [fontIcon]="'edit'" class="h-6! w-5! text-xl!" />
+                      </button>
                       <button
                         type="button"
                         (click)="removeChannel(channel.id)"

@@ -20,6 +20,7 @@ import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
+import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
 import {
   ChatHistoryExportService,
   ExportFormat,
@@ -62,6 +63,7 @@ export class SettingsPageView {
   readonly authorizationService = inject(AuthorizationService);
   readonly chatListService = inject(ChatListService);
   readonly presentation = inject(ChatMessagePresentationService);
+  readonly channelAvatars = inject(ChannelAvatarService);
   private readonly chatHistoryExport = inject(ChatHistoryExportService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly localStorageService = inject(LocalStorageService);
@@ -163,6 +165,12 @@ export class SettingsPageView {
     effect(() => {
       this.youtubeApiKey = this.localStorageService.get(YOUTUBE_DATA_API_KEY_STORAGE_KEY, "");
       this.changeDetectorRef.markForCheck();
+    });
+
+    effect(() => {
+      for (const channel of this.visibleChannels()) {
+        this.channelAvatars.ensureChannelImageForChannel(channel);
+      }
     });
   }
 

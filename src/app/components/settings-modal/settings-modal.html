@@ -354,21 +354,19 @@
                           <option [value]="account.id">{{ account.username }}</option>
                         }
                       </select>
-                      @if (!channel.isAuthorized) {
-                        <button
-                          type="button"
-                          (click)="startEditChannel(channel.id, channel.channelName)"
-                          class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
-                          [class]="
-                            channel.isVisible
-                              ? 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10'
-                          "
-                          title="Edit channel name"
-                        >
-                          <mat-icon [fontIcon]="'edit'" class="h-5! w-5!" />
-                        </button>
-                      }
+                      <button
+                        type="button"
+                        (click)="startEditChannel(channel.id, channel.channelName)"
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                        [class]="
+                          channel.isVisible
+                            ? 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10'
+                        "
+                        title="Edit channel name"
+                      >
+                        <mat-icon [fontIcon]="'edit'" class="h-5! w-5!" />
+                      </button>
                       <button
                         type="button"
                         (click)="toggleChannelVisibility(channel.id)"

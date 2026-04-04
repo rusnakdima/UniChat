@@ -27,11 +27,11 @@
       <p class="mt-4 text-sm tracking-[0.2em] uppercase opacity-50">Waiting for messages</p>
     </div>
   } @else {
-    <div class="flex flex-col items-start justify-start gap-2" [class]="messagesContainerClasses()">
+      <div class="flex flex-col items-start justify-start gap-2" [class]="messagesContainerClasses()">
       @for (message of orderedMessages(); track message.id) {
         <article class="message-item flex items-center gap-2">
-          <!-- Platform Icon (show when multiple channels are selected) -->
-          @if (shouldShowPlatformIcon()) {
+          <!-- Service icon always leads multi-channel overlays -->
+          @if (shouldShowPlatformContextIcon() && shouldShowPlatformIcon(message)) {
             <img
               [src]="presentation.platformIconUrl(message.platform)"
               [alt]="platformLabel(message.platform)"
@@ -40,8 +40,8 @@
             />
           }
 
-          <!-- Channel Profile Image (show when widget follows 2+ channels AND no user avatar) -->
-          @if (hasMultipleChannels() && getChannelImageUrl(message) && !getUserImageUrl(message)) {
+          <!-- Message source channel image stays in the first avatar slot for multi-channel overlays -->
+          @if (shouldShowChannelImage(message)) {
             <img
               [src]="getChannelImageUrl(message)"
               [alt]="channelTitle(message)"
@@ -49,10 +49,17 @@
               class="h-6 w-6 shrink-0 rounded-full object-cover"
               loading="lazy"
             />
+          } @else if (hasMultipleChannels()) {
+            <div
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold uppercase text-white"
+              [title]="channelTitle(message)"
+            >
+              {{ channelInitial(message) }}
+            </div>
           }
 
-          <!-- User Avatar (preferred over channel avatar) -->
-          @if (getUserImageUrl(message)) {
+          <!-- User avatar becomes the second image slot in multi-channel overlays -->
+          @if (shouldShowUserImage(message)) {
             <img
               [src]="getUserImageUrl(message)"
               [alt]="message.author"
@@ -60,13 +67,12 @@
               class="h-6 w-6 shrink-0 rounded-full object-cover"
               loading="lazy"
             />
-          } @else if (!hasMultipleChannels()) {
-            <!-- Show initials only if no user avatar AND not showing channel avatar -->
+          } @else if (shouldShowAuthorInitial(message)) {
             <div
               class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold uppercase"
               [title]="message.author"
             >
-              {{ message.author.charAt(0) }}
+              {{ authorInitial(message) }}
             </div>
           }
 

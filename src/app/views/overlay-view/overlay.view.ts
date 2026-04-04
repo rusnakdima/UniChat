@@ -41,7 +41,6 @@ import {
   buildChannelRef,
   findChannelByRef,
   migrateLegacyChannelRefs,
-  parseChannelRef,
 } from "@utils/channel-ref.util";
 
 /* helpers */
@@ -455,27 +454,32 @@ export class OverlayView implements OnDestroy {
     return (this.currentChannelIds?.length ?? 0) > 1;
   }
 
-  shouldShowPlatformIcon(): boolean {
-    return this.hasMultipleChannels();
+  shouldShowPlatformIcon(message: OverlayChatMessage): boolean {
+    return this.hasMultipleChannels() && !!this.presentation.platformIconUrl(message.platform);
   }
 
-  /**
-   * Check if selected channels are from multiple different services/platforms.
-   * Returns true if channels from different platforms are selected (e.g., Twitch + Kick).
-   */
-  hasMultipleServices(): boolean {
-    if (!this.currentChannelIds || this.currentChannelIds.length <= 1) {
-      return false;
-    }
-    const platforms = new Set<string>();
-    for (const channelId of this.currentChannelIds) {
-      const parsed = parseChannelRef(channelId);
-      platforms.add(parsed?.platform ?? "unknown");
-      if (platforms.size > 1) {
-        return true;
-      }
-    }
-    return false;
+  shouldShowChannelImage(message: OverlayChatMessage): boolean {
+    return this.hasMultipleChannels() && !!this.getChannelImageUrl(message);
+  }
+
+  shouldShowUserImage(message: OverlayChatMessage): boolean {
+    return !!this.getUserImageUrl(message);
+  }
+
+  shouldShowAuthorInitial(message: OverlayChatMessage): boolean {
+    return !this.hasMultipleChannels() && !this.shouldShowUserImage(message);
+  }
+
+  channelInitial(message: OverlayChatMessage): string {
+    return this.channelTitle(message).trim().charAt(0).toUpperCase();
+  }
+
+  authorInitial(message: OverlayChatMessage): string {
+    return message.author.trim().charAt(0).toUpperCase();
+  }
+
+  shouldShowPlatformContextIcon(): boolean {
+    return this.hasMultipleChannels();
   }
 
   /**
