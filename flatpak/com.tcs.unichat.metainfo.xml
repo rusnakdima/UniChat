@@ -28,6 +28,14 @@
   </provides>
 
   <releases>
+    <release version="0.1.2" date="2026-04-04">
+      <description>
+        <p>Release version 0.1.2 with platform-specific fixes:</p>
+        <ul>
+          <li>Fixed Android build error: conditionally applied desktop-only window methods (set_focus, title) with #[cfg(desktop)] to support mobile platforms</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.1" date="2026-04-04">
       <description>
         <p>Release version 0.1.1 with improvements and bug fixes:</p>
