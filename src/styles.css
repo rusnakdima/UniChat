@@ -1,3 +1,9 @@
+@import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
+@import "flowbite/src/themes/default";
+@plugin "flowbite/plugin";
+@source "../node_modules/flowbite";
+
 /* Full height reset for proper flex layout */
 html,
 body {
@@ -12,12 +18,6 @@ app-overlay-management-view {
   display: block;
   min-height: 0;
 }
-
-@import "tailwindcss";
-@import "flowbite/src/themes/default";
-@plugin "flowbite/plugin";
-@source "../node_modules/flowbite";
-@variant dark (&:where(.dark, .dark *));
 
 /* Custom Checkbox & Radio Styling (TaskFlow-inspired) */
 
@@ -199,3 +199,6 @@ mat-icon {
 .rotate-180 {
   transform: rotate(180deg);
 }
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
