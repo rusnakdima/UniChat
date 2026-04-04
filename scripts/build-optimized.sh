@@ -71,9 +71,9 @@ build_optimized() {
 	if check_frontend_changes; then
 		print_status "Building frontend..."
 		if [ "$build_type" = "debug" ]; then
-			npm run build
+			bun run build
 		else
-			npm run build:prod
+			bun run build:prod
 		fi
 		print_success "Frontend built successfully"
 	fi
@@ -83,20 +83,20 @@ build_optimized() {
 	"desktop")
 		if [ "$build_type" = "debug" ]; then
 			if [ ${#tauri_extra[@]} -gt 0 ]; then
-				npm run tauri:build:debug -- "${tauri_extra[@]}"
+				bun run tauri:build:debug -- "${tauri_extra[@]}"
 			else
-				npm run tauri:build:debug
+				bun run tauri:build:debug
 			fi
 		else
 			if [ ${#tauri_extra[@]} -gt 0 ]; then
-				npm run tauri:build -- "${tauri_extra[@]}"
+				bun run tauri:build -- "${tauri_extra[@]}"
 			else
-				npm run tauri:build
+				bun run tauri:build
 			fi
 		fi
 		;;
 	"android")
-		npm run tauri:build:android
+		bun run tauri:build:android
 		;;
 	"ios")
 		print_status "Frontend built for iOS target"

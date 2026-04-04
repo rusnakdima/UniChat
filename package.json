@@ -14,8 +14,8 @@
     "tauri:build:fast": "tauri build --no-bundle",
     "tauri:build:android": "tauri android build",
     "build:frontend:check": "ng build --configuration production --output-hashing none",
-    "build:optimized": "npm run build:prod && npm run tauri:build",
-    "build:android:optimized": "npm run build:prod && npm run tauri:build:android",
+    "build:optimized": "bun run build:prod && bun run tauri:build",
+    "build:android:optimized": "bun run build:prod && bun run tauri:build:android",
     "build:smart": "./scripts/build-optimized.sh build desktop release",
     "build:smart:debug": "./scripts/build-optimized.sh build desktop debug",
     "build:smart:android": "./scripts/build-optimized.sh build android release",
@@ -23,10 +23,10 @@
     "format": "prettier --write \"src/**/*.{ts,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css}\"",
     "format:rust": "cargo fmt --manifest-path src-tauri/Cargo.toml",
-    "format:all": "npm run format && npm run format:rust",
+    "format:all": "bun run format && bun run format:rust",
     "lint:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings",
     "lint:rust:fix": "cargo clippy --manifest-path src-tauri/Cargo.toml --fix --allow-dirty",
-    "lint:all": "npm run format:check && npm run lint:rust"
+    "lint:all": "bun run format:check && bun run lint:rust"
   },
   "private": true,
   "dependencies": {

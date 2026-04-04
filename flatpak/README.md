@@ -7,11 +7,11 @@ Files to build UniChat as a [Flatpak](https://flatpak.org/).
 - `com.tcs.unichat.yml` — Flatpak manifest
 - `com.tcs.unichat.desktop` — desktop entry
 - `com.tcs.unichat.metainfo.xml` — AppStream metadata
-- `build.sh` — helper script (builds Tauri with `npm run tauri:build:fast`, then runs `flatpak-builder`)
+- `build.sh` — helper script (builds Tauri with `bun run tauri:build:fast`, then runs `flatpak-builder`)
 
 ## Prerequisites
 
-Install `flatpak` and `flatpak-builder`, and run from the repo root after `npm ci`.
+Install `flatpak` and `flatpak-builder`, and run from the repo root after `bun install`.
 
 ## Build
 

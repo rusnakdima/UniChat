@@ -29,7 +29,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -50,7 +54,7 @@ jobs:
             rustc
 
       - name: Install Node.js dependencies
-        run: npm ci
+        run: bun install
 
       - name: Add flathub remote
         run: |
@@ -63,12 +67,17 @@ jobs:
           flatpak install --user --noninteractive flathub org.freedesktop.Sdk.Extension.node22//24.08
           flatpak install --user --noninteractive flathub org.freedesktop.Sdk.Extension.rust-stable//24.08
 
-      - name: Build Tauri application (binary only)
-        run: npm run tauri:build:fast
+      - name: Build Tauri application
+        run: |
+          bun run tauri:build:fast
 
       - name: Build Flatpak using manifest
         run: |
           flatpak-builder --disable-cache --force-clean --user --install-deps-from=flathub --repo=repo build flatpak/com.tcs.unichat.yml
+          if [ $? -ne 0 ]; then
+            echo "Flatpak build failed"
+            exit 1
+          fi
 
       - name: Create Flatpak bundle
         run: |

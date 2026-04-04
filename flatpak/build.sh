@@ -40,13 +40,13 @@ flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flath
 flatpak install -y --user flathub org.gnome.Platform//48 org.gnome.Sdk//48 || true
 
 if [ "$BUILD_TAURI" = "build" ]; then
-	if ! command -v npm &>/dev/null; then
-		echo -e "${RED}Error: npm is required to build the Tauri app${NC}"
+	if ! command -v bun &>/dev/null; then
+		echo -e "${RED}Error: bun is required to build the Tauri app${NC}"
 		exit 1
 	fi
 	echo -e "${YELLOW}Step 2: Building Tauri (no bundle)...${NC}"
 	cd ..
-	npm run tauri:build:fast
+	bun run tauri:build:fast
 	cd "$SCRIPT_DIR"
 else
 	echo -e "${YELLOW}Skipping Tauri build; using existing binary under ../src-tauri/target/release${NC}"
