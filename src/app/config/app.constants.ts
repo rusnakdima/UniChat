@@ -5,7 +5,7 @@
 
 export const APP_CONFIG = {
   // Environment
-  production: false,
+  production: true,
 
   // Message limits (global cap across ALL channels, in-memory only)
   MAX_MESSAGES_TOTAL: 1000,
