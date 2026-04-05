@@ -42,8 +42,8 @@ impl OAuthLoopbackService {
     }
 
     let expected_path = callback_path.to_string();
-    std::thread::spawn(move || {
-      if let Ok((mut stream, _)) = listener.accept() {
+    std::thread::spawn(move || match listener.accept() {
+      Ok((mut stream, _)) => {
         let mut buffer = [0_u8; 4096];
         let mut callback_url: Option<String> = None;
         if let Ok(size) = stream.read(&mut buffer) {
@@ -70,14 +70,15 @@ impl OAuthLoopbackService {
           "HTTP/1.1 400 Bad Request"
         };
         let response = format!(
-          "{status_line}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-          body.len()
-        );
+            "{status_line}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+          );
         let _ = stream.write_all(response.as_bytes());
         if let Some(url) = callback_url {
           let _ = sender.send(url);
         }
       }
+      Err(_) => {}
     });
 
     Ok(())
@@ -98,8 +99,9 @@ impl OAuthLoopbackService {
         .ok_or_else(|| "callback listener is not started".to_string())?
     };
 
+    let timeout = Duration::from_secs(timeout_seconds);
     receiver
-      .recv_timeout(Duration::from_secs(timeout_seconds))
+      .recv_timeout(timeout)
       .map_err(|_| "authorization callback timeout".to_string())
   }
 }

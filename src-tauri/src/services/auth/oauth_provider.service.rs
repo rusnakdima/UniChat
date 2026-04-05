@@ -113,33 +113,13 @@ impl OAuthProviderService {
     let session = self.oauth_state_service.consume_session(state)?;
     let config = get_oauth_provider_config(&platform)?;
 
-    println!("[Kick OAuth] Callback params: {:?}", params);
-    println!("[Kick OAuth] Platform: {:?}", platform);
+    let _platform_key = platform.as_key();
 
     let token =
       exchange_code_for_token(&self.http, &platform, code, &session.code_verifier, &config).await?;
 
-    println!(
-      "[Kick OAuth] Token response: access_token={}, refresh_token={}",
-      if token.access_token.is_empty() {
-        "empty"
-      } else {
-        "***"
-      },
-      if token.refresh_token.as_ref().is_none_or(|s| s.is_empty()) {
-        "none"
-      } else {
-        "***"
-      }
-    );
-
     let (username, user_id, avatar_url) =
       fetch_identity(&self.http, &platform, &token, &config).await?;
-
-    println!(
-      "[Kick OAuth] Identity fetched: username={}, user_id={}, avatar_url={:?}",
-      username, user_id, avatar_url
-    );
 
     let expires_at = token
       .expires_in_seconds
@@ -226,14 +206,7 @@ impl OAuthProviderService {
             // Token is truly invalid/revoked (401/403)
             account.auth_status = AuthStatusModel::Revoked;
           }
-          Err(_) => {
-            // API call failed (500, network, etc.) — keep existing status
-            // Don't mark as revoked just because the API is temporarily down
-            println!(
-              "[Auth Validate] {} keeping Authorized status (API unavailable)",
-              platform.as_key()
-            );
-          }
+          Err(_) => {}
         }
       }
 
@@ -275,71 +248,31 @@ impl OAuthProviderService {
       .map_err(|e| format!("Validation request failed: {e}"))?;
 
     let status = response.status();
-    println!(
-      "[Auth Validate] {} token validation status: {}",
-      platform.as_key(),
-      status
-    );
 
     if status.is_success() {
       return Ok(true);
     }
 
-    // 401/403 means token is truly invalid/revoked
     if status == 401 || status == 403 {
-      let body = response.text().await.unwrap_or_default();
-      println!(
-        "[Auth Validate] {} token rejected as unauthorized: {}",
-        platform.as_key(),
-        body
-      );
       return Ok(false);
     }
 
-    // Other errors (500, network, etc.) — don't mark as revoked, API may be down
-    let body = response.text().await.unwrap_or_default();
-    println!(
-      "[Auth Validate] {} validation API error ({}): {} — keeping existing status",
-      platform.as_key(),
-      status,
-      body
-    );
     Err(format!("API error {status}, not marking as revoked"))
   }
 
-  /// Refresh an expired access token using the refresh token
   pub async fn refresh_token(
     &self,
     platform: &PlatformTypeModel,
     account_id: &str,
   ) -> Result<AuthAccountModel, String> {
-    println!(
-      "[OAuth Refresh] Starting refresh for {} account {}",
-      platform.as_key(),
-      account_id
-    );
-
-    // Get the saved token
     let saved_token = self
       .token_vault_service
       .read_token(platform, account_id)?
       .ok_or_else(|| "No saved token found".to_string())?;
 
-    // Get the refresh token
-    let refresh_token = saved_token.refresh_token.ok_or_else(|| {
-      println!(
-        "[OAuth Refresh] {} account {} has no refresh token — must re-authenticate",
-        platform.as_key(),
-        account_id
-      );
-      "No refresh token available. Please re-authenticate.".to_string()
-    })?;
-
-    println!(
-      "[OAuth Refresh] {} has refresh token (length={})",
-      platform.as_key(),
-      refresh_token.len()
-    );
+    let refresh_token = saved_token
+      .refresh_token
+      .ok_or_else(|| "No refresh token available. Please re-authenticate.".to_string())?;
 
     // Get config
     let config = get_oauth_provider_config(platform)?;
@@ -373,13 +306,6 @@ impl OAuthProviderService {
       .lock()
       .map_err(|_| "account store lock poisoned".to_string())?;
     guard.insert(account.id.clone(), account.clone());
-
-    println!(
-      "[OAuth Refresh] {} account {} refreshed successfully, username={}",
-      platform.as_key(),
-      account_id,
-      account.username
-    );
 
     Ok(account)
   }

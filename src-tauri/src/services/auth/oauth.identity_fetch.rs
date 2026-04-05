@@ -18,10 +18,6 @@ pub async fn fetch_identity(
 ) -> Result<(String, String, Option<String>), String> {
   match platform {
     PlatformTypeModel::Kick => {
-      // Use Kick's official API to fetch user identity
-      // Endpoint: GET https://api.kick.com/public/v1/users (without id param = current user)
-      // Required scope: user:read
-      // Response format: { "data": [{ "user_id": 123, "name": "username", "profile_pic": "url" }], "message": "OK" }
       let response = http
         .get("https://api.kick.com/public/v1/users")
         .bearer_auth(&token.access_token)
@@ -30,28 +26,15 @@ pub async fn fetch_identity(
         .map_err(|e| format!("Kick identity request failed: {e}"))?;
 
       let status = response.status();
-
-      // Debug: log the raw response
       let raw_body = response.text().await.unwrap_or_default();
-      println!("[Kick OAuth] Identity response status: {}", status);
-      println!("[Kick OAuth] Identity response body: {}", raw_body);
 
       if !status.is_success() {
-        // If identity fetch fails, return placeholder - frontend will prompt user
-        println!(
-          "[Kick OAuth] Identity fetch failed with status {}, using placeholder",
-          status
-        );
         return Ok(("kick-user".to_string(), "kick-unknown".to_string(), None));
       }
 
       let payload: Value =
         serde_json::from_str(&raw_body).map_err(|e| format!("Kick identity parse failed: {e}"))?;
 
-      println!("[Kick OAuth] Identity parsed JSON: {:?}", payload);
-
-      // Extract username, user ID, and profile picture from response
-      // Response format: { "data": [{ "user_id": 123, "name": "username", "profile_pic": "url" }] }
       let data_array = payload["data"].as_array();
 
       if let Some(users) = data_array {
@@ -76,20 +59,13 @@ pub async fn fetch_identity(
             .or_else(|| first_user["avatar"].as_str())
             .map(|s| s.to_string());
 
-          println!(
-            "[Kick OAuth] Identity fetched: username={}, user_id={}, avatar_url={:?}",
-            username, user_id, avatar_url
-          );
           return Ok((username, user_id, avatar_url));
         }
       }
 
-      // Fallback if structure unexpected
-      println!("[Kick OAuth] Could not parse user data from response");
       Ok(("kick-user".to_string(), "kick-unknown".to_string(), None))
     }
     _ => {
-      // Standard OAuth userinfo endpoint for Twitch and YouTube
       let mut request = http
         .get(&config.userinfo_url)
         .bearer_auth(&token.access_token);

@@ -67,13 +67,20 @@ pub async fn openOverlayWindow(
 
   // In dev mode, load from Angular dev server for live reload support
   // In production, load from overlay HTTP server
+  // Use dev server only in debug builds (when running via `cargo run` or `bun run tauri:dev`)
+  // In release builds, always use the overlay HTTP server on 127.0.0.1
+  #[cfg(debug_assertions)]
   let overlay_url = if let Some(dev_url) = app.config().build.dev_url.as_ref() {
-    // Dev mode: use the same origin as the dev server
-    // e.g., "http://localhost:1450" -> "http://localhost:1450/overlay?widgetId=..."
     let origin = dev_url.to_string().trim_end_matches('/').to_string();
     format!("{}/overlay?widgetId={}", origin, widget_id.trim())
   } else {
-    // Production: load from overlay HTTP server
+    format!(
+      "http://127.0.0.1:{port}/overlay?widgetId={}",
+      widget_id.trim()
+    )
+  };
+  #[cfg(not(debug_assertions))]
+  let overlay_url = {
     format!(
       "http://127.0.0.1:{port}/overlay?widgetId={}",
       widget_id.trim()
@@ -113,9 +120,7 @@ pub async fn openOverlayWindow(
       .visible(true);
   }
 
-  builder
-    .build()
-    .map_err(|e: tauri::Error| e.to_string())?;
+  builder.build().map_err(|e: tauri::Error| e.to_string())?;
 
   Ok(())
 }

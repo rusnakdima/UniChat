@@ -40,19 +40,13 @@ pub fn run() {
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_deep_link::init())
     .setup(|app| {
-      let frontend_dist_dir = resolve_frontend_dist_dir();
+      let frontend_dist_dir = resolve_frontend_dist_dir(app);
 
-      // Initialize overlay server
       let overlay_server = Arc::new(OverlayServerService::new(frontend_dist_dir));
 
-      // Auto-start overlay server on default port (1421)
       let overlay_server_clone = overlay_server.clone();
       tauri::async_runtime::spawn(async move {
-        if let Err(e) = overlay_server_clone.start(1421).await {
-          eprintln!("[Overlay Server] Failed to auto-start on port 1421: {e}");
-        } else {
-          println!("[Overlay Server] Started on port 1421");
-        }
+        let _ = overlay_server_clone.start(1450).await;
       });
 
       app.manage(AppState {
@@ -105,22 +99,51 @@ pub fn run() {
     .expect("error while running tauri application");
 }
 
-fn resolve_frontend_dist_dir() -> std::path::PathBuf {
-  // P0 fallback: allow dev-mode execution even when Tauri resource resolution differs.
-  // When built for release, the overlay server will still serve from this folder.
-  let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-  let candidates = [
-    "dist/unichat/browser",
-    "../dist/unichat/browser",
-    "src-tauri/../dist/unichat/browser",
-  ];
-
-  for rel in candidates {
-    let p = cwd.join(rel);
-    if p.exists() {
-      return p;
+#[allow(unused_variables)]
+fn resolve_frontend_dist_dir(app: &tauri::App) -> std::path::PathBuf {
+  #[cfg(debug_assertions)]
+  {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let candidates = [
+      "dist/unichat/browser",
+      "../dist/unichat/browser",
+      "src-tauri/../dist/unichat/browser",
+    ];
+    for rel in candidates {
+      let p = cwd.join(rel);
+      if p.exists() {
+        return p;
+      }
     }
+    cwd.join("dist/unichat/browser")
   }
 
-  cwd.join("dist/unichat/browser")
+  #[cfg(not(debug_assertions))]
+  {
+    if let Ok(resource_dir) = app.path().resource_dir() {
+      let frontend_dist = resource_dir.join("dist").join("unichat").join("browser");
+      if frontend_dist.exists() && frontend_dist.join("index.html").exists() {
+        return frontend_dist;
+      }
+    }
+
+    if let Ok(exe_path) = std::env::current_exe() {
+      if let Some(exe_dir) = exe_path.parent() {
+        let fallback = exe_dir.join("dist").join("unichat").join("browser");
+        if fallback.exists() && fallback.join("index.html").exists() {
+          return fallback;
+        }
+
+        if let Some(parent) = exe_dir.parent() {
+          let alt_fallback = parent.join("dist").join("unichat").join("browser");
+          if alt_fallback.exists() && alt_fallback.join("index.html").exists() {
+            return alt_fallback;
+          }
+        }
+      }
+    }
+
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    cwd.join("dist").join("unichat").join("browser")
+  }
 }

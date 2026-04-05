@@ -31,12 +31,17 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": {
+      "../dist/unichat/browser": ""
+    }
   },
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["unichat"]
+        "schemes": [
+          "unichat"
+        ]
       }
     }
   }
