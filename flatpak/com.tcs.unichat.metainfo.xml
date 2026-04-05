@@ -28,6 +28,17 @@
   </provides>
 
   <releases>
+    <release version="0.1.6" date="2026-04-05">
+      <description>
+        <p>Release version 0.1.6 with overlay improvements and code cleanup:</p>
+        <ul>
+          <li>Added OverlayEventService for unified event sending to overlay (chat messages, widget config, channel updates, system events)</li>
+          <li>Extended OverlaySourceBridgeService with sendEvent method for custom payloads</li>
+          <li>Removed mockWidgets dependency from DashboardStateService, using inline default widget configuration</li>
+          <li>Removed dashboard mock data file</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.5" date="2026-04-05">
       <description>
         <p>Release version 0.1.5 with Tauri API and build improvements:</p>
