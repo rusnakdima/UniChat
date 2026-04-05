@@ -158,6 +158,20 @@ export class OverlaySourceBridgeService {
   }
 
   /**
+   * Send a custom event to overlay via WebSocket
+   */
+  sendEvent(event: unknown): void {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      try {
+        const json = JSON.stringify(event);
+        this.socket.send(json);
+      } catch {
+        // Silently fail for custom events
+      }
+    }
+  }
+
+  /**
    * Send a message via WebSocket
    */
   private sendWebSocketMessage(message: ChatMessage): void {

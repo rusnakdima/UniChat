@@ -6,8 +6,21 @@ import { ChatStateService } from "@services/data/chat-state.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 
-/* views */
-import { mockWidgets } from "@views/dashboard-view/dashboard.mock";
+/* models */
+import { WidgetConfig } from "@models/chat.model";
+
+const DEFAULT_WIDGETS: WidgetConfig[] = [
+  {
+    id: "widget-main",
+    name: "Main Stage",
+    status: "live",
+    filter: "all",
+    sceneHint: "Studio A browser source",
+    themeHint: "Aurora glass",
+    port: 1450,
+  },
+];
+
 @Injectable({
   providedIn: "root",
 })
@@ -19,7 +32,7 @@ export class DashboardStateService {
   readonly connections = this.connectionStateService.connections;
   readonly messages = this.chatStateService.messages;
   readonly splitFeed = this.chatStateService.splitFeed;
-  readonly widgets = computed(() => mockWidgets);
+  readonly widgets = computed(() => DEFAULT_WIDGETS);
   readonly preferences = this.dashboardPreferencesService.preferences;
 
   readonly visibleSplitPlatforms = computed(() => {
