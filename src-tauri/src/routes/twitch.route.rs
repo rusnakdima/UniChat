@@ -1,17 +1,19 @@
 use crate::helpers::http_client::shared_client;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::platform_type_model::PlatformTypeModel;
+use crate::AppState;
 
 /// Delete a message from Twitch chat
 /// Requires moderator or broadcaster OAuth token
 #[tauri::command]
 pub async fn twitchDeleteMessage(
+  state: tauri::State<'_, AppState>,
   _channel_id: String,
   message_id: String,
   access_token: String,
 ) -> Result<bool, String> {
   let client = shared_client();
-  let config = get_oauth_provider_config(&PlatformTypeModel::Twitch)
+  let config = get_oauth_provider_config(&PlatformTypeModel::Twitch, &state.config)
     .map_err(|e| format!("OAuth config error: {}", e))?;
 
   // Get user ID from token (we need it for the API call)

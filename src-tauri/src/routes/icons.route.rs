@@ -2,6 +2,7 @@ use crate::helpers::auth_twitch_helper::{
   normalize_twitch_cdn_url, twitch_app_access_token, twitch_client_credentials,
 };
 use crate::helpers::http_client::shared_client;
+use crate::AppState;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -152,8 +153,10 @@ fn build_badge_map(payload: HelixBadgeListResponse) -> HashMap<String, TwitchBad
 
 // ---------- Commands ----------
 #[tauri::command]
-pub async fn twitchFetchGlobalIcons() -> Result<IconsFetchResponseModel, String> {
-  let (client_id, client_secret) = twitch_client_credentials()?;
+pub async fn twitchFetchGlobalIcons(
+  state: tauri::State<'_, AppState>,
+) -> Result<IconsFetchResponseModel, String> {
+  let (client_id, client_secret) = twitch_client_credentials(&state.config)?;
   let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
 
   let client = shared_client();
@@ -186,12 +189,15 @@ pub async fn twitchFetchGlobalIcons() -> Result<IconsFetchResponseModel, String>
 }
 
 #[tauri::command]
-pub async fn twitchFetchChannelIcons(roomId: String) -> Result<IconsFetchResponseModel, String> {
+pub async fn twitchFetchChannelIcons(
+  state: tauri::State<'_, AppState>,
+  roomId: String,
+) -> Result<IconsFetchResponseModel, String> {
   if roomId.trim().is_empty() {
     return Err("roomId required".to_string());
   }
 
-  let (client_id, client_secret) = twitch_client_credentials()?;
+  let (client_id, client_secret) = twitch_client_credentials(&state.config)?;
   let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
 
   let client = shared_client();
