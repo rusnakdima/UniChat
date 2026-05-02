@@ -37,7 +37,7 @@ REPO_DIR="./repo"
 
 echo -e "${YELLOW}Step 1: Installing required runtimes...${NC}"
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || true
-flatpak install -y --user flathub org.gnome.Platform//48 org.gnome.Sdk//48 || true
+flatpak install -y --user flathub org.gnome.Platform//49 org.gnome.Sdk//49 || true
 
 if [ "$BUILD_TAURI" = "build" ]; then
 	if ! command -v bun &>/dev/null; then

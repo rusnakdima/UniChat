@@ -25,6 +25,7 @@
 
   <provides>
     <binary>unichat</binary>
+    <mediatype>x-scheme-handler/unichat</mediatype>
   </provides>
 
   <releases>

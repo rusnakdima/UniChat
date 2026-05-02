@@ -10,3 +10,4 @@ Categories=Network;InstantMessaging;
 Keywords=chat;twitch;kick;youtube;stream;
 StartupWMClass=unichat
 StartupNotify=true
+MimeType=x-scheme-handler/unichat;
