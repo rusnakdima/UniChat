@@ -1,3 +1,4 @@
+use crate::helpers::config_helper::AppConfig;
 use crate::helpers::http_client::shared_client;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::platform_type_model::PlatformTypeModel;
@@ -10,8 +11,8 @@ struct TwitchTokenBody {
 
 /// Get Twitch OAuth client credentials from configuration
 /// Returns (client_id, client_secret)
-pub fn twitch_client_credentials() -> Result<(String, Option<String>), String> {
-  let cfg = get_oauth_provider_config(&PlatformTypeModel::Twitch)?;
+pub fn twitch_client_credentials(config: &AppConfig) -> Result<(String, Option<String>), String> {
+  let cfg = get_oauth_provider_config(&PlatformTypeModel::Twitch, config)?;
   Ok((cfg.client_id, cfg.client_secret))
 }
 

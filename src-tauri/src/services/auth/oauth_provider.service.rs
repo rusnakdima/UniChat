@@ -9,6 +9,7 @@ use reqwest::Client;
 use url::Url;
 
 use crate::constants::OAUTH_CALLBACK_TIMEOUT_SECS;
+use crate::helpers::config_helper::SharedConfig;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::auth_account_model::{AuthAccountModel, AuthStatusModel};
 use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
@@ -29,6 +30,7 @@ pub struct OAuthProviderService {
   oauth_loopback_service: OAuthLoopbackService,
   token_vault_service: TokenVaultService,
   account_store: Mutex<HashMap<String, AuthAccountModel>>,
+  config: SharedConfig,
 }
 
 impl Default for OAuthProviderService {
@@ -46,13 +48,32 @@ impl OAuthProviderService {
       oauth_loopback_service: OAuthLoopbackService::new(),
       token_vault_service: TokenVaultService::new(),
       account_store: Mutex::new(HashMap::new()),
+      config: SharedConfig::default(),
     }
+  }
+
+  /// Create a new OAuth provider service with config
+  pub fn new_with_config(config: SharedConfig) -> Self {
+    Self {
+      http: Client::new(),
+      oauth_state_service: OAuthStateService::new(),
+      oauth_loopback_service: OAuthLoopbackService::new(),
+      token_vault_service: TokenVaultService::new(),
+      account_store: Mutex::new(HashMap::new()),
+      config,
+    }
+  }
+
+  /// Set the config (called from lib.rs after AppConfig is created)
+  pub fn set_config(&mut self, config: SharedConfig) {
+    self.config = config;
+    eprintln!("[Auth] Config updated");
   }
 
   /// Start OAuth authentication flow
   /// Returns the authorization URL to redirect the user to
   pub fn start_auth(&self, platform: PlatformTypeModel) -> Result<String, String> {
-    let config = get_oauth_provider_config(&platform)?;
+    let config = get_oauth_provider_config(&platform, &self.config)?;
     let (host, port, path) = parse_loopback_redirect(&config.redirect_uri)?;
     self
       .oauth_loopback_service
@@ -111,9 +132,7 @@ impl OAuthProviderService {
       .get("state")
       .ok_or_else(|| "missing state parameter in callback".to_string())?;
     let session = self.oauth_state_service.consume_session(state)?;
-    let config = get_oauth_provider_config(&platform)?;
-
-    let _platform_key = platform.as_key();
+    let config = get_oauth_provider_config(&platform, &self.config)?;
 
     let token =
       exchange_code_for_token(&self.http, &platform, code, &session.code_verifier, &config).await?;
@@ -172,7 +191,7 @@ impl OAuthProviderService {
     platform: PlatformTypeModel,
   ) -> Result<Vec<AuthAccountModel>, String> {
     let mut accounts = self.get_auth_status(platform.clone())?;
-    let config = get_oauth_provider_config(&platform)?;
+    let config = get_oauth_provider_config(&platform, &self.config)?;
     let now = chrono::Utc::now();
 
     for account in &mut accounts {
@@ -275,7 +294,7 @@ impl OAuthProviderService {
       .ok_or_else(|| "No refresh token available. Please re-authenticate.".to_string())?;
 
     // Get config
-    let config = get_oauth_provider_config(platform)?;
+    let config = get_oauth_provider_config(&platform, &self.config)?;
 
     // Refresh the token
     let new_token = refresh_access_token(&self.http, platform, &refresh_token, &config).await?;
@@ -320,7 +339,7 @@ impl OAuthProviderService {
       .token_vault_service
       .read_token(&platform, &account_id)?;
     if let Some(saved_token) = token {
-      let config = get_oauth_provider_config(&platform)?;
+      let config = get_oauth_provider_config(&platform, &self.config)?;
       if let Some(revoke_url) = config.revoke_url {
         let mut form: Vec<(&str, &str)> = vec![
           ("client_id", &config.client_id),

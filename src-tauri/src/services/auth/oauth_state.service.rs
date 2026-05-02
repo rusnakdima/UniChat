@@ -34,6 +34,11 @@ impl OAuthStateService {
       platform.as_key(),
       random_string(OAUTH_STATE_LENGTH)
     );
+    eprintln!(
+      "[OAuthState] Creating session for platform {} with state prefix: {}-*",
+      platform.as_key(),
+      platform.as_key()
+    );
     let session = OAuthPendingSessionModel {
       state: state.clone(),
       code_verifier: random_string(OAUTH_CODE_VERIFIER_LENGTH),
@@ -44,18 +49,25 @@ impl OAuthStateService {
       .sessions
       .lock()
       .map_err(|_| "oauth session lock poisoned".to_string())?;
+    eprintln!("[OAuthState] Storing session with state: {}", state);
     guard.insert(state, session.clone());
     Ok(session)
   }
 
   pub fn consume_session(&self, state: &str) -> Result<OAuthPendingSessionModel, String> {
+    eprintln!("[OAuthState] Attempting to consume state: {}", state);
     let mut guard = self
       .sessions
       .lock()
       .map_err(|_| "oauth session lock poisoned".to_string())?;
-    guard
-      .remove(state)
-      .ok_or_else(|| "oauth state is missing or expired".to_string())
+    eprintln!("[OAuthState] Current sessions in lock: {}", guard.len());
+    for (stored_state, _) in guard.iter() {
+      eprintln!("[OAuthState]   Available state: {}", stored_state);
+    }
+    guard.remove(state).ok_or_else(|| {
+      eprintln!("[OAuthState] State not found or expired: {}", state);
+      "oauth state is missing or expired".to_string()
+    })
   }
 }
 
