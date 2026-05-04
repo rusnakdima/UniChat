@@ -1,5 +1,6 @@
 /* sys lib */
-import { Injectable, inject } from "@angular/core";
+import { DestroyRef, inject, Injectable } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 /* models */
 import { ChatChannel, PlatformType } from "@models/chat.model";
@@ -24,6 +25,7 @@ export class ChatProviderCoordinatorService {
   private readonly connectionStateService = inject(ConnectionStateService);
   private readonly chatStateManager = inject(ChatStateManagerService);
   private readonly authService = inject(AuthorizationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
     this.twitchService.onStatusChange((channelId, status) => {
@@ -39,9 +41,11 @@ export class ChatProviderCoordinatorService {
     });
 
     // Listen for token refresh events and reconnect affected channels
-    this.authService.tokenRefreshed.subscribe(({ accountId, platform }) => {
-      this.reconnectChannelsForAccount(accountId, platform);
-    });
+    this.authService.tokenRefreshed
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ accountId, platform }) => {
+        this.reconnectChannelsForAccount(accountId, platform);
+      });
   }
 
   connectChannel(channelId: string, platform: PlatformType): void {

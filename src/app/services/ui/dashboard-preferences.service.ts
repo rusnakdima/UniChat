@@ -1,5 +1,5 @@
 /* sys lib */
-import { Injectable, inject, signal } from "@angular/core";
+import { Injectable, inject, signal, OnDestroy } from "@angular/core";
 
 /* models */
 import { DashboardPreferences, DensityMode, FeedMode, PlatformType } from "@models/chat.model";
@@ -22,31 +22,37 @@ const defaultPreferences: DashboardPreferences = {
       youtube: 320,
     },
     orderedChannelIds: {},
+    orientation: "row",
+    splitEnabledChannelIds: {},
   },
 };
 
 @Injectable({
   providedIn: "root",
 })
-export class DashboardPreferencesService {
+export class DashboardPreferencesService implements OnDestroy {
   private readonly localStorage = inject(LocalStorageService);
   private readonly logger = inject(LoggerService);
   private readonly preferencesSignal = signal<DashboardPreferences>(this.readPreferences());
+  private readonly storageHandler = (ev: StorageEvent) => {
+    if (ev.key !== storageKey) {
+      return;
+    }
+    this.preferencesSignal.set(this.readPreferences());
+  };
 
   readonly preferences = this.preferencesSignal.asReadonly();
 
   constructor() {
-    // Keep multiple overlay documents in sync (OBS + app) via `storage` events.
-    if (typeof window === "undefined") {
-      return;
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", this.storageHandler);
     }
+  }
 
-    window.addEventListener("storage", (ev) => {
-      if (ev.key !== storageKey) {
-        return;
-      }
-      this.preferencesSignal.set(this.readPreferences());
-    });
+  ngOnDestroy(): void {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", this.storageHandler);
+    }
   }
 
   setFeedMode(feedMode: FeedMode): void {
@@ -160,6 +166,56 @@ export class DashboardPreferencesService {
         orderedPlatforms: [...orderedPlatforms],
       },
     });
+  }
+
+  setSplitLayoutOrientation(orientation: "row" | "column"): void {
+    const preferences = this.preferencesSignal();
+    this.updatePreferences({
+      ...preferences,
+      splitLayout: {
+        ...preferences.splitLayout,
+        orientation,
+      },
+    });
+  }
+
+  getSplitLayoutOrientation(): "row" | "column" {
+    return this.preferencesSignal().splitLayout?.orientation ?? "row";
+  }
+
+  setSplitEnabledChannelIds(platform: PlatformType, channelIds: string[]): void {
+    const preferences = this.preferencesSignal();
+    this.updatePreferences({
+      ...preferences,
+      splitLayout: {
+        ...preferences.splitLayout,
+        splitEnabledChannelIds: {
+          ...(preferences.splitLayout.splitEnabledChannelIds ?? {}),
+          [platform]: [...channelIds],
+        },
+      },
+    });
+  }
+
+  getSplitEnabledChannelIds(platform: PlatformType): string[] {
+    return this.preferencesSignal().splitLayout?.splitEnabledChannelIds?.[platform] ?? [];
+  }
+
+  addSplitEnabledChannelId(platform: PlatformType, channelRef: string): void {
+    const current = this.getSplitEnabledChannelIds(platform);
+    if (!current.includes(channelRef)) {
+      this.setSplitEnabledChannelIds(platform, [...current, channelRef]);
+    }
+  }
+
+  removeSplitEnabledChannelId(platform: PlatformType, channelRef: string): void {
+    const current = this.getSplitEnabledChannelIds(platform);
+    if (current.includes(channelRef)) {
+      this.setSplitEnabledChannelIds(
+        platform,
+        current.filter((id) => id !== channelRef)
+      );
+    }
   }
 
   setChannelOrderForPlatform(platform: PlatformType, channelIds: string[]): void {
@@ -284,6 +340,8 @@ export class DashboardPreferencesService {
               youtube: parsed.splitLayout.columnWidths?.youtube ?? 320,
             },
             orderedChannelIds: parsed.splitLayout.orderedChannelIds ?? {},
+            orientation: parsed.splitLayout?.orientation ?? "row",
+            splitEnabledChannelIds: parsed.splitLayout?.splitEnabledChannelIds ?? {},
           },
         };
       }

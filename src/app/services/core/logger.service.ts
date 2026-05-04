@@ -8,7 +8,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
  * Logging service with configurable log levels per environment
- * 
+ *
  * Debug mode can be enabled in production by setting:
  *   localStorage.setItem('unichat_debug', 'true')
  * Then reload the app.
@@ -18,7 +18,11 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 })
 export class LoggerService {
   private readonly debugEnabled = this.checkDebugMode();
-  private readonly minLevel: LogLevel = this.debugEnabled ? "debug" : (APP_CONFIG.production ? "warn" : "debug");
+  private readonly minLevel: LogLevel = this.debugEnabled
+    ? "debug"
+    : APP_CONFIG.production
+      ? "warn"
+      : "debug";
 
   private readonly levels: Record<LogLevel, number> = {
     debug: 0,

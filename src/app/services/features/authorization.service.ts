@@ -1,5 +1,5 @@
 /* sys lib */
-import { Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { Subject } from "rxjs";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -41,6 +41,7 @@ export class AuthorizationService {
   private readonly chatListService = inject(ChatListService);
   private readonly feedData = inject(DashboardFeedDataService);
   private readonly logger = inject(LoggerService);
+  private readonly destroyRef = inject(DestroyRef);
   private accountsLoaded = false;
 
   /**
@@ -55,15 +56,19 @@ export class AuthorizationService {
     void this.refreshStatuses();
 
     // Listen for OAuth completion events from deep links
-    void listen<ChatAccount>('oauth-complete', (event) => {
+    void listen<ChatAccount>("oauth-complete", (event) => {
       this.logger.info("AuthorizationService", "Received oauth-complete event", event.payload);
       this.upsertAccount(event.payload);
       this.ensureChannelForAuthorizedAccount(event.payload);
     });
 
-    void listen<string>('oauth-error', (event) => {
+    void listen<string>("oauth-error", (event) => {
       this.logger.error("AuthorizationService", "Received oauth-error event", event.payload);
     });
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoRefresh();
   }
 
   /**
@@ -138,7 +143,7 @@ export class AuthorizationService {
     const result = await invoke<AuthCommandResultPayload>("authStart", { platform });
     if (result.authUrl) {
       // Check if we're using deep links (Flatpak) or localhost
-      const isDeepLink = result.authUrl.includes('unichat://');
+      const isDeepLink = result.authUrl.includes("unichat://");
 
       await openUrl(result.authUrl);
 
@@ -305,12 +310,12 @@ export class AuthorizationService {
         // Link channel to account if it doesn't have one yet
         // This allows sending to any channel, not just your own
         if (!channel.accountId) {
-        this.logger.debug(
-          "AuthorizationService",
-          "Linking channel to account",
-          channel.channelName,
-          account.username
-        );
+          this.logger.debug(
+            "AuthorizationService",
+            "Linking channel to account",
+            channel.channelName,
+            account.username
+          );
           this.chatListService.updateChannelAccount(channel.id, account.id, account.username);
         }
       }
@@ -541,11 +546,7 @@ export class AuthorizationService {
           "Linking existing channel to account",
           matchingChannel.channelName
         );
-        this.chatListService.updateChannelAccount(
-          matchingChannel.id,
-          account.id,
-          account.username
-        );
+        this.chatListService.updateChannelAccount(matchingChannel.id, account.id, account.username);
       }
 
       // Ensure channel messages are loaded

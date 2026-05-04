@@ -1,5 +1,5 @@
 /* sys lib */
-import { Injectable, inject } from "@angular/core";
+import { DestroyRef, Injectable, inject } from "@angular/core";
 
 /* services */
 import { ChatStorageService } from "@services/data/chat-storage.service";
@@ -22,7 +22,14 @@ import { APP_CONFIG } from "@config/app.constants";
 })
 export class MemoryManagementService {
   private readonly chatStorage = inject(ChatStorageService);
+  private readonly destroyRef = inject(DestroyRef);
   private pruneIntervalId: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.stopAutoPrune();
+    });
+  }
 
   /**
    * Start automatic memory management

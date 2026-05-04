@@ -96,7 +96,7 @@ export class TwitchChatService extends BaseChatProviderService {
         skipUpdatingEmotesets: true,
       },
       channels: [normalizedChannel],
-      connection: { reconnect: true, secure: true },
+      connection: { reconnect: false, secure: true },
       identity:
         account?.authStatus === "authorized" && account.accessToken
           ? {
@@ -139,7 +139,13 @@ export class TwitchChatService extends BaseChatProviderService {
     this.connectedListeners.set(normalizedChannel, connectedListener);
 
     const disconnectedListener = (remoteAddress?: string) => {
-      this.logger.warn("TwitchChatService", "Disconnected from Twitch", normalizedChannel, "remote:", remoteAddress);
+      this.logger.warn(
+        "TwitchChatService",
+        "Disconnected from Twitch",
+        normalizedChannel,
+        "remote:",
+        remoteAddress
+      );
       this.emitStatus(normalizedChannel, "disconnected");
       this.connectionStateService.clearRoomState(normalizedChannel);
     };
@@ -182,7 +188,13 @@ export class TwitchChatService extends BaseChatProviderService {
     };
 
     const failureListener = (err: unknown) => {
-      this.logger.error("TwitchChatService", "Connection failure for", normalizedChannel, "error:", err);
+      this.logger.error(
+        "TwitchChatService",
+        "Connection failure for",
+        normalizedChannel,
+        "error:",
+        err
+      );
       this.errorService.reportNetworkTimeout(normalizedChannel, "twitch");
     };
     (client as unknown as TmiClientWithConnectionFailure).on("connectionfailure", failureListener);
@@ -307,12 +319,21 @@ export class TwitchChatService extends BaseChatProviderService {
       return true;
     } catch (error) {
       const message = String(error ?? "");
-      this.logger.error("TwitchChatService", "Send message failed for", normalizedChannel, "error:", error);
+      this.logger.error(
+        "TwitchChatService",
+        "Send message failed for",
+        normalizedChannel,
+        "error:",
+        error
+      );
       if (
         message.toLowerCase().includes("anonymous") ||
         message.toLowerCase().includes("not connected")
       ) {
-        this.logger.warn("TwitchChatService", "Detected anonymous/not-connected state, reconnecting...");
+        this.logger.warn(
+          "TwitchChatService",
+          "Detected anonymous/not-connected state, reconnecting..."
+        );
         this.errorService.reportWebSocketError(normalizedChannel, "twitch", true);
         this.disconnect(normalizedChannel);
         this.connect(normalizedChannel);
@@ -688,20 +709,6 @@ export class TwitchChatService extends BaseChatProviderService {
     }
 
     return merged;
-  }
-
-  private computeDeletePermission(
-    authUsername: string | undefined,
-    channelName: string,
-    badges: string[]
-  ): boolean {
-    if (!authUsername) {
-      return false;
-    }
-
-    const isBroadcaster = authUsername.toLowerCase() === channelName.toLowerCase();
-    const isModerator = badges.includes("broadcaster") || badges.includes("moderator");
-    return isBroadcaster || isModerator;
   }
 
   private resolveAccountForChannel(channelName: string) {

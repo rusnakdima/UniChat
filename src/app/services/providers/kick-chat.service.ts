@@ -113,7 +113,15 @@ export class KickChatService extends BaseChatProviderService {
     });
 
     socket.addEventListener("close", (event) => {
-      this.logger.warn("KickChatService", "WebSocket closed for", channelSlug, "code:", event.code, "reason:", event.reason);
+      this.logger.warn(
+        "KickChatService",
+        "WebSocket closed for",
+        channelSlug,
+        "code:",
+        event.code,
+        "reason:",
+        event.reason
+      );
       this.socketByChannel.delete(channelSlug);
       if (this.connectedChannels.has(channelSlug)) {
         this.scheduleReconnect(channelSlug);
@@ -149,7 +157,13 @@ export class KickChatService extends BaseChatProviderService {
       return channelInfo;
     } catch (error) {
       const message = String(error ?? "");
-      this.logger.error("KickChatService", "fetchChannelInfo failed for", channelSlug, "error:", error);
+      this.logger.error(
+        "KickChatService",
+        "fetchChannelInfo failed for",
+        channelSlug,
+        "error:",
+        error
+      );
       if (message.includes("404") || message.includes("not found")) {
         this.errorService.reportChannelNotFound(channelSlug, "kick");
       } else if (
@@ -385,7 +399,13 @@ export class KickChatService extends BaseChatProviderService {
         this.errorService.reportChannelNotFound(channelSlug, "kick");
         return;
       }
-      this.logger.info("KickChatService", "Got channel info for", channelSlug, "chatroomId:", channelInfo.chatroomId);
+      this.logger.info(
+        "KickChatService",
+        "Got channel info for",
+        channelSlug,
+        "chatroomId:",
+        channelInfo.chatroomId
+      );
       this.channelInfoByChannel.set(channelSlug, channelInfo);
       await this.fetchKickRecentMessagesRest(channelSlug, channelInfo.chatroomId);
       if (!this.connectedChannels.has(channelSlug)) {
@@ -399,7 +419,15 @@ export class KickChatService extends BaseChatProviderService {
       const attempts = this.reconnectAttempts.get(channelSlug) ?? 0;
       this.reconnectAttempts.set(channelSlug, attempts + 1);
 
-      this.logger.error("KickChatService", "Failed to connect to", channelSlug, "attempt:", attempts + 1, "error:", error);
+      this.logger.error(
+        "KickChatService",
+        "Failed to connect to",
+        channelSlug,
+        "attempt:",
+        attempts + 1,
+        "error:",
+        error
+      );
       this.errorService.reportNetworkError(
         channelSlug,
         "Failed to connect to Kick chat. Retrying...",
