@@ -228,4 +228,19 @@ export class ChatMessageCardComponent {
       this.pinnedMessagesService.pinMessage(this.message());
     }
   }
+
+  /** Get platform dot color for mobile indicator */
+  getPlatformDotColor(): string {
+    const platform = this.message().platform;
+    switch (platform) {
+      case "twitch":
+        return "bg-purple-500";
+      case "kick":
+        return "bg-green-500";
+      case "youtube":
+        return "bg-red-500";
+      default:
+        return "bg-slate-400";
+    }
+  }
 }

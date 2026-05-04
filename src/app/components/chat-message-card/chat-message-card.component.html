@@ -1,41 +1,20 @@
 <article
-  class="group flex gap-3 rounded-xl border bg-white p-3 transition hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10"
+  class="group flex gap-2 overflow-hidden rounded-xl border bg-white p-2.5 transition hover:bg-slate-50 sm:gap-3 sm:p-3 dark:bg-white/5 dark:hover:bg-white/10"
   [ngClass]="getMessageClasses()"
   [style]="getMessageStyles()"
   [attr.data-message-type]="getMessageType()"
 >
-  <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+  <div class="flex min-w-0 flex-1 flex-col gap-1.5 overflow-hidden">
     <!-- Header Row: Platform (mixed only), User Info, Time -->
     <div class="flex items-center justify-between gap-2">
       <div class="flex min-w-0 items-center gap-1.5">
-        <!-- Platform/Service Icon (only in mixed feed with channelLabel) -->
+        <!-- Platform Indicator Dot (mobile - compact) -->
         @if (channelLabel()) {
-          <img
-            [src]="presentation.platformIconUrl(message().platform)"
-            [alt]="presentation.platformLabel(message().platform)"
+          <div
+            class="h-2 w-2 shrink-0 rounded-full"
+            [class]="getPlatformDotColor()"
             [title]="presentation.platformLabel(message().platform)"
-            class="h-5 w-5 shrink-0 rounded-sm object-contain"
-            loading="lazy"
-          />
-          <!-- Channel Image (only in mixed feed) -->
-          @if (
-            channelAvatars.getChannelImage(message().platform, message().sourceChannelId);
-            as channelImage
-          ) {
-            <img
-              [src]="channelImage"
-              [alt]="channelLabel()!"
-              [title]="channelLabel()!"
-              class="h-6 w-6 rounded-full object-cover"
-              loading="lazy"
-            />
-          } @else {
-            <div
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
-            >
-              {{ channelAvatars.getChannelInitial(channelLabel()) }}
-            </div>
-          }
+          ></div>
         }
 
         <!-- User Profile Image -->
@@ -49,31 +28,19 @@
             <img
               [src]="getCachedUserImage()!"
               [alt]="message().author"
-              class="h-6 w-6 rounded-full object-cover"
+              class="h-7 w-7 rounded-full object-cover sm:h-6 sm:w-6"
               loading="lazy"
               (error)="onEmoteImageError($event)"
             />
           } @else {
             <div
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
+              class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 uppercase sm:h-6 sm:w-6 dark:bg-slate-700 dark:text-slate-300"
               [class]="presentation.usernameColorClasses(message().author)"
             >
               {{ message().author.charAt(0) }}
             </div>
           }
         </button>
-
-        <!-- Badges (User Roles & Badges) -->
-        @for (badgeIcon of visibleBadgeIcons(); track badgeIcon.id) {
-          <img
-            [src]="badgeIcon.url"
-            [alt]="badgeIcon.label"
-            [title]="badgeIcon.label"
-            class="h-4 w-4 shrink-0 rounded-sm align-middle"
-            loading="lazy"
-            (error)="onBadgeIconError(badgeIcon.url, $event)"
-          />
-        }
 
         <!-- Username -->
         <button
@@ -86,10 +53,10 @@
           {{ message().author }}
         </button>
 
-        <!-- Message Type Badge -->
-        @if (getMessageTypeConfig().badgeLabel; as badgeLabel) {
+        <!-- Message Type Badge (desktop only) -->
+        @if (getMessageTypeConfig().badgeLabel && !channelLabel()) {
           <span
-            class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-400/20 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:from-amber-400/30 dark:to-orange-400/30 dark:text-amber-400"
+            class="hidden text-[10px] sm:inline-flex"
             [matTooltip]="getMessageTypeConfig().tooltip"
             matTooltipShowDelay="150"
             matTooltipPosition="above"
@@ -97,16 +64,16 @@
             @if (getMessageTypeConfig().badgeIcon; as badgeIcon) {
               <mat-icon [fontIcon]="badgeIcon" class="h-3! w-3! text-xs!" />
             }
-            {{ badgeLabel }}
           </span>
         }
       </div>
 
       <!-- Time (right aligned) -->
       <div class="flex shrink-0 items-center gap-2">
-        <!-- Action Buttons (hover only) -->
+        <!-- Action Buttons (hover only on desktop, always visible on mobile) -->
         <div
-          class="flex -translate-x-2 items-center gap-0.5 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
+          class="flex items-center gap-0.5 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100 sm:opacity-0 md:group-hover:opacity-100"
+          [class]="channelLabel() ? 'opacity-100 sm:opacity-0' : ''"
           role="group"
           aria-label="Message actions"
         >
@@ -114,14 +81,14 @@
           <button
             type="button"
             (click)="togglePin(); $event.stopPropagation()"
-            class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-amber-100 hover:text-amber-600 dark:text-slate-400 dark:hover:bg-amber-500/20 dark:hover:text-amber-400"
+            class="inline-flex items-center justify-center rounded p-1.5 text-slate-500 transition hover:bg-amber-100 hover:text-amber-600 dark:text-slate-400 dark:hover:bg-amber-500/20 dark:hover:text-amber-400"
             [title]="isPinned ? 'Unpin message' : 'Pin message'"
             [aria-label]="isPinned ? 'Unpin message' : 'Pin message'"
             [aria-pressed]="isPinned"
           >
             <mat-icon
               [fontIcon]="'push_pin'"
-              class="h-6! w-5! text-xl! leading-none"
+              class="h-5! w-5! text-lg! leading-none"
               [class.opacity-70]="!isPinned"
             />
           </button>
@@ -129,28 +96,28 @@
             <button
               type="button"
               (click)="interactions.onReplyClick(message().id)"
-              class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+              class="inline-flex items-center justify-center rounded p-1.5 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
               title="Reply"
               aria-label="Reply to message"
             >
-              <mat-icon [fontIcon]="'reply'" class="h-6! w-5! text-xl! leading-none" />
+              <mat-icon [fontIcon]="'reply'" class="h-5! w-5! text-lg! leading-none" />
             </button>
           }
           @if (message().actions.delete.status === "available") {
             <button
               type="button"
               (click)="interactions.deleteMessage(message().id)"
-              class="inline-flex items-center justify-center rounded p-1 text-slate-500 transition hover:bg-red-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-500/20 dark:hover:text-red-400"
+              class="inline-flex items-center justify-center rounded p-1.5 text-slate-500 transition hover:bg-red-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-500/20 dark:hover:text-red-400"
               title="Delete message"
               aria-label="Delete message"
             >
-              <mat-icon [fontIcon]="'delete'" class="h-6! w-5! text-xl! leading-none" />
+              <mat-icon [fontIcon]="'delete'" class="h-5! w-5! text-lg! leading-none" />
             </button>
           }
         </div>
         <!-- Time Label -->
         <span
-          class="shrink-0 cursor-help text-[11px] text-slate-500 dark:text-slate-400"
+          class="shrink-0 cursor-help text-[10px] text-slate-500 sm:text-[11px] dark:text-slate-400"
           [matTooltip]="presentation.messageFullTimeLabel(message())"
           matTooltipShowDelay="150"
           matTooltipPosition="above"
@@ -177,7 +144,7 @@
     }
 
     <!-- Message Text -->
-    <p class="text-sm break-words text-slate-700 dark:text-slate-300">
+    <p class="overflow-wrap-anywhere text-sm break-words text-slate-700 dark:text-slate-300">
       @for (segment of richText.buildSegments(message()); track $index) {
         @if (segment.type === "text") {
           <span>{{ segment.value }}</span>

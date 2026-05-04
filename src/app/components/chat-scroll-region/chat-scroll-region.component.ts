@@ -16,7 +16,7 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatIconModule } from "@angular/material/icon";
-import { CdkVirtualScrollViewport, ScrollingModule } from "@angular/cdk/scrolling";
+import { ScrollingModule } from "@angular/cdk/scrolling";
 import { fromEvent } from "rxjs";
 import { throttleTime } from "rxjs/operators";
 
@@ -36,7 +36,6 @@ export class ChatScrollRegionComponent {
   private static readonly detachFromBottomPx = 100;
   private static readonly reattachToBottomPx = 150;
   private static readonly scrollNoiseThresholdPx = 8;
-  private static readonly messageItemHeight = 80;
   private static readonly scrollBehavior: ScrollBehavior = "smooth";
 
   private readonly destroyRef = inject(DestroyRef);
@@ -45,7 +44,7 @@ export class ChatScrollRegionComponent {
   readonly scrollToken = input.required<string>();
   readonly messages = input.required<readonly ChatMessage[]>();
 
-  private readonly viewport = viewChild<CdkVirtualScrollViewport>("viewport");
+  private readonly scrollContainer = viewChild<HTMLElement>("scrollContainer");
 
   private readonly pinnedToBottom = signal(true);
   readonly pendingNewCount = signal(0);
@@ -55,36 +54,59 @@ export class ChatScrollRegionComponent {
   private lastScrollTop = 0;
   private readonly distanceFromBottomValue = signal(0);
 
+  private pendingRenderCallback: (() => void) | null = null;
+  private renderCallbackOwner = 0;
+
+  private scheduleRenderCallback(callback: () => void): void {
+    const owner = ++this.renderCallbackOwner;
+    this.pendingRenderCallback = callback;
+    afterNextRender(() => {
+      if (this.renderCallbackOwner === owner && this.pendingRenderCallback === callback) {
+        this.pendingRenderCallback = null;
+        callback();
+      }
+    });
+    this.destroyRef.onDestroy(() => {
+      if (this.renderCallbackOwner === owner) {
+        this.pendingRenderCallback = null;
+      }
+    });
+  }
+
+  private clearRenderCallback(): void {
+    this.pendingRenderCallback = null;
+    this.renderCallbackOwner++;
+  }
+
   readonly showJumpButton = computed(() => this.distanceFromBottomValue() > 10);
   readonly showUnreadCount = computed(
     () => this.distanceFromBottomValue() > 10 && this.pendingNewCount() > 0
   );
 
-  // Virtual scroll configuration
-  readonly virtualScrollItemSize = ChatScrollRegionComponent.messageItemHeight;
-
   private prevTotalHeight = 0;
   private prevOldestMessageId: string | null = null;
 
-  private getViewportNode(): HTMLElement | null {
-    const viewport = this.viewport();
-    if (!viewport) {
+  private getScrollContainer(): HTMLElement | null {
+    const container = this.scrollContainer();
+    if (!container) {
       return null;
     }
-    return viewport.elementRef.nativeElement ?? null;
+    return container;
   }
 
   constructor() {
-    fromEvent(globalThis, "resize", { passive: true })
-      .pipe(throttleTime(100), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        if (this.pinnedToBottom()) {
-          this.scrollToBottom();
-        }
-      });
+    if (typeof window !== "undefined") {
+      fromEvent(window, "resize", { passive: true })
+        .pipe(throttleTime(100), takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          if (this.pinnedToBottom()) {
+            this.scrollToBottom();
+          }
+        });
+    }
 
     afterNextRender(() => {
-      const node = this.getViewportNode();
+      const node = this.getScrollContainer();
       if (!node) return;
 
       this.prevTotalHeight = node.scrollHeight;
@@ -96,7 +118,8 @@ export class ChatScrollRegionComponent {
     effect(() => {
       this.scrollToken();
       untracked(() => {
-        const node = this.getViewportNode();
+        this.clearRenderCallback();
+        const node = this.getScrollContainer();
         if (!node) return;
 
         this.lastScrollTop = node.scrollTop ?? 0;
@@ -108,7 +131,7 @@ export class ChatScrollRegionComponent {
         if (this.pinnedToBottom()) {
           this.pendingNewCount.set(0);
           runInInjectionContext(this.injector, () => {
-            afterNextRender(() => {
+            this.scheduleRenderCallback(() => {
               queueMicrotask(() => {
                 requestAnimationFrame(() => this.scrollToBottom());
               });
@@ -120,6 +143,10 @@ export class ChatScrollRegionComponent {
 
         this.prevMessageLen = this.messages().length;
       });
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.clearRenderCallback();
     });
 
     effect(() => {
@@ -158,14 +185,12 @@ export class ChatScrollRegionComponent {
           return;
         }
 
-        // Check distance AFTER view updates to account for newly rendered messages
         runInInjectionContext(this.injector, () => {
-          afterNextRender(() => {
+          this.scheduleRenderCallback(() => {
             requestAnimationFrame(() => {
-              const node = this.getViewportNode();
+              const node = this.getScrollContainer();
               if (!node) return;
 
-              // If user is pinned to bottom, ALWAYS auto-scroll on new messages
               const shouldAutoScroll = this.pinnedToBottom();
 
               if (shouldAutoScroll) {
@@ -184,7 +209,7 @@ export class ChatScrollRegionComponent {
   }
 
   onScroll(): void {
-    const node = this.getViewportNode();
+    const node = this.getScrollContainer();
     if (!node) return;
 
     const scrollTop = node.scrollTop;
@@ -220,7 +245,7 @@ export class ChatScrollRegionComponent {
   }
 
   jumpToBottom(): void {
-    const node = this.getViewportNode();
+    const node = this.getScrollContainer();
     if (!node) return;
 
     this.scrollToBottom(true);
@@ -232,18 +257,18 @@ export class ChatScrollRegionComponent {
   }
 
   private scrollToBottom(smooth: boolean = false): void {
-    const viewportEl = this.getViewportNode();
-    if (!viewportEl) return;
+    const scrollEl = this.getScrollContainer();
+    if (!scrollEl) return;
 
     if (smooth) {
-      viewportEl.scrollTo({
-        top: viewportEl.scrollHeight,
+      scrollEl.scrollTo({
+        top: scrollEl.scrollHeight,
         behavior: ChatScrollRegionComponent.scrollBehavior,
       });
     } else {
-      viewportEl.scrollTop = viewportEl.scrollHeight;
+      scrollEl.scrollTop = scrollEl.scrollHeight;
     }
-    this.prevTotalHeight = viewportEl.scrollHeight;
+    this.prevTotalHeight = scrollEl.scrollHeight;
   }
 
   private distanceFromBottom(node: HTMLElement): number {
@@ -266,7 +291,7 @@ export class ChatScrollRegionComponent {
   }
 
   private preserveScrollPositionOnPrepend(): void {
-    const node = this.getViewportNode();
+    const node = this.getScrollContainer();
     if (!node) return;
 
     const newTotalHeight = node.scrollHeight;

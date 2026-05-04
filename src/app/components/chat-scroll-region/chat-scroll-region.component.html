@@ -1,18 +1,16 @@
 <div class="relative flex min-h-full w-full flex-1 flex-col">
-  <cdk-virtual-scroll-viewport
-    #viewport
-    [itemSize]="virtualScrollItemSize"
+  <div
+    #scrollContainer
     class="h-full min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
-    aria-label="Chat messages"
     role="log"
     aria-live="polite"
     aria-relevant="additions"
+    aria-label="Chat messages"
   >
     <ng-content />
-  </cdk-virtual-scroll-viewport>
+  </div>
 
   @if (showJumpButton()) {
-    <!-- Jump to bottom button - Positioned at bottom-right of chat region -->
     <div class="pointer-events-none absolute right-0 bottom-0 z-50 p-4">
       <button
         type="button"
