@@ -10,20 +10,61 @@
   </div>
 } @else {
   <div class="flex w-full flex-col overflow-hidden" style="height: calc(100vh - 62px)">
-    <!-- Single Row Container for resizable blocks -->
+    <!-- Layout Controls Bar -->
+    <div
+      class="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
+    >
+      <div class="flex items-center gap-2">
+        <span
+          class="text-xs font-medium tracking-[0.15em] text-slate-500 uppercase dark:text-slate-400"
+        >
+          Split Layout:
+        </span>
+        <button
+          type="button"
+          (click)="toggleLayoutOrientation()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+          [title]="
+            layoutOrientation() === 'row' ? 'Switch to column layout' : 'Switch to row layout'
+          "
+        >
+          <mat-icon
+            [fontIcon]="layoutOrientation() === 'row' ? 'view_stream' : 'view_column'"
+            class="h-4! w-4! text-base!"
+          />
+          {{ layoutOrientation() === "row" ? "Row" : "Column" }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Single Row/Column Container for resizable blocks -->
     <div
       #gridContainer
       cdkDropList
+      id="platform-drop-list"
       [cdkDropListData]="visiblePlatforms()"
-      cdkDropListOrientation="horizontal"
+      [cdkDropListOrientation]="layoutOrientation() === 'row' ? 'horizontal' : 'vertical'"
       (cdkDropListDropped)="onPlatformDrop($event)"
-      class="relative flex h-full w-full flex-row items-stretch gap-1 overflow-hidden p-1"
+      class="relative flex h-full w-full overflow-hidden p-1"
+      [class]="
+        layoutOrientation() === 'row'
+          ? 'flex-row items-stretch gap-1'
+          : 'flex-col items-stretch gap-1'
+      "
     >
       <!-- Resize tracker line - only show during resize, not drag -->
       @if (isResizing() && !isReorderingChannels()) {
         <div
-          class="pointer-events-none absolute top-0 bottom-0 z-50 w-px bg-emerald-500 shadow-lg"
-          [style.left.px]="resizeTrackerX() - getContainerLeft()"
+          class="pointer-events-none absolute z-50 w-px bg-emerald-500 shadow-lg"
+          [class]="layoutOrientation() === 'row' ? 'inset-y-0 left-0' : 'inset-x-0 top-0 h-px'"
+          [style.left.px]="
+            layoutOrientation() === 'row' ? resizeTrackerX() - getContainerLeft() : 0
+          "
+          [style.top.px]="
+            layoutOrientation() === 'column' ? resizeTrackerY() - getContainerTop() : 0
+          "
+          [style.width]="layoutOrientation() === 'column' ? '100%' : '1px'"
+          [style.height]="layoutOrientation() === 'row' ? '100%' : '1px'"
         ></div>
       }
 
@@ -32,116 +73,136 @@
         <div
           cdkDrag
           [cdkDragData]="platform"
-          [cdkDragDisabled]="isReorderingChannels()"
-          class="relative flex h-full flex-col"
+          [cdkDragLockAxis]="layoutOrientation() === 'row' ? 'x' : 'y'"
+          (cdkDragStarted)="onChannelDragStarted()"
+          (cdkDragEnded)="onChannelDragEnded()"
+          class="relative flex"
+          [style.width]="layoutOrientation() === 'column' ? '100%' : 'auto'"
           [style.flex]="getBlockFlex(platform)"
-          [style.min-width]="'100px'"
           [attr.aria-label]="platform + ' chat panel'"
           role="region"
         >
           <div
-            class="flex h-full w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
+            class="relative flex h-full w-full flex-col overflow-visible rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"
+            [class.w-full]="true"
           >
-            <!-- Resize Handle - Only show if NOT the last item (between blocks) -->
+            <!-- Resize Handle - Only show if NOT the last item -->
             @if (!last) {
               <div
-                class="absolute inset-y-0 right-0 z-20 flex w-1.5 cursor-col-resize items-center justify-center transition-colors hover:bg-slate-300 dark:hover:bg-slate-600"
+                class="absolute z-20 flex items-center justify-center transition-colors hover:bg-slate-300 dark:hover:bg-slate-600"
+                [class]="
+                  layoutOrientation() === 'row'
+                    ? 'inset-y-0 right-0 w-2 cursor-col-resize'
+                    : 'inset-x-0 bottom-0 h-2 cursor-row-resize'
+                "
                 [class.bg-slate-300]="isResizing() && resizeData()?.platform === platform"
-                [class.dark-bg-slate-600]="isResizing() && resizeData()?.platform === platform"
                 (mousedown)="onResizeStart(platform, $event); $event.stopPropagation()"
                 role="separator"
                 [attr.aria-label]="'Resize ' + platform + ' panel'"
-                [attr.aria-orientation]="'vertical'"
+                [attr.aria-orientation]="layoutOrientation() === 'row' ? 'vertical' : 'horizontal'"
                 tabindex="0"
               >
-                <div class="flex h-full w-px flex-col items-center justify-center gap-1">
-                  <div class="h-3 w-px rounded-full bg-slate-400 dark:bg-slate-500"></div>
-                  <div class="h-3 w-px rounded-full bg-slate-400 dark:bg-slate-500"></div>
-                  <div class="h-3 w-px rounded-full bg-slate-400 dark:bg-slate-500"></div>
-                </div>
+                <!-- Simple capsule grip -->
+                <div
+                  class="rounded-full bg-slate-400 dark:bg-slate-500"
+                  [class]="layoutOrientation() === 'row' ? 'h-6 w-0.5' : 'h-0.5 w-6'"
+                ></div>
               </div>
             }
 
             @if (orderedChannels(platform).length > 0) {
+              <!-- Platform Header with Filter Button -->
               <div
-                class="flex shrink-0 cursor-move items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
-                cdkDragHandle
+                class="relative flex shrink-0 cursor-move items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
               >
-                <span class="min-w-0 truncate text-sm font-semibold tracking-tight">
-                  <span class="text-slate-900 dark:text-white">{{
-                    presentation.platformLabel(platform)
-                  }}</span>
-                  <span class="font-medium text-slate-500 dark:text-slate-400">
-                    · {{ orderedChannels(platform).length }}
-                    @if (orderedChannels(platform).length === 1) {
-                      channel
-                    } @else {
-                      channels
-                    }
-                  </span>
-                </span>
-                <mat-icon class="pointer-events-none size-4 shrink-0 text-slate-400"
-                  >drag_indicator</mat-icon
-                >
-              </div>
-
-              <div
-                class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-2 py-2 dark:border-white/10 dark:bg-slate-900/50"
-                role="radiogroup"
-                [attr.aria-label]="'Channels: ' + presentation.platformLabel(platform)"
-              >
-                <span
-                  class="w-full text-[10px] font-medium tracking-[0.15em] text-slate-500 uppercase sm:w-auto dark:text-slate-400"
-                >
-                  Channels:
-                </span>
-                <div
-                  cdkDropList
-                  [cdkDropListData]="orderedChannelIds(platform)"
-                  (cdkDropListDropped)="onChannelDrop(platform, $event)"
-                  cdkDropListOrientation="horizontal"
-                  class="flex flex-wrap items-center gap-2"
-                >
-                  @for (ch of draggableOrderedChannels(platform); track ch.id) {
-                    <button
-                      type="button"
-                      role="radio"
-                      cdkDrag
-                      [cdkDragData]="ch.channelId"
-                      (cdkDragStarted)="onChannelDragStarted()"
-                      (cdkDragEnded)="onChannelDragEnded()"
-                      [attr.aria-checked]="isChannelActive(platform, ch)"
-                      (click)="onChannelClick(platform, ch); loadChannelImage(ch)"
-                      class="inline-flex max-w-full min-w-0 cursor-move items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:max-w-56"
-                      [class]="
-                        isChannelActive(platform, ch)
-                          ? 'border-slate-800 bg-slate-800 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:shadow-none'
-                          : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/12 dark:bg-white/6 dark:text-slate-200 dark:hover:border-white/18 dark:hover:bg-white/10'
-                      "
-                    >
-                      @if (channelAvatars.getChannelImageForChannel(ch); as channelImage) {
-                        <img
-                          [src]="channelImage"
-                          [alt]="ch.channelName"
-                          class="h-4 w-4 rounded-full object-cover"
-                          loading="lazy"
-                        />
+                <div class="flex min-w-0 items-center gap-2">
+                  <span class="min-w-0 truncate text-sm font-semibold tracking-tight">
+                    <span class="text-slate-900 dark:text-white">{{
+                      presentation.platformLabel(platform)
+                    }}</span>
+                    <span class="font-medium text-slate-500 dark:text-slate-400">
+                      · {{ orderedChannels(platform).length }}
+                      @if (orderedChannels(platform).length === 1) {
+                        channel
                       } @else {
-                        <div
-                          class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
-                        >
-                          {{ channelAvatars.getChannelInitial(ch.channelName) }}
-                        </div>
+                        channels
                       }
-                      <span class="min-w-0 truncate text-left">{{ ch.channelName }}</span>
-                    </button>
+                    </span>
+                  </span>
+                </div>
+                <div class="relative flex items-center gap-1">
+                  <!-- Filter Toggle Button -->
+                  <button
+                    type="button"
+                    (click)="toggleChannelFilter(platform); $event.stopPropagation()"
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                    [attr.aria-haspopup]="'true'"
+                    [attr.aria-expanded]="activeFilterPlatform() === platform"
+                  >
+                    <mat-icon fontIcon="filter_list" class="h-4! w-4! text-base!" />
+                    <span>Filter ({{ getFilteredChannelCount(platform) }})</span>
+                    <mat-icon fontIcon="expand_more" class="h-4! w-4! text-base!" />
+                  </button>
+                  <mat-icon class="size-4 shrink-0 cursor-grab text-slate-400" cdkDragHandle
+                    >drag_indicator</mat-icon
+                  >
+                  <!-- Per-Platform Channel Filter Dropdown -->
+                  @if (activeFilterPlatform() === platform) {
+                    <div
+                      class="absolute top-full left-0 z-30 w-64 rounded-b-lg border border-t-0 border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-slate-900"
+                    >
+                      <div
+                        class="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-white/10"
+                      >
+                        <span class="text-xs font-medium text-slate-600 dark:text-slate-400">
+                          Filter {{ presentation.platformLabel(platform) }} channels
+                        </span>
+                        <div class="flex gap-1">
+                          <button
+                            type="button"
+                            (click)="enableAllChannelsForSplitPlatform(platform)"
+                            class="text-[10px] text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                          >
+                            All
+                          </button>
+                          <button
+                            type="button"
+                            (click)="disableAllChannelsForSplitPlatform(platform)"
+                            class="text-[10px] text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                          >
+                            None
+                          </button>
+                        </div>
+                      </div>
+                      <div class="max-h-48 overflow-y-auto p-2">
+                        @for (ch of orderedChannels(platform); track ch.id) {
+                          <label
+                            class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-white/5"
+                          >
+                            <input
+                              type="checkbox"
+                              [checked]="
+                                isChannelEnabledInSplit(platform, splitChannelRefFor(platform, ch))
+                              "
+                              (change)="
+                                toggleSplitChannelFilter(platform, splitChannelRefFor(platform, ch))
+                              "
+                              class="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span class="min-w-0 truncate text-slate-700 dark:text-slate-300">
+                              {{ ch.channelName }}
+                            </span>
+                          </label>
+                        }
+                      </div>
+                    </div>
                   }
                 </div>
               </div>
 
+              <!-- Chat Area -->
               <div class="relative flex flex-1 flex-col overflow-hidden">
                 @if (activeChannelId(platform); as cid) {
-                  <!-- Connection Error Banner -->
                   @if (connectionStateService.hasError(channelRefFor(platform, cid))) {
                     <div class="shrink-0 px-2 pt-2">
                       <app-connection-error-banner [channelId]="cid" [platform]="platform" />
@@ -173,6 +234,7 @@
                 }
               </div>
 
+              <!-- Message Composer -->
               @if (orderedChannels(platform).length > 0 && activeChannel(platform)) {
                 <div
                   class="flex shrink-0 flex-col border-t border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900"

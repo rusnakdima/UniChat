@@ -1,10 +1,10 @@
 <header
-  class="sticky top-0 z-40 flex w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-white/10 dark:bg-slate-900/80"
+  class="sticky top-0 z-40 flex w-full shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-3 py-2 backdrop-blur lg:px-6 lg:py-3 dark:border-white/10 dark:bg-slate-900/80"
   role="banner"
 >
-  <div class="flex items-center gap-4">
-    <h1 class="text-lg font-semibold tracking-tight">UniChat</h1>
-    <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 lg:gap-4">
+    <h1 class="text-base font-semibold tracking-tight lg:text-lg">UniChat</h1>
+    <div class="hidden items-center gap-2 lg:flex" role="group" aria-label="Feed mode indicator">
       <span
         class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
         [attr.aria-label]="'Current feed mode: ' + (feedMode() === 'mixed' ? 'Mixed' : 'Split')"
@@ -14,43 +14,45 @@
     </div>
   </div>
 
-  <div class="flex items-center gap-2" role="navigation" aria-label="Dashboard controls">
-    <!-- Search Button -->
+  <div class="flex items-center gap-1 sm:gap-2" role="navigation" aria-label="Dashboard controls">
+    <!-- Search Button (visible on mobile) -->
     <button
       type="button"
       (click)="toggleSearch.emit()"
-      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+      class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 transition hover:bg-slate-50 hover:text-slate-900 lg:p-1.5 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
       title="Search messages (Ctrl+K)"
       aria-label="Search messages"
       aria-keyshortcuts="Ctrl+K"
     >
       <mat-icon [fontIcon]="'search'" class="h-5! w-5! text-lg!" />
-      <span aria-hidden="true">Search</span>
+      <span class="sr-only lg:inline">Search</span>
     </button>
 
-    <!-- Pinned Messages Button -->
+    <!-- Pinned Messages Button (visible on mobile) -->
     <button
       type="button"
       (click)="togglePinned.emit()"
-      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+      class="relative inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 transition hover:bg-slate-50 hover:text-slate-900 lg:p-1.5 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
       title="Pinned messages"
       aria-label="Pinned messages"
       aria-keyshortcuts="Ctrl+P"
     >
       <mat-icon [fontIcon]="'push_pin'" class="h-5! w-5! text-lg!" />
       @if (pinnedCount() > 0) {
-        <span class="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-          {{ pinnedCount() }}
+        <span
+          class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white lg:h-5 lg:w-5 lg:text-[10px]"
+        >
+          {{ pinnedCount() > 9 ? "9+" : pinnedCount() }}
         </span>
       }
-      <span aria-hidden="true">Pinned</span>
+      <span class="sr-only lg:inline">Pinned</span>
     </button>
 
     @if (feedMode() === "split") {
       <button
         type="button"
         (click)="resetSizes.emit()"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+        class="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 lg:inline-flex dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
         title="Reset all block sizes to default"
         aria-label="Reset split view sizes"
       >
@@ -58,8 +60,10 @@
         <span aria-hidden="true">Reset sizes</span>
       </button>
     }
+
+    <!-- Feed Mode Toggle (desktop only) -->
     <div
-      class="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-white/5"
+      class="hidden items-center gap-1 rounded-xl bg-slate-100 p-1 lg:flex dark:bg-white/5"
       role="group"
       aria-label="Feed mode toggle"
     >
@@ -77,6 +81,33 @@
           [attr.aria-label]="'Switch to ' + (mode === 'mixed' ? 'mixed' : 'split') + ' view'"
         >
           {{ mode === "mixed" ? "Mixed" : "Split" }}
+        </button>
+      }
+    </div>
+
+    <!-- Mobile Feed Mode Toggle (icon only) -->
+    <div
+      class="flex items-center gap-1 rounded-xl bg-slate-100 p-1 lg:hidden dark:bg-white/5"
+      role="group"
+      aria-label="Feed mode toggle"
+    >
+      @for (mode of feedModes; track mode) {
+        <button
+          type="button"
+          (click)="setFeedMode.emit(mode)"
+          class="rounded-lg p-1.5 transition"
+          [class]="
+            feedMode() === mode
+              ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
+              : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white'
+          "
+          [attr.aria-pressed]="feedMode() === mode"
+          [attr.aria-label]="'Switch to ' + (mode === 'mixed' ? 'mixed' : 'split') + ' view'"
+        >
+          <mat-icon
+            [fontIcon]="mode === 'mixed' ? 'view_stream' : 'view_column'"
+            class="h-4! w-4! text-base!"
+          />
         </button>
       }
     </div>

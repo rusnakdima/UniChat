@@ -2,8 +2,10 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
+  HostListener,
   computed,
   effect,
   inject,
@@ -81,6 +83,12 @@ export class DashboardSplitFeedComponent {
   private readonly keyboardShortcutsService = inject(KeyboardShortcutsService);
   private readonly authorizationService = inject(AuthorizationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  @HostListener("document:click")
+  onDocumentClick(): void {
+    this.activeFilterPlatform.set(null);
+  }
 
   // Reference to the history header component
   readonly historyHeader = viewChild<
@@ -97,6 +105,19 @@ export class DashboardSplitFeedComponent {
     leftBlockRect?: DOMRect;
   } | null>(null);
   resizeTrackerX = signal<number>(0);
+
+  readonly layoutOrientation = computed(() =>
+    this.dashboardPreferencesService.getSplitLayoutOrientation()
+  );
+
+  readonly activeFilterPlatform = signal<PlatformType | null>(null);
+  readonly activeFilterChannelIds = computed(() => {
+    const platform = this.activeFilterPlatform();
+    if (!platform) return new Set<string>();
+    const enabled = this.dashboardPreferencesService.getSplitEnabledChannelIds(platform);
+    return new Set(enabled);
+  });
+  resizeTrackerY = signal<number>(0);
 
   // Track block widths in pixels for precise resizing
   blockWidthsPx = signal<Map<string, number>>(new Map());
@@ -238,13 +259,19 @@ export class DashboardSplitFeedComponent {
   }
 
   getBlockFlex(platform: PlatformType): string {
-    // Use flex with explicit flex-basis to control width in flex container
+    // In column mode, allow blocks to grow and fill container height
+    if (this.layoutOrientation() === "column") {
+      return "1 1 auto";
+    }
+
+    // In row mode, use flex-basis for width control
     const stored = this.blockResize.getBlockWidth(platform);
     if (stored) {
-      return `0 0 ${stored}%`;
+      return `1 1 ${stored}%`;
     }
-    // Default: equal distribution
-    return "1 1 0";
+    // Default: equal distribution with growth enabled
+    // Use auto flex-basis for better CDK drag-drop compatibility
+    return "1 1 auto";
   }
 
   /**
@@ -263,13 +290,16 @@ export class DashboardSplitFeedComponent {
     const containerRect =
       gridContainer?.getBoundingClientRect() ?? container.getBoundingClientRect();
 
-    // The resize handle is on the RIGHT edge of the current platform block
-    // So we're resizing between this platform (left) and the next one (right)
+    const orientation = this.layoutOrientation();
+    const isRow = orientation === "row";
+
+    // The resize handle is on the RIGHT edge of the current platform block (for row)
+    // or BOTTOM edge (for column)
     const platforms = this.feedData.visiblePlatformsInOrder();
     const currentIndex = this.getPlatformIndex(platform);
     const nextIndex = currentIndex + 1;
 
-    // Don't allow resize if this is the last platform (no right neighbor)
+    // Don't allow resize if this is the last platform (no right/bottom neighbor)
     if (nextIndex >= platforms.length) {
       return;
     }
@@ -317,24 +347,35 @@ export class DashboardSplitFeedComponent {
     },
     event: MouseEvent
   ): void {
+    const orientation = this.layoutOrientation();
+    const isRow = orientation === "row";
+
     // Update resize tracker position to follow mouse
-    this.resizeTrackerX.set(event.clientX);
+    if (isRow) {
+      this.resizeTrackerX.set(event.clientX);
+    } else {
+      this.resizeTrackerY.set(event.clientY);
+    }
 
     // Get current widths of both blocks
     const currentLeftWidth = this.blockResize.getBlockWidth(data.leftPlatform);
     const currentRightWidth = this.blockResize.getBlockWidth(data.rightPlatform);
 
     // If no stored widths, assume equal distribution
-    const leftWidth = currentLeftWidth ?? 100 / this.feedData.visiblePlatformsInOrder().length;
-    const rightWidth = currentRightWidth ?? 100 / this.feedData.visiblePlatformsInOrder().length;
+    const platforms = this.feedData.visiblePlatformsInOrder();
+    const leftWidth = currentLeftWidth ?? 100 / platforms.length;
+    const rightWidth = currentRightWidth ?? 100 / platforms.length;
     const totalShared = leftWidth + rightWidth;
 
-    // Calculate mouse position as percentage of total container width
-    const mousePercent =
-      ((event.clientX - data.containerRect.left) / data.containerRect.width) * 100;
+    // Calculate mouse position as percentage
+    let mousePercent: number;
+    if (isRow) {
+      mousePercent = ((event.clientX - data.containerRect.left) / data.containerRect.width) * 100;
+    } else {
+      mousePercent = ((event.clientY - data.containerRect.top) / data.containerRect.height) * 100;
+    }
 
     // Calculate the offset (sum of all widths before the left block)
-    const platforms = this.feedData.visiblePlatformsInOrder();
     const leftIndex = this.getPlatformIndex(data.leftPlatform);
     let offset = 0;
     for (let i = 0; i < leftIndex; i++) {
@@ -355,16 +396,74 @@ export class DashboardSplitFeedComponent {
     this.isResizing.set(false);
     this.resizeData.set(null);
     this.resizeTrackerX.set(0);
+    this.resizeTrackerY.set(0);
   }
 
   resetBlockSizes(): void {
     this.blockResize.resetWidths();
   }
 
+  toggleLayoutOrientation(): void {
+    const current = this.layoutOrientation();
+    const next: "row" | "column" = current === "row" ? "column" : "row";
+    this.dashboardPreferencesService.setSplitLayoutOrientation(next);
+  }
+
+  toggleChannelFilter(platform: PlatformType): void {
+    if (this.activeFilterPlatform() === platform) {
+      this.activeFilterPlatform.set(null);
+    } else {
+      this.activeFilterPlatform.set(platform);
+    }
+    this.cdr.markForCheck();
+  }
+
+  closeChannelFilter(): void {
+    this.activeFilterPlatform.set(null);
+  }
+
+  getFilteredChannelCount(platform: PlatformType): string {
+    const total = this.orderedChannels(platform).length;
+    const enabled = this.activeFilterChannelIds().size;
+    return `${enabled}/${total}`;
+  }
+
+  isChannelEnabledInSplit(platform: PlatformType, channelRef: string): boolean {
+    return this.activeFilterChannelIds().has(channelRef);
+  }
+
+  toggleSplitChannelFilter(platform: PlatformType, channelRef: string): void {
+    const isEnabled = this.isChannelEnabledInSplit(platform, channelRef);
+    if (isEnabled) {
+      this.dashboardPreferencesService.removeSplitEnabledChannelId(platform, channelRef);
+    } else {
+      this.dashboardPreferencesService.addSplitEnabledChannelId(platform, channelRef);
+    }
+    this.cdr.markForCheck();
+  }
+
+  enableAllChannelsForSplitPlatform(platform: PlatformType): void {
+    const channels = this.orderedChannels(platform);
+    const allRefs = channels.map((ch) => this.channelRefFor(platform, ch.channelId));
+    this.dashboardPreferencesService.setSplitEnabledChannelIds(platform, allRefs);
+    this.cdr.markForCheck();
+  }
+
+  disableAllChannelsForSplitPlatform(platform: PlatformType): void {
+    this.dashboardPreferencesService.setSplitEnabledChannelIds(platform, []);
+    this.cdr.markForCheck();
+  }
+
   getContainerLeft(): number {
     if (typeof window === "undefined") return 0;
     const element = document.querySelector("[cdkDropList]");
     return element?.getBoundingClientRect().left ?? 0;
+  }
+
+  getContainerTop(): number {
+    if (typeof window === "undefined") return 0;
+    const element = document.querySelector("[cdkDropList]");
+    return element?.getBoundingClientRect().top ?? 0;
   }
 
   orderedChannels(platform: PlatformType): ChatChannel[] {
@@ -483,6 +582,10 @@ export class DashboardSplitFeedComponent {
 
   channelRefFor(platform: PlatformType, channelId: string): string {
     return buildChannelRef(platform, channelId);
+  }
+
+  splitChannelRefFor(platform: PlatformType, channel: ChatChannel): string {
+    return buildChannelRef(platform, channel.channelId);
   }
 
   async onLoadHistory(event: {

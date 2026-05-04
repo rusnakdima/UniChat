@@ -2,6 +2,7 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   effect,
@@ -65,6 +66,7 @@ export class DashboardMixedFeedComponent {
   private readonly localStorageService = inject(LocalStorageService);
   private readonly chatStateService = inject(ChatStateService);
   private readonly authorizationService = inject(AuthorizationService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   // Reference to the history header component
   readonly historyHeader = viewChild<
@@ -83,6 +85,9 @@ export class DashboardMixedFeedComponent {
     // Only keep enabled IDs that still exist in visible channels
     return new Set(saved.filter((id) => visible.has(id)));
   });
+
+  readonly showFilterDropdown = signal(false);
+  readonly activeFilterChannelIds = computed(() => this.enabledChannels());
 
   private readonly mixedChannelOrderStorageKey = "unichat-mixed-channel-order";
   readonly channelOrder = signal<string[]>(this.hydrateMixedOrder());
@@ -201,6 +206,35 @@ export class DashboardMixedFeedComponent {
     return !this.enabledChannels().has(channelRef);
   }
 
+  toggleFilterDropdown(): void {
+    this.showFilterDropdown.update((show) => !show);
+  }
+
+  closeFilterDropdown(): void {
+    this.showFilterDropdown.set(false);
+  }
+
+  isChannelEnabledMixed(channelRef: string): boolean {
+    return this.enabledChannels().has(channelRef);
+  }
+
+  toggleMixedChannelFilter(channelRef: string): void {
+    // CDK can emit a click after drag ends; prevent toggling filter in that case.
+    if (this.isDragging || this.suppressNextClick) {
+      this.suppressNextClick = false;
+      return;
+    }
+    const current = this.enabledChannels();
+    const isEnabled = current.has(channelRef);
+
+    if (isEnabled) {
+      this.dashboardPreferences.removeMixedEnabledChannelId(channelRef);
+    } else {
+      this.dashboardPreferences.addMixedEnabledChannelId(channelRef);
+    }
+    this.cdr.markForCheck();
+  }
+
   enableAllChannels(): void {
     // Enable all visible channels in mixed feed only
     // Add all visible channels to dashboard enabled list
@@ -211,6 +245,7 @@ export class DashboardMixedFeedComponent {
       .map((ch) => this.channelRefFor(ch));
 
     this.dashboardPreferences.setMixedEnabledChannelIds(allChannelRefs);
+    this.cdr.markForCheck();
   }
 
   disableAllChannels(): void {
@@ -218,6 +253,7 @@ export class DashboardMixedFeedComponent {
     // Clear dashboard enabled list
     // Does NOT change channel visibility in settings or overlay configurations
     this.dashboardPreferences.setMixedEnabledChannelIds([]);
+    this.cdr.markForCheck();
   }
 
   channelRefFor(channel: ChatChannel): string {

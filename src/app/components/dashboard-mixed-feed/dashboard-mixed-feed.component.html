@@ -11,81 +11,94 @@
     </div>
   } @else {
     <div class="flex flex-col overflow-hidden" style="height: calc(100vh - 62px)">
+      <!-- Compact Filter Bar with Toggle Button -->
       <div
-        class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
+        class="relative flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-900/50"
       >
-        <span
-          class="text-xs font-medium tracking-[0.15em] text-slate-500 uppercase dark:text-slate-400"
+        <button
+          type="button"
+          (click)="toggleFilterDropdown()"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+          [attr.aria-expanded]="showFilterDropdown()"
+          aria-haspopup="true"
         >
-          Filter:
-        </span>
-        <div
-          cdkDropList
-          [cdkDropListData]="orderedVisibleChannelIds()"
-          (cdkDropListDropped)="onMixedChannelDrop($event)"
-          cdkDropListOrientation="horizontal"
-          class="flex flex-1 flex-wrap items-center gap-2"
-        >
-          @for (channel of orderedVisibleChannels(); track channel.id) {
-            <button
-              type="button"
-              cdkDrag
-              [cdkDragData]="channel.id"
-              (cdkDragStarted)="onMixedChannelDragStarted()"
-              (cdkDragEnded)="onMixedChannelDragEnded()"
-              (click)="toggleChannelFilter(channelRefFor(channel)); loadChannelImage(channel)"
-              class="inline-flex cursor-move items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
-              [class]="
-                isChannelDisabled(channelRefFor(channel))
-                  ? 'border-slate-300/90 bg-slate-100 text-slate-500 line-through opacity-90 dark:border-white/10 dark:bg-black/25 dark:text-slate-500'
-                  : 'border-slate-800 bg-slate-800 text-white shadow-sm dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:shadow-none'
-              "
-            >
-              <img
-                [src]="presentation.platformIconUrl(channel.platform)"
-                [alt]="presentation.platformLabel(channel.platform)"
-                [title]="presentation.platformLabel(channel.platform)"
-                class="h-4 w-4 shrink-0 object-contain"
-                loading="lazy"
-              />
-              @if (channelAvatars.getChannelImageForChannel(channel); as channelImage) {
-                <img
-                  [src]="channelImage"
-                  [alt]="channel.channelName"
-                  class="h-4 w-4 rounded-full object-cover"
-                  loading="lazy"
-                />
-              } @else {
-                <div
-                  class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
+          <mat-icon [fontIcon]="'filter_list'" class="h-4! w-4! text-base!" />
+          <span>
+            Filter
+            @if (enabledChannels().size < visibleChannelCount()) {
+              ({{ enabledChannels().size }}/{{ visibleChannelCount() }})
+            } @else {
+              ({{ visibleChannelCount() }})
+            }
+          </span>
+          <mat-icon
+            [fontIcon]="showFilterDropdown() ? 'expand_less' : 'expand_more'"
+            class="h-4! w-4! text-base!"
+          />
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="disableAllChannels()"
+            class="text-xs text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            (click)="enableAllChannels()"
+            class="text-xs text-slate-700 underline decoration-slate-400 underline-offset-2 hover:text-slate-900 dark:text-slate-300 dark:decoration-slate-500 dark:hover:text-white"
+          >
+            All
+          </button>
+        </div>
+
+        <!-- Filter Dropdown Panel -->
+        @if (showFilterDropdown()) {
+          <div
+            class="absolute top-full left-3 z-30 w-72 rounded-b-lg border border-t-0 border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-slate-900"
+          >
+            <div class="max-h-64 overflow-y-auto p-2">
+              @for (channel of orderedVisibleChannels(); track channel.id) {
+                <label
+                  class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-white/5"
                 >
-                  {{ channelAvatars.getChannelInitial(channel.channelName) }}
-                </div>
+                  <input
+                    type="checkbox"
+                    [checked]="isChannelEnabledMixed(channelRefFor(channel))"
+                    (change)="toggleMixedChannelFilter(channelRefFor(channel))"
+                    class="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <img
+                    [src]="presentation.platformIconUrl(channel.platform)"
+                    [alt]="presentation.platformLabel(channel.platform)"
+                    [title]="presentation.platformLabel(channel.platform)"
+                    class="h-4 w-4 shrink-0 object-contain"
+                    loading="lazy"
+                  />
+                  @if (channelAvatars.getChannelImageForChannel(channel); as channelImage) {
+                    <img
+                      [src]="channelImage"
+                      [alt]="channel.channelName"
+                      class="h-4 w-4 rounded-full object-cover"
+                      loading="lazy"
+                    />
+                  } @else {
+                    <div
+                      class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 uppercase dark:bg-slate-700 dark:text-slate-300"
+                    >
+                      {{ channelAvatars.getChannelInitial(channel.channelName) }}
+                    </div>
+                  }
+                  <span class="min-w-0 truncate text-slate-700 dark:text-slate-300">
+                    {{ channel.channelName }}
+                  </span>
+                </label>
               }
-              {{ channel.channelName }}
-            </button>
-          }
-        </div>
-        <div class="ml-auto flex gap-2">
-          @if (enabledChannels().size > 0) {
-            <button
-              type="button"
-              (click)="disableAllChannels()"
-              class="text-xs text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              Disable all
-            </button>
-          }
-          @if (enabledChannels().size < visibleChannelCount()) {
-            <button
-              type="button"
-              (click)="enableAllChannels()"
-              class="text-xs text-slate-700 underline decoration-slate-400 underline-offset-2 hover:text-slate-900 dark:text-slate-300 dark:decoration-slate-500 dark:hover:text-white"
-            >
-              Enable all
-            </button>
-          }
-        </div>
+            </div>
+          </div>
+        }
       </div>
 
       <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
