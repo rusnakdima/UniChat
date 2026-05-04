@@ -1,17 +1,20 @@
 <div
   class="flex h-screen w-screen flex-row bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
 >
-  <!-- Sidebar (fixed position) -->
-  <app-sidebar />
+  <!-- Desktop Sidebar (hidden on mobile) -->
+  <app-sidebar class="hidden lg:flex" />
 
-  <!-- Main content area with left margin for sidebar - full width/height -->
+  <!-- Main content area -->
   <main
     class="flex h-full min-h-0 w-full flex-col"
-    [style.marginLeft.px]="SIDEBAR_WIDTH"
+    [style.marginLeft]="isDesktop() ? SIDEBAR_WIDTH + 'px' : '0px'"
     role="main"
   >
     <router-outlet />
   </main>
+
+  <!-- Mobile Bottom Navigation (hidden on desktop) -->
+  <app-mobile-nav class="flex lg:hidden" />
 
   <!-- Debug Panel (fixed position, bottom-right) -->
   @if (showDebugPanel()) {

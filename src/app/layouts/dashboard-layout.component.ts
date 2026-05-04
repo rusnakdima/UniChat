@@ -1,10 +1,11 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, computed } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterOutlet } from "@angular/router";
 
 /* components */
 import { AppSidebarComponent } from "@components/app-sidebar/app-sidebar.component";
+import { AppMobileNavComponent } from "@components/app-sidebar/app-mobile-nav.component";
 import { DebugPanelComponent } from "@components/debug-panel/debug-panel.component";
 import { ENVIRONMENT } from "../../environments/environment";
 
@@ -14,11 +15,17 @@ const SIDEBAR_WIDTH = 56;
 @Component({
   selector: "app-dashboard-layout",
   standalone: true,
-  imports: [CommonModule, RouterOutlet, AppSidebarComponent, DebugPanelComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    AppSidebarComponent,
+    AppMobileNavComponent,
+    DebugPanelComponent,
+  ],
   templateUrl: "./dashboard-layout.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardLayoutComponent {
+export class DashboardLayoutComponent implements OnDestroy {
   readonly showSidebar = computed(() => {
     return true;
   });
@@ -34,4 +41,22 @@ export class DashboardLayoutComponent {
   });
 
   readonly SIDEBAR_WIDTH = SIDEBAR_WIDTH;
+
+  readonly isDesktop = signal(window.innerWidth >= 1024);
+
+  private readonly resizeHandler = () => {
+    this.isDesktop.set(window.innerWidth >= 1024);
+  };
+
+  constructor() {
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", this.resizeHandler);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("resize", this.resizeHandler);
+    }
+  }
 }

@@ -118,6 +118,10 @@ export interface SplitLayout {
   columnWidths: Record<PlatformType, number>;
   /** Per-platform order of provider channel ids for split channel switcher */
   orderedChannelIds?: Partial<Record<PlatformType, string[]>>;
+  /** Layout orientation for split feed: row (horizontal) or column (vertical) */
+  orientation?: "row" | "column";
+  /** Per-platform channel ids enabled for split feed; empty = all enabled */
+  splitEnabledChannelIds?: Partial<Record<PlatformType, string[]>>;
 }
 
 export interface DashboardPreferences {
