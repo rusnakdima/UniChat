@@ -37,14 +37,10 @@ pub async fn kickFetchChatroomId(
   channelSlug: String,
   accessToken: Option<String>,
 ) -> Result<KickChannelInfo, String> {
-  eprintln!("[Kick] Fetching channel info for: {}", channelSlug);
   validate_channel_slug(&channelSlug).map_err(|e| format!("Invalid channel slug: {}", e))?;
 
   if let Some(ref token) = accessToken {
     validate_oauth_token(token).map_err(|e| format!("Invalid access token: {}", e))?;
-    eprintln!("[Kick] Using authenticated request");
-  } else {
-    eprintln!("[Kick] Using anonymous request (no token)");
   }
 
   let client = shared_client();
@@ -68,20 +64,16 @@ pub async fn kickFetchChatroomId(
 
   let status = response.status();
 
-  eprintln!("[Kick] API response status: {}", status);
-
   if status == 404 {
     return Err(format!("Channel '{}' not found on Kick", channelSlug));
   } else if status == 429 {
     return Err("Rate limit exceeded. Please try again later.".to_string());
   } else if status == 401 || status == 403 {
-    eprintln!("[Kick] Authentication error: {}", status);
     return Err(format!(
       "Kick API returned {}. Authentication may be required.",
       status
     ));
   } else if !status.is_success() {
-    eprintln!("[Kick] API error: {}", status);
     return Err(format!("Kick API error: {}", status));
   }
 
@@ -89,8 +81,6 @@ pub async fn kickFetchChatroomId(
     .json::<KickChannelResponse>()
     .await
     .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-  eprintln!("[Kick] Response data: {:?}", data);
 
   let chatroom_id = data
     .chatroom
@@ -102,11 +92,6 @@ pub async fn kickFetchChatroomId(
     .user
     .and_then(|u| u.id)
     .ok_or("User ID not found in response".to_string())?;
-
-  eprintln!(
-    "[Kick] Got chatroom_id: {}, broadcaster_user_id: {}",
-    chatroom_id, broadcaster_user_id
-  );
 
   Ok(KickChannelInfo {
     chatroomId: chatroom_id,
@@ -200,15 +185,8 @@ pub async fn kickFetchRecentMessages(
     };
 
     if !response.status().is_success() {
-      eprintln!(
-        "[Kick] Recent messages fallback failed: {} for url: {}",
-        response.status(),
-        url
-      );
       continue;
     }
-
-    eprintln!("[Kick] Recent messages response from: {}", url);
 
     let body = response
       .text()
@@ -216,7 +194,6 @@ pub async fn kickFetchRecentMessages(
       .map_err(|e| format!("Failed to read response: {}", e))?;
 
     if !body.trim().is_empty() {
-      eprintln!("[Kick] Got recent messages, length: {}", body.len());
       return Ok(body);
     }
   }
@@ -255,11 +232,6 @@ pub async fn kickSendChatMessage(
   broadcaster_user_id: i64,
   reply_to_message_id: Option<String>,
 ) -> Result<KickSendMessageResponseData, String> {
-  eprintln!(
-    "[Kick] Sending message to broadcaster: {}, reply_to: {:?}",
-    broadcaster_user_id, reply_to_message_id
-  );
-
   let client = shared_client();
 
   let request_body = KickSendMessageRequest {
@@ -275,34 +247,23 @@ pub async fn kickSendChatMessage(
     .json(&request_body)
     .send()
     .await
-    .map_err(|e| {
-      eprintln!("[Kick] Send message network error: {}", e);
-      format!("Network error: {}", e)
-    })?;
+    .map_err(|e| format!("Network error: {}", e))?;
 
   let status = response.status();
-  eprintln!("[Kick] Send message response status: {}", status);
 
   if status == 429 {
     return Err("Rate limit exceeded. Please wait before sending more messages.".to_string());
-  } else if !status.is_success() {
-    let error_text = response.text().await.unwrap_or_default();
-    eprintln!("[Kick] Send message error: {}", error_text);
-    return Err(format!("Send failed ({}): {}", status, error_text));
   }
 
   if !status.is_success() {
     let error_text = response.text().await.unwrap_or_default();
-    eprintln!("[Kick] Send message error: {}", error_text);
-    return Err(format!("Kick API error {}: {}", status, error_text));
+    return Err(format!("Kick API error ({}): {}", status, error_text));
   }
 
   let data = response
     .json::<KickSendMessageResponse>()
     .await
     .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-  eprintln!("[Kick] Message sent successfully: {:?}", data.data);
 
   Ok(KickSendMessageResponseData {
     is_sent: data.data.is_sent,
@@ -327,7 +288,7 @@ pub async fn kickDeleteChatMessage(
   let client = shared_client();
 
   let response = client
-    .delete(&format!("https://api.kick.com/public/v1/chat/{message_id}"))
+    .delete(format!("https://api.kick.com/public/v1/chat/{message_id}"))
     .bearer_auth(&access_token)
     .send()
     .await

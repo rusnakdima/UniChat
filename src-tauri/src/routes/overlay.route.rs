@@ -1,4 +1,5 @@
 use crate::models::overlay_message_model::OverlayMessageModel;
+use crate::services::overlay_server::overlay_helpers::filter_and_sort_messages;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 
@@ -251,38 +252,11 @@ pub async fn getOverlayMessages(
   channel_ids: Option<Vec<String>>,
 ) -> Result<Vec<OverlayMessageModel>, String> {
   let messages = OVERLAY_MESSAGES.read().await;
-  let widget_messages = messages.get(&widget_id);
-
-  if widget_messages.is_none() {
+  let Some(widget_messages) = messages.get(&widget_id) else {
     return Ok(Vec::new());
-  }
+  };
 
-  let mut result: Vec<OverlayMessageModel> = widget_messages
-    .ok_or_else(|| "Widget messages not found".to_string())?
-    .clone();
-
-  // Apply channel filter if specified
-  if let Some(ids) = channel_ids {
-    if !ids.is_empty() {
-      result.retain(|msg| {
-        let channel_ref = format!("{}:{}", msg.platform, msg.source_channel_id);
-        ids.contains(&channel_ref)
-      });
-    }
-  }
-
-  // Sort by timestamp (newest first)
-  result.sort_by(|a, b| {
-    let a_time = a.timestamp.parse::<i64>().unwrap_or(0);
-    let b_time = b.timestamp.parse::<i64>().unwrap_or(0);
-    b_time.cmp(&a_time)
-  });
-
-  // Apply limit
-  let limit_value = limit.unwrap_or(50) as usize;
-  if result.len() > limit_value {
-    result.truncate(limit_value);
-  }
+  let result = filter_and_sort_messages(widget_messages, channel_ids.as_ref(), limit);
 
   Ok(result)
 }

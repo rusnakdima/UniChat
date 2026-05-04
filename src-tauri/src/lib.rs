@@ -9,7 +9,6 @@ use std::sync::Arc;
 use tauri::Manager;
 
 use crate::helpers::config_helper::{AppConfig, SharedConfig};
-use crate::models::platform_type_model::PlatformKey;
 use crate::routes::auth_provider_route::{
   authAwaitCallback, authComplete, authDisconnect, authRefresh, authStart, authStatus, authValidate,
 };
@@ -44,6 +43,7 @@ pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_deep_link::init())
+    .plugin(tauri_plugin_mcp_bridge::init())
     .setup(|app| {
       let config = Arc::new(AppConfig::new());
 
@@ -69,24 +69,13 @@ pub fn run() {
       let app_handle = app.handle().clone();
       app.deep_link().on_open_url(move |event| {
         let urls = event.urls();
-        eprintln!("[DeepLink] Event received with {} URLs", urls.len());
         for url in urls {
-          eprintln!(
-            "[DeepLink] Processing URL: {} (scheme: {}, path: {})",
-            url,
-            url.scheme(),
-            url.path()
-          );
           if url.scheme() == "unichat" && url.path().starts_with("/oauth/callback") {
-            eprintln!("[DeepLink] OAuth callback detected: {}", url);
-            // Process the OAuth callback asynchronously
             let url_string = url.to_string();
             let oauth_service = oauth_service_clone.clone();
             let app_handle = app_handle.clone();
 
             tauri::async_runtime::spawn(async move {
-              // Try to complete auth for all platforms since we don't know which one it is
-              // The state validation will tell us which platform this callback is for
               let platforms = vec![
                 crate::models::platform_type_model::PlatformTypeModel::Twitch,
                 crate::models::platform_type_model::PlatformTypeModel::Kick,
@@ -94,39 +83,18 @@ pub fn run() {
               ];
 
               for platform in platforms {
-                eprintln!("[DeepLink] Trying platform: {}", platform.as_key());
-                match oauth_service
+                if let Ok(account) = oauth_service
                   .complete_auth(platform.clone(), url_string.clone())
                   .await
                 {
-                  Ok(account) => {
-                    eprintln!(
-                      "[DeepLink] OAuth completed for {}: {}",
-                      platform.as_key(),
-                      account.username
-                    );
-                    // Emit event to frontend that auth is complete
-                    let _ = app_handle.emit("oauth-complete", &account);
-                    return; // Success, stop trying other platforms
-                  }
-                  Err(e) => {
-                    eprintln!("[DeepLink] OAuth failed for {}: {}", platform.as_key(), e);
-                    // Continue trying other platforms
-                  }
+                  let _ = app_handle.emit("oauth-complete", &account);
+                  return;
                 }
               }
 
-              // If we get here, none of the platforms worked
               let error_msg = "OAuth callback failed for all platforms";
-              eprintln!("[DeepLink] {}", error_msg);
               let _ = app_handle.emit("oauth-error", error_msg);
             });
-          } else {
-            eprintln!(
-              "[DeepLink] URL not handled: scheme={}, path={}",
-              url.scheme(),
-              url.path()
-            );
           }
         }
       });
