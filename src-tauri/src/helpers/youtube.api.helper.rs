@@ -324,6 +324,7 @@ pub async fn youtube_fetch_live_chat_messages_by_api_key(
 }
 
 /// Fetch live chat ID using OAuth access token
+#[allow(dead_code)]
 pub async fn youtube_fetch_live_chat_id_with_oauth(
   video_id: &str,
   access_token: &str,
@@ -370,6 +371,7 @@ pub async fn youtube_fetch_live_chat_id_with_oauth(
 }
 
 /// Send a chat message using OAuth access token
+#[allow(dead_code)]
 pub async fn youtube_send_message_with_oauth(
   live_chat_id: &str,
   message_text: &str,
@@ -416,6 +418,7 @@ pub async fn youtube_send_message_with_oauth(
 }
 
 /// Delete a chat message using OAuth access token
+#[allow(dead_code)]
 pub async fn youtube_delete_message_with_oauth(
   message_id: &str,
   access_token: &str,
@@ -447,6 +450,7 @@ pub async fn youtube_delete_message_with_oauth(
 }
 
 /// Fetch live video ID using OAuth access token
+#[allow(dead_code)]
 pub async fn youtube_fetch_live_video_id_with_oauth(
   channel_name: &str,
   access_token: &str,
@@ -506,6 +510,7 @@ pub async fn youtube_fetch_live_video_id_with_oauth(
 }
 
 /// Fetch channel ID by channel name using OAuth
+#[allow(dead_code)]
 async fn fetch_channel_id_by_name_oauth(
   client: &reqwest::Client,
   channel_name: &str,
@@ -624,6 +629,7 @@ pub async fn youtube_fetch_channel_info_by_api_key(
 }
 
 /// Fetch channel info including profile image URL using OAuth
+#[allow(dead_code)]
 pub async fn youtube_fetch_channel_info_with_oauth(
   channel_id_or_name: &str,
   access_token: &str,

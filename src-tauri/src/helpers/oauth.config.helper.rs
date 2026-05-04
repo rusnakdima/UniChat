@@ -17,27 +17,15 @@ pub fn get_oauth_provider_config(
   platform: &PlatformTypeModel,
   config: &AppConfig,
 ) -> Result<OAuthProviderConfig, String> {
-  eprintln!("[OAuth] Getting config for {:?}", platform);
   match platform {
     PlatformTypeModel::Twitch => {
-      eprintln!("[OAuth] Loading Twitch config...");
       let client_id = config
         .twitch_client_id
         .clone()
         .ok_or_else(|| {
-          eprintln!("[OAuth] Twitch OAuth not configured: TWITCH_CLIENT_ID not set");
           "Twitch OAuth not configured. Please set TWITCH_CLIENT_ID in your .env file or environment variables.".to_string()
         })?;
-      eprintln!(
-        "[OAuth] Twitch client_id loaded (length: {})",
-        client_id.len()
-      );
       let client_secret = config.twitch_client_secret.clone();
-      if client_secret.is_some() {
-        eprintln!("[OAuth] Twitch client_secret loaded");
-      } else {
-        eprintln!("[OAuth] Twitch client_secret not set (optional)");
-      }
 
       Ok(OAuthProviderConfig {
         client_id,
@@ -55,22 +43,13 @@ pub fn get_oauth_provider_config(
       })
     }
     PlatformTypeModel::Kick => {
-      eprintln!("[OAuth] Loading Kick config...");
       let client_id = config
         .kick_client_id
         .clone()
         .ok_or_else(|| {
-          eprintln!("[OAuth] Kick OAuth not configured: KICK_CLIENT_ID not set");
           "Kick OAuth not configured. Please set KICK_CLIENT_ID in your .env file or environment variables.".to_string()
         })?;
-      eprintln!(
-        "[OAuth] Kick client_id loaded (length: {})",
-        client_id.len()
-      );
       let client_secret = config.kick_client_secret.clone();
-      if client_secret.is_some() {
-        eprintln!("[OAuth] Kick client_secret loaded");
-      }
 
       Ok(OAuthProviderConfig {
         client_id,
@@ -93,22 +72,13 @@ pub fn get_oauth_provider_config(
       })
     }
     PlatformTypeModel::Youtube => {
-      eprintln!("[OAuth] Loading YouTube config...");
       let client_id = config
         .youtube_client_id
         .clone()
         .ok_or_else(|| {
-          eprintln!("[OAuth] YouTube OAuth not configured: YOUTUBE_CLIENT_ID not set");
           "YouTube OAuth not configured. Please set YOUTUBE_CLIENT_ID in your .env file or environment variables.".to_string()
         })?;
-      eprintln!(
-        "[OAuth] YouTube client_id loaded (length: {})",
-        client_id.len()
-      );
       let client_secret = config.youtube_client_secret.clone();
-      if client_secret.is_some() {
-        eprintln!("[OAuth] YouTube client_secret loaded");
-      }
 
       Ok(OAuthProviderConfig {
         client_id,

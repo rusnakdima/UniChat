@@ -35,26 +35,15 @@ impl Default for AppConfig {
 
 impl AppConfig {
   pub fn new() -> Self {
-    eprintln!("[Config] Loading application configuration...");
-
-    // Load environment variables from all sources
     let env_vars = Self::load_env_vars();
 
-    let config = AppConfig {
-      // App metadata
+    AppConfig {
       name: "UniChat".to_string(),
       version: env!("CARGO_PKG_VERSION").to_string(),
-
-      // OAuth settings
       oauth_redirect_uri: env_vars
         .get("UNICHAT_OAUTH_REDIRECT_URI")
         .cloned()
-        .unwrap_or_else(|| {
-          eprintln!("[Config] UNICHAT_OAUTH_REDIRECT_URI not set, using default");
-          "http://localhost:3456/callback".to_string()
-        }),
-
-      // Platform credentials
+        .unwrap_or_else(|| "http://localhost:3456/callback".to_string()),
       twitch_client_id: env_vars.get("TWITCH_CLIENT_ID").cloned(),
       twitch_client_secret: env_vars.get("TWITCH_CLIENT_SECRET").cloned(),
       kick_client_id: env_vars.get("KICK_CLIENT_ID").cloned(),
@@ -62,56 +51,11 @@ impl AppConfig {
       youtube_client_id: env_vars.get("YOUTUBE_CLIENT_ID").cloned(),
       youtube_client_secret: env_vars.get("YOUTUBE_CLIENT_SECRET").cloned(),
       youtube_data_api_key: env_vars.get("YOUTUBE_DATA_API_KEY").cloned(),
-
-      // Feature flags
       enable_debug_logging: env_vars
         .get("UNICHAT_DEBUG")
         .map(|s| s.to_lowercase() == "true")
         .unwrap_or(false),
-    };
-
-    config.log_status();
-    config
-  }
-
-  /// Log which platforms are configured
-  fn log_status(&self) {
-    eprintln!("[Config] === Configuration Status ===");
-    eprintln!("[Config] App: {} v{}", self.name, self.version);
-    eprintln!(
-      "[Config] Twitch OAuth: {}",
-      if self.twitch_client_id.is_some() {
-        "configured"
-      } else {
-        "NOT configured (set TWITCH_CLIENT_ID)"
-      }
-    );
-    eprintln!(
-      "[Config] Kick OAuth: {}",
-      if self.kick_client_id.is_some() {
-        "configured"
-      } else {
-        "NOT configured (set KICK_CLIENT_ID)"
-      }
-    );
-    eprintln!(
-      "[Config] YouTube OAuth: {}",
-      if self.youtube_client_id.is_some() {
-        "configured"
-      } else {
-        "NOT configured (set YOUTUBE_CLIENT_ID)"
-      }
-    );
-    eprintln!(
-      "[Config] YouTube Data API: {}",
-      if self.youtube_data_api_key.is_some() {
-        "configured"
-      } else {
-        "NOT configured (set YOUTUBE_DATA_API_KEY)"
-      }
-    );
-    eprintln!("[Config] Debug logging: {}", self.enable_debug_logging);
-    eprintln!("[Config] ================================");
+    }
   }
 
   /// Load environment variables from multiple sources
@@ -148,11 +92,8 @@ impl AppConfig {
   fn load_embedded_env() -> HashMap<String, String> {
     let mut result = HashMap::new();
 
-    // Try to include .env from the source directory (compile time)
-    // This makes the .env file part of the binary
     let embedded_content = include_str!("../../.env");
     if !embedded_content.trim().is_empty() {
-      eprintln!("[Config] Loaded embedded .env (compile-time)");
       result = Self::parse_dotenv(embedded_content);
     }
 
@@ -166,13 +107,11 @@ impl AppConfig {
 
     for path in paths {
       if let Ok(content) = std::fs::read_to_string(&path) {
-        eprintln!("[Config] Loaded .env from {:?}", path);
         let parsed = Self::parse_dotenv(&content);
-        // Only insert keys that don't already exist (first found wins)
         for (key, value) in parsed {
           result.entry(key).or_insert(value);
         }
-        break; // Use first found file
+        break;
       }
     }
 
