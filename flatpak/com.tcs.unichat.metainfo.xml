@@ -29,6 +29,15 @@
   </provides>
 
   <releases>
+    <release version="0.3.4" date="2026-05-19">
+      <description>
+        <p>Release version 0.3.4 with build configuration improvements:</p>
+        <ul>
+          <li>Set Angular output path to dist/unichat</li>
+          <li>Disabled Tauri CSP for better integration</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.3.3" date="2026-05-16">
       <description>
         <p>Release version 0.3.3 with Android build improvements:</p>
