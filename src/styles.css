@@ -316,6 +316,11 @@ body {
 
 /* ===== Glass Effect ===== */
 .glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.dark .glass {
   background: rgba(24, 24, 27, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -326,8 +331,11 @@ body {
   width: 6px;
 }
 .chat-container::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: #d4d4d8;
   border-radius: 10px;
+}
+.dark .chat-container::-webkit-scrollbar-thumb {
+  background: #3f3f46;
 }
 
 /* ===== Platform Border Accents ===== */
