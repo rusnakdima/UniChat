@@ -1,10 +1,7 @@
-/* sys lib */
 import { computed, inject, Injectable, signal } from "@angular/core";
 
-/* models */
 import { ChatMessage, PlatformType, ChatHistoryLoadState } from "@models/chat.model";
 
-/* services */
 import { BlockedWordsService } from "@services/ui/blocked-words.service";
 import { ChatPersistenceService } from "@services/data/chat-persistence.service";
 import { ChatPruningService } from "@services/data/chat-pruning.service";
@@ -12,44 +9,15 @@ import { HighlightNotificationService } from "@services/ui/highlight-notificatio
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
 
-/* helpers */
+import { ChatBatchingService } from "@services/data/chat-batching.service";
+import { ChatCacheService } from "@services/data/chat-cache.service";
+import { ChatMemoryService } from "@services/data/chat-memory.service";
+
 import { groupByPlatform } from "@helpers/chat.helper";
 
-/* config */
 import { APP_CONFIG } from "@config/app.constants";
 import { buildChannelRef, parseChannelRef } from "@utils/channel-ref.util";
 
-/**
- * Chat Storage Service - PRIMARY SOURCE OF TRUTH
- *
- * Responsibility: Owns all chat message data and persistence.
- * This is THE authoritative source for chat messages in the application.
- *
- * Source of Truth Hierarchy:
- * 1. ChatStorageService - Primary message storage (owns the data) <-- THIS SERVICE
- * 2. ChatStateService - Computed state (derived from storage)
- * 3. ChatStateManagerService - Connection tracking (session state)
- * 4. ConnectionStateService - Connection status per channel
- *
- * Key Features:
- * - Signal-based reactive state management
- * - PERSISTENCE DISABLED: Message history is NOT stored between sessions
- * - Message deduplication and limiting
- * - History load state tracking
- * - Overlay message broadcasting
- * - High-throughput coalescing: live ddMessage is flushed once per animation frame
- *   to cut signal churn during 1000+ msg/min bursts (memory + CPU).
- *
- * Delegates to:
- * - ChatPersistenceService: PERSISTENCE DISABLED (all no-ops)
- * - ChatPruningService: Memory management and pruning
- *
- * All other services should read from this service, not duplicate its data.
- *
- * @see ChatStateService for computed message views
- * @see ChatStateManagerService for session connection tracking
- * @see ConnectionStateService for connection status
- */
 @Injectable({
   providedIn: "root",
 })
@@ -63,18 +31,9 @@ export class ChatStorageService {
   private readonly highlightNotifications = inject(HighlightNotificationService);
   private readonly persistence = inject(ChatPersistenceService);
   private readonly pruning = inject(ChatPruningService);
-
-  /** Live ingress batches (flushed on requestAnimationFrame). */
-  private readonly pendingBatches = new Map<string, ChatMessage[]>();
-  private batchRafId: number | null = null;
-
-  // Cache version for allMessages to avoid recalculation on every change
-  private readonly allMessagesVersion = signal(0);
-  private _allMessagesCache: { version: number; messages: ChatMessage[] } = {
-    version: 0,
-    messages: [],
-  };
-  private _lastChannelMessages: Record<string, ChatMessage[]> = {};
+  private readonly batching = inject(ChatBatchingService);
+  private readonly cache = inject(ChatCacheService);
+  private readonly memory = inject(ChatMemoryService);
 
   readonly channelMessages = this.channelMessagesSignal.asReadonly();
   readonly loadedChannelsSet = this.loadedChannels.asReadonly();
@@ -82,34 +41,36 @@ export class ChatStorageService {
 
   constructor() {
     this.channelMessagesSignal.set({});
-    // PERSISTENCE DISABLED: Do not load any persisted messages on startup
+    this.cache.setChannelMessagesSignal(() => this.channelMessagesSignal());
+    this.memory.setSignals(
+      () => this.channelMessagesSignal(),
+      (store) => this.channelMessagesSignal.set(store),
+      () => this.batching.flushPendingBatchesNow()
+    );
   }
 
-  /**
-   * Increment the message version to invalidate cache
-   */
-  private incrementMessageVersion(): void {
-    this.allMessagesVersion.update((v) => v + 1);
+  incrementMessageVersion(): void {
+    this.cache.incrementMessageVersion();
   }
 
   readonly allMessages = computed(() => {
-    const currentVersion = this.allMessagesVersion();
+    const currentVersion = this.cache.allMessagesVersion();
     const currentChannelMessages = this.channelMessagesSignal();
 
-    if (this._allMessagesCache.version === currentVersion) {
-      return this._allMessagesCache.messages;
+    if (this.cache["_allMessagesCache"].version === currentVersion) {
+      return this.cache["_allMessagesCache"].messages;
     }
 
     const allMessages: ChatMessage[] = [];
 
     for (const [channelId, messages] of Object.entries(currentChannelMessages)) {
       allMessages.push(...messages);
-      this._lastChannelMessages[channelId] = messages;
+      this.cache["_lastChannelMessages"][channelId] = messages;
     }
 
-    for (const channelId of Object.keys(this._lastChannelMessages)) {
+    for (const channelId of Object.keys(this.cache["_lastChannelMessages"])) {
       if (!currentChannelMessages[channelId]) {
-        delete this._lastChannelMessages[channelId];
+        delete this.cache["_lastChannelMessages"][channelId];
       }
     }
 
@@ -117,7 +78,7 @@ export class ChatStorageService {
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
-    this._allMessagesCache = { version: currentVersion, messages: sorted };
+    this.cache["_allMessagesCache"] = { version: currentVersion, messages: sorted };
     return sorted;
   });
 
@@ -206,18 +167,13 @@ export class ChatStorageService {
     message.messageType = type;
     message.messageTypeReason = reason;
 
-    const q = this.pendingBatches.get(storageKey);
-    if (q) {
-      q.push(message);
-    } else {
-      this.pendingBatches.set(storageKey, [message]);
-    }
+    this.batching.addToBatch(storageKey, message);
     this.messageTypeDetector.updateLastMessageTime(message);
-    this.scheduleBatchFlush();
+    this.batching.scheduleBatchFlush();
   }
 
   prependMessages(channelId: string, messages: ChatMessage[]): void {
-    this.flushPendingBatchesNow();
+    this.batching.flushPendingBatchesNow();
 
     const sortedMessages = [...messages].sort(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -256,9 +212,7 @@ export class ChatStorageService {
       };
     });
 
-    this.enforceGlobalCap();
-
-    // PERSISTENCE DISABLED: this.persistence.persistAllChannels removed
+    this.memory.enforceGlobalCap();
 
     for (const message of sortedMessages) {
       this.messageTypeDetector.updateLastMessageTime(message);
@@ -271,7 +225,7 @@ export class ChatStorageService {
   }
 
   removeMessage(channelId: string, messageId: string): void {
-    this.flushPendingBatchesNow();
+    this.batching.flushPendingBatchesNow();
     this.channelMessagesSignal.update((store) => {
       const channelMessages = store[channelId];
 
@@ -284,11 +238,10 @@ export class ChatStorageService {
         [channelId]: channelMessages.filter((msg) => msg.id !== messageId),
       };
     });
-    // PERSISTENCE DISABLED: this.persistence.persistAllChannels removed
   }
 
   updateMessage(channelId: string, messageId: string, updates: Partial<ChatMessage>): void {
-    this.flushPendingBatchesNow();
+    this.batching.flushPendingBatchesNow();
     const channelMessages = this.channelMessagesSignal()[channelId];
     if (!channelMessages) {
       return;
@@ -321,17 +274,12 @@ export class ChatStorageService {
         [channelId]: messages.map((msg) => (msg.id === messageId ? updated : msg)),
       };
     });
-    // PERSISTENCE DISABLED: this.persistence.persistAllChannels removed
 
     if (shouldForward) {
       this.overlayBridge.forwardMessage(updated);
     }
   }
 
-  /**
-   * Batch update messages for a channel without triggering multiple signal updates.
-   * More efficient than calling updateMessage multiple times.
-   */
   batchUpdateMessagesForChannel(
     channelId: string,
     updates: Array<{ messageId: string; changes: Partial<ChatMessage> }>
@@ -360,24 +308,7 @@ export class ChatStorageService {
     });
   }
 
-  private scheduleBatchFlush(): void {
-    if (this.batchRafId !== null) {
-      return;
-    }
-    this.batchRafId = requestAnimationFrame(() => {
-      this.batchRafId = null;
-      this.flushBatches();
-    });
-  }
-
-  /** Apply pending live messages (one signal update per frame per burst). */
-  private flushBatches(): void {
-    if (this.pendingBatches.size === 0) {
-      return;
-    }
-    const snapshot = new Map(this.pendingBatches);
-    this.pendingBatches.clear();
-
+  updateChannelMessagesWithBatches(snapshot: Map<string, ChatMessage[]>): void {
     this.channelMessagesSignal.update((store) => {
       let next: Record<string, ChatMessage[]> = { ...store };
       for (const [channelId, incoming] of snapshot) {
@@ -401,65 +332,23 @@ export class ChatStorageService {
       }
       return next;
     });
-
-    this.enforceGlobalCap();
-
-    this.incrementMessageVersion();
-
-    // PERSISTENCE DISABLED: this.persistence.persistAllChannels removed
-
-    for (const incoming of snapshot.values()) {
-      for (const message of incoming) {
-        this.highlightNotifications.maybeNotify(message);
-        this.overlayBridge.forwardMessage(message);
-      }
-    }
   }
 
-  private flushPendingBatchesNow(): void {
-    if (this.batchRafId !== null) {
-      cancelAnimationFrame(this.batchRafId);
-      this.batchRafId = null;
-    }
-    this.flushBatches();
+  enforceGlobalCap(): void {
+    this.memory.enforceGlobalCap();
   }
 
-  /**
-   * Enforce global message cap across ALL channels.
-   * Removes oldest messages until total <= MAX_MESSAGES_TOTAL.
-   */
-  private enforceGlobalCap(): void {
-    const store = this.channelMessagesSignal();
-    const pruned = this.pruning.pruneOldMessages(store);
-    if (pruned !== store) {
-      this.channelMessagesSignal.set(pruned);
-    }
-  }
-
-  /**
-   * Export all current messages as JSON string.
-   * Useful for debugging, archiving, or analysis.
-   */
   exportMessages(): string {
     const store = this.channelMessagesSignal();
     return JSON.stringify(store, null, 2);
   }
 
-  /**
-   * Prune old messages across all channels to prevent memory growth.
-   * Trims to MAX_MESSAGES_TOTAL by removing oldest messages first.
-   */
   pruneOldMessages(): void {
-    this.flushPendingBatchesNow();
-    this.enforceGlobalCap();
+    this.memory.pruneOldMessages();
   }
 
-  /**
-   * Clear messages for a specific channel (memory cleanup)
-   */
   clearChannel(channelId: string): void {
-    this.flushPendingBatchesNow();
-    this.pendingBatches.delete(channelId);
+    this.batching.flushPendingBatchesNow();
     this.channelMessagesSignal.update((store) => {
       const newStore = { ...store };
       delete newStore[channelId];
@@ -470,26 +359,17 @@ export class ChatStorageService {
       newSet.delete(channelId);
       return newSet;
     });
-    // PERSISTENCE DISABLED: this.persistence.clearChannel removed
   }
 
-  /**
-   * Clear all messages (full memory reset)
-   */
   clearAllMessages(): void {
-    this.flushPendingBatchesNow();
-    this.pendingBatches.clear();
+    this.batching.flushPendingBatchesNow();
     this.channelMessagesSignal.set({});
     this.loadedChannels.set(new Set());
     this.historyLoadState.set({});
-    // PERSISTENCE DISABLED: this.persistence.clearAll removed
+    this.cache.invalidateCache();
   }
 
-  /**
-   * Get memory usage stats
-   */
   getMemoryStats(): { totalMessages: number; channels: number; byChannel: Record<string, number> } {
-    const store = this.channelMessagesSignal();
-    return this.pruning.getMemoryStats(store);
+    return this.memory.getMemoryStats();
   }
 }

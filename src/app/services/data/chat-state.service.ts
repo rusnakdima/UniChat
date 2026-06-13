@@ -1,9 +1,8 @@
 /* sys lib */
-import { Injectable, computed, effect, inject, signal, untracked } from "@angular/core";
+import { Injectable, computed, effect, inject, untracked } from "@angular/core";
 
 /* models */
 import {
-  ChannelAccountCapabilities,
   ChatChannel,
   ChatMessage,
   MessageAction,
@@ -16,20 +15,16 @@ import { LoggerService } from "@services/core/logger.service";
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
+import { MessageCapabilitiesService } from "@services/data/message-capabilities.service";
+import { OptimisticMessageService } from "@services/data/optimistic-message.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
+import { MessageHighlightService } from "@services/ui/message-highlight.service";
 
 /* helpers */
-import { buildSplitFeed, createMessageActionState, generateTimestamp } from "@helpers/chat.helper";
+import { buildSplitFeed, createMessageActionState } from "@helpers/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
-function generateUuidV4(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 /**
  * Chat State Service - Computed State Layer
  *
@@ -56,10 +51,11 @@ export class ChatStateService {
   private readonly authorizationService = inject(AuthorizationService);
   private readonly chatStorageService = inject(ChatStorageService);
   private readonly providerCoordinator = inject(ChatProviderCoordinatorService);
+  private readonly optimisticMessageService = inject(OptimisticMessageService);
+  private readonly messageCapabilitiesService = inject(MessageCapabilitiesService);
+  private readonly messageHighlightService = inject(MessageHighlightService);
 
-  // Track highlighted message (from search results)
-  private readonly highlightedMessageIdSignal = signal<string | null>(null);
-  readonly highlightedMessageId = this.highlightedMessageIdSignal.asReadonly();
+  readonly highlightedMessageId = this.messageHighlightService.highlightedMessageId;
 
   readonly messages = computed(() => this.chatStorageService.allMessages());
 
@@ -69,7 +65,7 @@ export class ChatStateService {
     effect(() => {
       this.chatListService.channels();
       this.authorizationService.accounts();
-      untracked(() => this.refreshMessageCapabilities());
+      untracked(() => this.messageCapabilitiesService.refreshMessageCapabilities(this.messages));
     });
   }
 
@@ -88,8 +84,6 @@ export class ChatStateService {
       return;
     }
 
-    // Reply is currently disabled for all platforms (tmi.js limitation for Twitch)
-    // This method is kept for future implementation
     this.logger.warn(
       "ChatStateService",
       "Reply functionality is currently unavailable for this platform."
@@ -120,166 +114,69 @@ export class ChatStateService {
       return;
     }
 
-    // Fire-and-forget: send to provider without blocking
-    // For Twitch, we skip creating a synthetic message since Twitch echoes back
     if (platform === "twitch") {
-      // Create optimistic message asynchronously to avoid signal write in computed context
       if (optimistic) {
-        setTimeout(() => this.createOptimisticMessage(platform, channelId, trimmed), 0);
+        setTimeout(
+          () => this.optimisticMessageService.createOptimisticMessage(platform, channelId, trimmed),
+          0
+        );
       }
 
       void this.providerCoordinator
         .sendMessage(channelId, platform, trimmed)
         .then((sentToProvider) => {
           if (!sentToProvider) {
-            // Mark as failed if send failed (only if we created optimistic message)
             if (optimistic) {
-              // Find and update the optimistic message
-              this.markOptimisticMessageFailed(platform, channelId, trimmed, "Send failed");
+              this.optimisticMessageService.markOptimisticMessageFailed(
+                platform,
+                channelId,
+                trimmed,
+                "Send failed"
+              );
             }
           }
-          // If sentToProvider is true, Twitch will echo the message back
-          // The echo will be handled by the message listener
         })
         .catch((error) => {
           if (optimistic) {
-            this.markOptimisticMessageFailed(platform, channelId, trimmed, error);
+            this.optimisticMessageService.markOptimisticMessageFailed(
+              platform,
+              channelId,
+              trimmed,
+              error
+            );
           }
         });
     } else {
-      // For Kick and YouTube
-      // Create optimistic message asynchronously to avoid signal write in computed context
       if (optimistic) {
-        setTimeout(() => this.createOptimisticMessage(platform, channelId, trimmed), 0);
+        setTimeout(
+          () => this.optimisticMessageService.createOptimisticMessage(platform, channelId, trimmed),
+          0
+        );
       }
 
-      // Fire-and-forget send to provider
       void this.providerCoordinator
         .sendMessage(channelId, platform, trimmed)
         .then((sentToProvider) => {
           if (optimistic) {
-            // Update the optimistic message status
-            this.updateOptimisticMessageStatus(platform, channelId, trimmed, sentToProvider);
+            this.optimisticMessageService.updateOptimisticMessageStatus(
+              platform,
+              channelId,
+              trimmed,
+              sentToProvider
+            );
           }
-          // If not optimistic, the echo will be handled by the message listener
         })
         .catch((error) => {
           if (optimistic) {
-            this.updateOptimisticMessageStatus(platform, channelId, trimmed, false, error);
+            this.optimisticMessageService.updateOptimisticMessageStatus(
+              platform,
+              channelId,
+              trimmed,
+              false,
+              error
+            );
           }
         });
-    }
-  }
-
-  /**
-   * Create an optimistic outgoing message for instant UI feedback
-   */
-  private createOptimisticMessage(platform: PlatformType, channelId: string, text: string): void {
-    const id = `out-${platform}-${channelId}-${generateUuidV4()}`;
-    const outgoing: ChatMessage = {
-      id,
-      platform,
-      sourceMessageId: id,
-      sourceChannelId: channelId,
-      sourceUserId: "local-user",
-      author: "You",
-      text: text,
-      timestamp: generateTimestamp(),
-      badges: ["operator"],
-      isSupporter: false,
-      isOutgoing: true,
-      isDeleted: false,
-      canRenderInOverlay: false, // Don't show optimistic messages in overlay
-      actions: {
-        reply: createMessageActionState("reply", "pending"),
-        delete: createMessageActionState("delete", "pending"),
-      },
-      rawPayload: {
-        providerEvent: "outgoing_sending",
-        providerChannelId: channelId,
-        providerUserId: "local-user",
-        preview: text.slice(0, 120),
-      },
-    };
-
-    this.chatStorageService.addMessage(buildChannelRef(platform, channelId), outgoing);
-    this.refreshMessageCapabilities();
-  }
-
-  /**
-   * Mark optimistic message as failed
-   */
-  private markOptimisticMessageFailed(
-    platform: PlatformType,
-    channelId: string,
-    text: string,
-    error: unknown
-  ): void {
-    const channelRef = buildChannelRef(platform, channelId);
-    const messages = this.chatStorageService.getMessagesByChannel(channelRef);
-
-    const optimisticMessage = messages.find((msg) => {
-      if (!msg.isOutgoing || msg.isDeleted) return false;
-      if (msg.author !== "You") return false;
-      if (msg.text !== text) return false;
-      const messageTime = new Date(msg.timestamp).getTime();
-      return Date.now() - messageTime < 5000;
-    });
-
-    if (optimisticMessage) {
-      this.chatStorageService.updateMessage(channelRef, optimisticMessage.id, {
-        actions: {
-          reply: createMessageActionState("reply", "disabled", "Cannot reply - message not sent"),
-          delete: createMessageActionState("delete", "failed", `Send failed: ${error}`),
-        },
-        rawPayload: {
-          ...optimisticMessage.rawPayload,
-          providerEvent: "outgoing_send_failed",
-        },
-      });
-    }
-  }
-
-  /**
-   * Update optimistic message status after send completes
-   */
-  private updateOptimisticMessageStatus(
-    platform: PlatformType,
-    channelId: string,
-    text: string,
-    sentToProvider: boolean,
-    error?: unknown
-  ): void {
-    const channelRef = buildChannelRef(platform, channelId);
-    const messages = this.chatStorageService.getMessagesByChannel(channelRef);
-
-    const optimisticMessage = messages.find((msg) => {
-      if (!msg.isOutgoing || msg.isDeleted) return false;
-      if (msg.author !== "You") return false;
-      if (msg.text !== text) return false;
-      const messageTime = new Date(msg.timestamp).getTime();
-      return Date.now() - messageTime < 5000;
-    });
-
-    if (optimisticMessage) {
-      this.chatStorageService.updateMessage(channelRef, optimisticMessage.id, {
-        actions: {
-          reply: createMessageActionState(
-            "reply",
-            sentToProvider ? "available" : "disabled",
-            sentToProvider ? undefined : "Cannot reply - message not sent"
-          ),
-          delete: createMessageActionState(
-            "delete",
-            sentToProvider ? "available" : "failed",
-            sentToProvider ? undefined : `Send failed: ${error}`
-          ),
-        },
-        rawPayload: {
-          ...optimisticMessage.rawPayload,
-          providerEvent: sentToProvider ? "outgoing_sent" : "outgoing_send_failed",
-        },
-      });
     }
   }
 
@@ -336,67 +233,12 @@ export class ChatStateService {
     );
   }
 
-  refreshMessageCapabilities(): void {
-    const channels = this.chatListService.getVisibleChannels();
-    const allMessages = this.messages();
+  highlightMessage(messageId: string | null): void {
+    this.messageHighlightService.highlightMessage(messageId);
+  }
 
-    const updatesByChannel = new Map<
-      string,
-      Array<{ messageId: string; changes: Partial<ChatMessage> }>
-    >();
-
-    for (const message of allMessages) {
-      const channel = channels.find(
-        (ch) => ch.platform === message.platform && ch.channelId === message.sourceChannelId
-      );
-
-      if (!channel) {
-        continue;
-      }
-
-      const account = this.authorizationService.getAccountByIdSync(channel.accountId);
-      const isAuthorized = account?.authStatus === "authorized";
-      const base = isAuthorized
-        ? this.platformResolver.getCapabilities(channel.platform)
-        : { canListen: true, canReply: false, canDelete: false };
-
-      const moderation = channel.accountCapabilities;
-
-      const capabilities: ChannelAccountCapabilities = {
-        ...base,
-        canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
-        canModerate: moderation?.verified === true && moderation.canModerate,
-        moderationRole: moderation?.moderationRole ?? "viewer",
-        verified: moderation?.verified ?? false,
-      };
-
-      const messageUpdate = {
-        messageId: message.id,
-        changes: {
-          actions: {
-            reply: createMessageActionState(
-              "reply",
-              capabilities.canReply ? "available" : "disabled",
-              capabilities.canReply ? undefined : "This channel is watch-only for replies."
-            ),
-            delete: createMessageActionState(
-              "delete",
-              capabilities.canDelete ? "available" : "disabled",
-              capabilities.canDelete ? undefined : "This channel cannot delete messages."
-            ),
-          },
-        },
-      };
-
-      const channelRef = buildChannelRef(message.platform, message.sourceChannelId);
-      const existing = updatesByChannel.get(channelRef) ?? [];
-      existing.push(messageUpdate);
-      updatesByChannel.set(channelRef, existing);
-    }
-
-    for (const [channelRef, updates] of updatesByChannel) {
-      this.chatStorageService.batchUpdateMessagesForChannel(channelRef, updates);
-    }
+  isMessageHighlighted(messageId: string): boolean {
+    return this.messageHighlightService.isMessageHighlighted(messageId);
   }
 
   private updateMessageAction(
@@ -419,19 +261,5 @@ export class ChatStateService {
         },
       },
     });
-  }
-
-  /**
-   * Highlight a message (e.g., from search results)
-   */
-  highlightMessage(messageId: string | null): void {
-    this.highlightedMessageIdSignal.set(messageId);
-  }
-
-  /**
-   * Check if a message is currently highlighted
-   */
-  isMessageHighlighted(messageId: string): boolean {
-    return this.highlightedMessageIdSignal() === messageId;
   }
 }
