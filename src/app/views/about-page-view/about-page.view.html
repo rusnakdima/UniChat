@@ -1,0 +1,53 @@
+<div
+  class="flex h-full min-h-0 w-full flex-col overflow-hidden"
+  [class.bg-white]="themeMode() === 'light'"
+  [class.text-zinc-900]="themeMode() === 'light'"
+  [class.bg-zinc-950]="themeMode() === 'dark'"
+  [class.text-zinc-100]="themeMode() === 'dark'"
+>
+  <div class="flex-1 space-y-6 overflow-y-auto p-6 pb-24 md:pb-6">
+    <div
+      class="flex flex-col items-center justify-center rounded-2xl border p-8 text-center"
+      [class.border-zinc-200]="themeMode() === 'light'"
+      [class.bg-white]="themeMode() === 'light'"
+      [class.glass]="themeMode() === 'dark'"
+    >
+      <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-indigo-600">
+        <img src="assets/images/icon.png" alt="UniChat" class="h-12 w-12 object-contain" />
+      </div>
+
+      <h1
+        class="mb-2 text-3xl font-bold"
+        [class.text-zinc-900]="themeMode() === 'light'"
+        [class.text-zinc-100]="themeMode() === 'dark'"
+      >
+        UniChat
+      </h1>
+
+      <div
+        class="mb-6 text-sm tracking-wider uppercase"
+        [class.text-zinc-500]="themeMode() === 'light'"
+        [class.text-zinc-400]="themeMode() === 'dark'"
+      >
+        Version {{ currentVersion() || "..." }}
+      </div>
+
+      <p
+        class="mb-8 max-w-sm text-sm"
+        [class.text-zinc-600]="themeMode() === 'light'"
+        [class.text-zinc-400]="themeMode() === 'dark'"
+      >
+        Unified chat aggregator for Twitch, Kick, and YouTube.
+      </p>
+
+      <button
+        type="button"
+        (click)="openChangelog()"
+        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-bold text-white transition hover:bg-indigo-500"
+      >
+        <mat-icon [fontIcon]="'history'" />
+        View Changelog
+      </button>
+    </div>
+  </div>
+</div>
