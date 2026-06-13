@@ -30,7 +30,7 @@ import {
   selector: "app-settings-modal",
   standalone: true,
   imports: [FormsModule, MatIconModule],
-  templateUrl: "./settings-modal.html",
+  templateUrl: "./settings-modal.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsModal {

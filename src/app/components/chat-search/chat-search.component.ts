@@ -15,7 +15,7 @@ import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 /* models */
-import { ChatMessage } from "@models/chat.model";
+import { ChatMessage, PlatformType } from "@models/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
@@ -82,7 +82,8 @@ export class ChatSearchComponent {
       query,
       isRegex: this.isRegex(),
       caseSensitive: this.caseSensitive(),
-      platform: this.searchPlatform() !== "all" ? (this.searchPlatform() as any) : undefined,
+      platform:
+        this.searchPlatform() !== "all" ? (this.searchPlatform() as PlatformType) : undefined,
       channelId: this.searchChannel() !== "all" ? this.searchChannel() : undefined,
       author: this.searchAuthor().trim() || undefined,
       limit: 50,

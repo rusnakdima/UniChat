@@ -1,8 +1,8 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal, effect, OnInit } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
-import { Router, RouterEvent, NavigationEnd } from "@angular/router";
-import { Subscription } from "rxjs";
+import { Router, NavigationEnd } from "@angular/router";
+import { toSignal } from "@angular/core/rxjs-interop";
 import { filter } from "rxjs/operators";
 
 /* services */
@@ -20,7 +20,7 @@ interface MenuItem {
   templateUrl: "./app-sidebar.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppSidebarComponent implements OnInit, OnDestroy {
+export class AppSidebarComponent implements OnInit {
   readonly themeService = inject(ThemeService);
 
   readonly menu: MenuItem[] = [
@@ -35,21 +35,25 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   readonly themeMode = this.themeService.themeMode;
 
   private readonly router = inject(Router);
-  private routerSub: Subscription | null = null;
 
   activePath: string = "";
 
   ngOnInit(): void {
-    this.activePath = this.router.url;
-    this.routerSub = this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
-        this.activePath = event.urlAfterRedirects;
-      });
-  }
+    const navigationEndEvents = toSignal(
+      this.router.events.pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+      ),
+      { initialValue: null }
+    );
 
-  ngOnDestroy(): void {
-    this.routerSub?.unsubscribe();
+    effect(() => {
+      const event = navigationEndEvents();
+      if (event) {
+        this.activePath = event.urlAfterRedirects;
+      }
+    });
+
+    this.activePath = this.router.url;
   }
 
   isActive(path: string): boolean {

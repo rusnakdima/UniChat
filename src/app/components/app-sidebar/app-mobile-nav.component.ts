@@ -1,8 +1,8 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, effect, OnInit } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { Router, NavigationEnd } from "@angular/router";
-import { Subscription } from "rxjs";
+import { toSignal } from "@angular/core/rxjs-interop";
 import { filter } from "rxjs/operators";
 
 /* services */
@@ -21,7 +21,7 @@ interface NavItem {
   templateUrl: "./app-mobile-nav.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppMobileNavComponent implements OnInit, OnDestroy {
+export class AppMobileNavComponent implements OnInit {
   readonly themeService = inject(ThemeService);
   readonly router = inject(Router);
 
@@ -36,19 +36,23 @@ export class AppMobileNavComponent implements OnInit, OnDestroy {
   readonly themeMode = this.themeService.themeMode;
 
   activePath: string = "";
-  private routerSub: Subscription | null = null;
 
   ngOnInit(): void {
-    this.activePath = this.router.url;
-    this.routerSub = this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
-        this.activePath = event.urlAfterRedirects;
-      });
-  }
+    const navigationEndEvents = toSignal(
+      this.router.events.pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+      ),
+      { initialValue: null }
+    );
 
-  ngOnDestroy(): void {
-    this.routerSub?.unsubscribe();
+    effect(() => {
+      const event = navigationEndEvents();
+      if (event) {
+        this.activePath = event.urlAfterRedirects;
+      }
+    });
+
+    this.activePath = this.router.url;
   }
 
   isActive(path: string): boolean {

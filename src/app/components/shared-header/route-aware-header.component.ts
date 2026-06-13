@@ -6,10 +6,10 @@ import {
   signal,
   computed,
   output,
-  OnDestroy,
 } from "@angular/core";
 import { Router, NavigationEnd } from "@angular/router";
-import { Subscription, filter } from "rxjs";
+import { toSignal } from "@angular/core/rxjs-interop";
+import { filter } from "rxjs/operators";
 import { MatIconModule } from "@angular/material/icon";
 
 /* services */
@@ -27,10 +27,9 @@ interface RouteInfo {
   templateUrl: "./route-aware-header.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RouteAwareHeaderComponent implements OnDestroy {
+export class RouteAwareHeaderComponent {
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
-  private readonly subscriptions = new Subscription();
 
   readonly themeMode = this.themeService.themeMode;
   readonly openShortcutDialog = output<void>();
@@ -62,18 +61,20 @@ export class RouteAwareHeaderComponent implements OnDestroy {
   readonly isDashboard = computed(() => this.currentPath() === "/dashboard");
 
   constructor() {
-    this.subscriptions.add(
-      this.router.events
-        .pipe(filter((event) => event instanceof NavigationEnd))
-        .subscribe((event: NavigationEnd) => {
-          this.currentPath.set(event.urlAfterRedirects);
-        })
+    const navigationEndEvents = toSignal(
+      this.router.events.pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+      ),
+      { initialValue: null }
     );
-    this.currentPath.set(this.router.url);
-  }
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.currentPath.set(event.urlAfterRedirects);
+      });
+
+    this.currentPath.set(this.router.url);
   }
 
   onOpenShortcuts(): void {

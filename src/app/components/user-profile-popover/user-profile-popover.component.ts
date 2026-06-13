@@ -37,7 +37,7 @@ export interface UserProfilePanelLayout {
   selector: "app-user-profile-popover",
   standalone: true,
   imports: [MatIconModule, MatProgressSpinnerModule],
-  templateUrl: "./user-profile-popover.html",
+  templateUrl: "./user-profile-popover.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserProfilePopoverComponent {

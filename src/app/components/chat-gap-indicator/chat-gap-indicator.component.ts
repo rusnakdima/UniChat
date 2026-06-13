@@ -20,7 +20,7 @@ import { ReconnectionService } from "@services/core/reconnection.service";
   selector: "app-chat-gap-indicator",
   standalone: true,
   imports: [MatIconModule],
-  templateUrl: "./chat-gap-indicator.html",
+  templateUrl: "./chat-gap-indicator.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChatGapIndicator implements OnInit, OnDestroy {

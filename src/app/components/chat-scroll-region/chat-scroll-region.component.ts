@@ -17,6 +17,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatIconModule } from "@angular/material/icon";
 import { fromEvent } from "rxjs";
 import { throttleTime } from "rxjs/operators";
+import { toSignal } from "@angular/core/rxjs-interop";
 
 /* models */
 import { ChatMessage } from "@models/chat.model";
@@ -86,17 +87,27 @@ export class ChatScrollRegionComponent implements AfterViewInit {
 
     this.prevTotalHeight = node.scrollHeight;
 
-    fromEvent(node, "scroll", { passive: true })
-      .pipe(throttleTime(16), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.onScroll());
+    const scrollEvent = toSignal(
+      fromEvent(node, "scroll", { passive: true }).pipe(throttleTime(16)),
+      { initialValue: null }
+    );
 
-    fromEvent(window, "resize", { passive: true })
-      .pipe(throttleTime(100), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        if (this.pinnedToBottom() && !this.pendingRaf) {
-          this.pendingScrollTop = this.getScrollContainer()?.scrollHeight ?? null;
-        }
-      });
+    effect(() => {
+      scrollEvent();
+      this.onScroll();
+    });
+
+    const resizeEvent = toSignal(
+      fromEvent(window, "resize", { passive: true }).pipe(throttleTime(100)),
+      { initialValue: null }
+    );
+
+    effect(() => {
+      resizeEvent();
+      if (this.pinnedToBottom() && !this.pendingRaf) {
+        this.pendingScrollTop = this.getScrollContainer()?.scrollHeight ?? null;
+      }
+    });
 
     if (this.pinnedToBottom() && this.autoScroll()) {
       this.pendingScrollTop = node.scrollHeight;

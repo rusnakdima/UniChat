@@ -9,7 +9,7 @@ import { getLinkPreviewIframeSrc, LinkPreviewService } from "@services/ui/link-p
 @Component({
   selector: "app-link-preview-modal",
   standalone: true,
-  templateUrl: "./link-preview-modal.html",
+  templateUrl: "./link-preview-modal.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LinkPreviewModal {

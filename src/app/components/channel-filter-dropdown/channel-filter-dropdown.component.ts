@@ -14,7 +14,7 @@ import {
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
-import { ChatChannel } from "@models/chat.model";
+import { ChatChannel, PlatformType } from "@models/chat.model";
 import { ThemeService } from "@services/core/theme.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
@@ -123,11 +123,11 @@ export class ChannelFilterDropdownComponent implements AfterViewInit {
     return this.channelAvatars.getChannelInitial(channelName);
   }
 
-  platformIconUrl(platform: string): string {
-    return this.presentation.platformIconUrl(platform as any);
+  platformIconUrl(platform: PlatformType): string {
+    return this.presentation.platformIconUrl(platform);
   }
 
-  platformLabel(platform: string): string {
-    return this.presentation.platformLabel(platform as any);
+  platformLabel(platform: PlatformType): string {
+    return this.presentation.platformLabel(platform);
   }
 }
