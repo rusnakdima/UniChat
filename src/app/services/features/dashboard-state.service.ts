@@ -8,6 +8,7 @@ import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.
 
 /* models */
 import { WidgetConfig } from "@models/chat.model";
+import { OVERLAY_CONSTANTS } from "@app/config/app.constants";
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   {
@@ -17,7 +18,7 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
     filter: "all",
     sceneHint: "Studio A browser source",
     themeHint: "Aurora glass",
-    port: 1450,
+    port: OVERLAY_CONSTANTS.DEFAULT_PORT,
   },
 ];
 
