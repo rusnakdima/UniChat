@@ -6,21 +6,16 @@ use serde::Deserialize;
 
 enum AuthMethod {
   ApiKey(String),
-  Bearer(String),
 }
 
 impl AuthMethod {
   fn apply_to_request(&self, request: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
-    match self {
-      AuthMethod::ApiKey(_) => request,
-      AuthMethod::Bearer(token) => request.header("Authorization", format!("Bearer {}", token)),
-    }
+    request
   }
 
   fn key_param(&self) -> Option<String> {
     match self {
       AuthMethod::ApiKey(key) => Some(format!("key={}", key)),
-      AuthMethod::Bearer(_) => None,
     }
   }
 }
@@ -171,16 +166,6 @@ pub async fn youtube_fetch_live_video_id_by_api_key(
   youtube_fetch_live_video_id_internal(channel_name, &AuthMethod::ApiKey(api_key.to_string())).await
 }
 
-/// Fetch live video ID using OAuth access token
-#[allow(dead_code)]
-pub async fn youtube_fetch_live_video_id_with_oauth(
-  channel_name: &str,
-  access_token: &str,
-) -> Result<String, String> {
-  youtube_fetch_live_video_id_internal(channel_name, &AuthMethod::Bearer(access_token.to_string()))
-    .await
-}
-
 async fn youtube_fetch_live_video_id_internal(
   channel_name: &str,
   auth: &AuthMethod,
@@ -289,23 +274,8 @@ pub async fn youtube_fetch_live_chat_id_by_api_key(
   api_key: &str,
 ) -> Result<String, String> {
   let client = shared_client();
-  youtube_fetch_live_chat_id_internal(client, video_id, &AuthMethod::ApiKey(api_key.to_string()))
+  youtube_fetch_live_chat_id_internal(&client, video_id, &AuthMethod::ApiKey(api_key.to_string()))
     .await
-}
-
-/// Fetch live chat ID using OAuth access token
-#[allow(dead_code)]
-pub async fn youtube_fetch_live_chat_id_with_oauth(
-  video_id: &str,
-  access_token: &str,
-) -> Result<String, String> {
-  let client = shared_client();
-  youtube_fetch_live_chat_id_internal(
-    client,
-    video_id,
-    &AuthMethod::Bearer(access_token.to_string()),
-  )
-  .await
 }
 
 async fn youtube_fetch_live_chat_id_internal(
@@ -392,83 +362,6 @@ pub async fn youtube_fetch_live_chat_messages_by_api_key(
     .map_err(|e| format!("Failed to read response body: {}", e))
 }
 
-/// Send a chat message using OAuth access token
-#[allow(dead_code)]
-pub async fn youtube_send_message_with_oauth(
-  live_chat_id: &str,
-  message_text: &str,
-  access_token: &str,
-) -> Result<String, String> {
-  let client = shared_client();
-
-  let url = "https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet";
-
-  let request_body = serde_json::json!({
-    "snippet": {
-      "liveChatId": live_chat_id,
-      "type": "textMessageEvent",
-      "textMessageDetails": {
-        "messageText": message_text
-      }
-    }
-  });
-
-  let response = client
-    .post(url)
-    .header("Authorization", format!("Bearer {}", access_token))
-    .header("Content-Type", "application/json")
-    .json(&request_body)
-    .send()
-    .await
-    .map_err(|e| format!("Failed to send message: {}", e))?;
-
-  if !response.status().is_success() {
-    return Err(youtube_api_error(
-      "send message",
-      response.status(),
-      &response.text().await.unwrap_or_default(),
-    ));
-  }
-
-  let result: YouTubeSendMessageResponse = response
-    .json()
-    .await
-    .map_err(|e| format!("Failed to parse send message response: {}", e))?;
-
-  Ok(result.data.id)
-}
-
-/// Delete a chat message using OAuth access token
-#[allow(dead_code)]
-pub async fn youtube_delete_message_with_oauth(
-  message_id: &str,
-  access_token: &str,
-) -> Result<(), String> {
-  let client = shared_client();
-
-  let url = format!(
-    "https://www.googleapis.com/youtube/v3/liveChat/messages?id={}",
-    message_id
-  );
-
-  let response = client
-    .delete(&url)
-    .header("Authorization", format!("Bearer {}", access_token))
-    .send()
-    .await
-    .map_err(|e| format!("Failed to delete message: {}", e))?;
-
-  if !response.status().is_success() {
-    return Err(youtube_api_error(
-      "delete message",
-      response.status(),
-      &response.text().await.unwrap_or_default(),
-    ));
-  }
-
-  Ok(())
-}
-
 /// Response structure for YouTube channel info
 #[derive(Debug, serde::Serialize)]
 pub struct YouTubeChannelInfo {
@@ -486,19 +379,6 @@ pub async fn youtube_fetch_channel_info_by_api_key(
 ) -> Result<YouTubeChannelInfo, String> {
   youtube_fetch_channel_info_internal(channel_id_or_name, &AuthMethod::ApiKey(api_key.to_string()))
     .await
-}
-
-/// Fetch channel info including profile image URL using OAuth
-#[allow(dead_code)]
-pub async fn youtube_fetch_channel_info_with_oauth(
-  channel_id_or_name: &str,
-  access_token: &str,
-) -> Result<YouTubeChannelInfo, String> {
-  youtube_fetch_channel_info_internal(
-    channel_id_or_name,
-    &AuthMethod::Bearer(access_token.to_string()),
-  )
-  .await
 }
 
 async fn youtube_fetch_channel_info_internal(

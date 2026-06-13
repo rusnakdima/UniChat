@@ -27,18 +27,16 @@ use crate::routes::update_route::{
   checkForUpdate, downloadUpdate, getCurrentVersion, installUpdate,
 };
 use crate::routes::youtube_route::{
-  youtubeDeleteMessage, youtubeFetchChannelInfo, youtubeFetchChannelInfoByApiKey,
-  youtubeFetchChatMessages, youtubeFetchLiveChatId, youtubeFetchLiveVideoId,
-  youtubeFetchLiveVideoIdByApiKey, youtubeSendMessage,
+  youtubeFetchChannelInfoByApiKey, youtubeFetchChatMessages, youtubeFetchLiveVideoIdByApiKey,
 };
-use crate::services::auth::oauth_provider_service::OAuthProviderService;
+use crate::services::auth::account_service::AccountService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
 use tauri::Emitter;
 use tauri_plugin_deep_link::DeepLinkExt;
 
 pub struct AppState {
   pub config: SharedConfig,
-  pub oauth_provider_service: Arc<OAuthProviderService>,
+  pub account_service: Arc<AccountService>,
   pub overlay_server_service: Arc<OverlayServerService>,
 }
 
@@ -65,12 +63,12 @@ pub fn run() {
         let _ = overlay_server_clone.start(OVERLAY_SERVER_PORT).await;
       });
 
-      let oauth_service = Arc::new(OAuthProviderService::new_with_config(config.clone()));
-      let oauth_service_clone = oauth_service.clone();
+      let account_service = Arc::new(AccountService::new_with_config(config.clone()));
+      let account_service_clone = account_service.clone();
 
       app.manage(AppState {
         config: config.clone(),
-        oauth_provider_service: oauth_service,
+        account_service,
         overlay_server_service: overlay_server,
       });
 
@@ -80,7 +78,7 @@ pub fn run() {
         for url in urls {
           if url.scheme() == "unichat" && url.path().starts_with("/oauth/callback") {
             let url_string = url.to_string();
-            let oauth_service = oauth_service_clone.clone();
+            let account_service = account_service_clone.clone();
             let app_handle = app_handle.clone();
 
             tauri::async_runtime::spawn(async move {
@@ -91,7 +89,7 @@ pub fn run() {
               ];
 
               for platform in platforms {
-                if let Ok(account) = oauth_service
+                if let Ok(account) = account_service
                   .complete_auth(platform.clone(), url_string.clone())
                   .await
                 {
@@ -135,10 +133,6 @@ pub fn run() {
       getOverlayMessages,
       youtubeFetchChatMessages,
       youtubeFetchLiveVideoIdByApiKey,
-      youtubeFetchLiveVideoId,
-      youtubeFetchLiveChatId,
-      youtubeSendMessage,
-      youtubeDeleteMessage,
       kickFetchChatroomId,
       kickFetchRecentMessages,
       kickFetchUserInfo,
@@ -147,7 +141,6 @@ pub fn run() {
       kickSendChatMessage,
       kickDeleteChatMessage,
       youtubeFetchChannelInfoByApiKey,
-      youtubeFetchChannelInfo,
       checkForUpdate,
       downloadUpdate,
       installUpdate,
@@ -160,7 +153,7 @@ pub fn run() {
   }
 }
 
-#[allow(unused_variables)]
+#[allow(unused)]
 fn resolve_frontend_dist_dir(app: &tauri::App) -> std::path::PathBuf {
   #[cfg(debug_assertions)]
   {

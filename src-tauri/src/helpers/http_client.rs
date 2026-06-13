@@ -13,6 +13,6 @@ static HTTP: Lazy<Client> = Lazy::new(|| {
     .expect("reqwest Client build")
 });
 
-pub fn shared_client() -> &'static Client {
-  &HTTP
+pub fn shared_client() -> Client {
+  HTTP.clone()
 }

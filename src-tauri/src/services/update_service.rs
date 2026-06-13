@@ -1,8 +1,10 @@
 use futures_util::StreamExt;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
+use tauri_plugin_shell::ShellExt;
+
+use crate::helpers::http_client::shared_client;
 
 const GITHUB_API_BASE: &str =
   "https://api.github.com/repos/TechCraft-Solutions/UniChat/releases/latest";
@@ -91,7 +93,7 @@ impl Platform {
 }
 
 pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, String> {
-  let client = Client::new();
+  let client = shared_client();
 
   let response = client
     .get(GITHUB_API_BASE)
@@ -181,7 +183,7 @@ pub async fn download_update_with_progress(
   dest_path: &PathBuf,
   app_handle: AppHandle,
 ) -> Result<u64, String> {
-  let client = Client::new();
+  let client = shared_client();
 
   let response = client
     .get(url)
@@ -216,7 +218,7 @@ pub async fn download_update_with_progress(
         bytes_downloaded += chunk.len() as u64;
         chunk_counter += 1;
 
-        if chunk_counter % 100 == 0 {
+        if chunk_counter.is_multiple_of(100) {
           let progress = if total_bytes > 0 {
             (bytes_downloaded as f64 / total_bytes as f64) * 100.0
           } else {
@@ -254,4 +256,77 @@ pub fn get_temp_download_path(asset_name: &str) -> Result<PathBuf, String> {
   let safe_name = asset_name.replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], "_");
 
   Ok(temp_dir.join(format!("unichat_update_{}", safe_name)))
+}
+
+pub fn install_update(installer_path: &str, app_handle: &tauri::AppHandle) -> Result<bool, String> {
+  let path = std::path::Path::new(installer_path);
+  if !path.exists() {
+    return Err("Installer file not found".to_string());
+  }
+
+  let extension = path
+    .extension()
+    .and_then(|e| e.to_str())
+    .unwrap_or("")
+    .to_lowercase();
+
+  #[cfg(target_os = "windows")]
+  {
+    if extension == "msi" {
+      let shell = app_handle.shell();
+      let _child = shell
+        .command("msiexec")
+        .args(["/i", installer_path])
+        .spawn()
+        .map_err(|e| format!("Failed to run installer: {}", e))?;
+    } else {
+      let shell = app_handle.shell();
+      let _child = shell
+        .command(installer_path)
+        .spawn()
+        .map_err(|e| format!("Failed to run installer: {}", e))?;
+    }
+  }
+
+  #[cfg(target_os = "macos")]
+  {
+    let shell = app_handle.shell();
+    let _child = shell
+      .command("open")
+      .args(["-W", installer_path])
+      .spawn()
+      .map_err(|e| format!("Failed to open installer: {}", e))?;
+  }
+
+  #[cfg(target_os = "linux")]
+  {
+    let shell = app_handle.shell();
+    if extension == "AppImage" {
+      let _child = shell
+        .command("chmod")
+        .args(["+x", installer_path])
+        .spawn()
+        .map_err(|e| format!("Failed to make executable: {}", e))?;
+      let _child = shell
+        .command(installer_path)
+        .spawn()
+        .map_err(|e| format!("Failed to run installer: {}", e))?;
+    } else if extension == "deb" {
+      let _child = shell
+        .command("dpkg")
+        .args(["-i", installer_path])
+        .spawn()
+        .map_err(|e| format!("Failed to install .deb: {}", e))?;
+    } else if extension == "rpm" {
+      let _child = shell
+        .command("rpm")
+        .args(["-U", installer_path])
+        .spawn()
+        .map_err(|e| format!("Failed to install .rpm: {}", e))?;
+    } else {
+      return Err(format!("Unsupported installer format: {}", extension));
+    }
+  }
+
+  Ok(true)
 }
