@@ -9,6 +9,12 @@ export interface InvokeOptions {
   suppressError?: boolean;
 }
 
+interface TauriResponse<T> {
+  status: "success" | "error";
+  data: T;
+  message?: string;
+}
+
 @Injectable({ providedIn: "root" })
 export class TauriApiService {
   private readonly logger = inject(LoggingService);
@@ -21,7 +27,7 @@ export class TauriApiService {
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       const response = await Promise.race([
-        invoke<Response<T>>(command, args),
+        invoke<TauriResponse<T>>(command, args),
         new Promise<never>((_, reject) =>
           setTimeout(
             () => reject(new Error(`Command "${command}" timed out after ${timeoutMs}ms`)),

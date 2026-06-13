@@ -9,7 +9,7 @@ import { ChannelImagePreloaderService } from "@services/ui/channel-image-preload
 import { AuthorizationService } from "@services/features/authorization.service";
 
 /* components */
-import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal";
+import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal.component";
 
 @Component({
   selector: "app-root",
