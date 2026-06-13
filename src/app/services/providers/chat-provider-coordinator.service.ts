@@ -1,5 +1,5 @@
 /* sys lib */
-import { DestroyRef, inject, Injectable } from "@angular/core";
+import { DestroyRef, inject, Injectable, effect } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 /* models */
@@ -41,11 +41,12 @@ export class ChatProviderCoordinatorService {
     });
 
     // Listen for token refresh events and reconnect affected channels
-    this.authService.tokenRefreshed
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ accountId, platform }) => {
-        this.reconnectChannelsForAccount(accountId, platform);
-      });
+    effect(() => {
+      const event = this.authService.tokenRefreshed();
+      if (event) {
+        this.reconnectChannelsForAccount(event.accountId, event.platform);
+      }
+    });
   }
 
   connectChannel(channelId: string, platform: PlatformType): void {

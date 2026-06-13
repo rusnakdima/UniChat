@@ -1,11 +1,11 @@
 /* sys lib */
 import { Injectable, OnDestroy, inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* models */
 import { ChatMessage, PlatformType } from "@models/chat.model";
 import { ReconnectionManager } from "@utils/reconnection-manager.util";
 import { LoggerService } from "@services/core/logger.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 type OverlaySourcePayload = {
   type: "chatMessage";
   message: {
@@ -26,6 +26,7 @@ type OverlaySourcePayload = {
 })
 export class OverlaySourceBridgeService implements OnDestroy {
   private readonly logger = inject(LoggerService);
+  private readonly tauriApi = inject(TauriApiService);
   private socket: WebSocket | null = null;
   private connectedPort: number | null = null;
   private readonly reconnectionManager = new ReconnectionManager({
@@ -59,7 +60,7 @@ export class OverlaySourceBridgeService implements OnDestroy {
     this.connectionState = "connecting";
 
     try {
-      await invoke("startOverlayServer", { port });
+      await this.tauriApi.invoke("startOverlayServer", { port }, { suppressError: true });
     } catch {
       // If invoke fails (e.g. already started), we'll still try to connect WS.
     }

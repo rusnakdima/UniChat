@@ -2,20 +2,17 @@
 import { inject, Injectable } from "@angular/core";
 
 /* models */
-import { ChatMessage, PlatformType } from "@models/chat.model";
+import { ChannelAccountCapabilities, ChatMessage, PlatformType } from "@models/chat.model";
 
 /* services */
+import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 
 /* helpers */
-import {
-  createMessageActionState,
-  generateTimestamp,
-  getChannelAccountCapabilities,
-} from "@helpers/chat.helper";
+import { createMessageActionState, generateTimestamp } from "@helpers/chat.helper";
 export interface PlatformChatConfig {
   server?: string;
   port?: number;
@@ -26,6 +23,7 @@ export interface PlatformChatConfig {
   providedIn: "root",
 })
 export abstract class BaseChatProviderService {
+  protected readonly platformResolver = inject(PlatformResolverService);
   protected readonly chatStorageService = inject(ChatStorageService);
   protected readonly chatListService = inject(ChatListService);
   protected readonly authorizationService = inject(AuthorizationService);
@@ -66,7 +64,23 @@ export abstract class BaseChatProviderService {
       .find((entry) => entry.channelId === channelId);
     // Note: Uses sync version - accounts are loaded when channels are connected
     const account = this.authorizationService.getAccountByIdSync(channel?.accountId);
-    const capabilities = channel ? getChannelAccountCapabilities(channel, account) : undefined;
+    const isAuthorized = account?.authStatus === "authorized";
+    const base =
+      isAuthorized && channel
+        ? this.platformResolver.getCapabilities(channel.platform)
+        : { canListen: true, canReply: false, canDelete: false };
+
+    const moderation = channel?.accountCapabilities;
+
+    const capabilities: ChannelAccountCapabilities | undefined = channel
+      ? {
+          ...base,
+          canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
+          canModerate: moderation?.verified === true && moderation.canModerate,
+          moderationRole: moderation?.moderationRole ?? "viewer",
+          verified: moderation?.verified ?? false,
+        }
+      : undefined;
 
     const baseMessage: ChatMessage = {
       id: messageId,

@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from "@angular/core";
 
 /* models */
 import {
+  ChannelAccountCapabilities,
   ChannelConnection,
   ChannelConnectionError,
   PlatformCapabilities,
@@ -12,11 +13,12 @@ import {
 } from "@models/chat.model";
 
 /* services */
+import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 
 /* helpers */
-import { getChannelAccountCapabilities, generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@helpers/chat.helper";
 import {
   buildChannelRef,
   findChannelByRef,
@@ -42,6 +44,7 @@ import {
   providedIn: "root",
 })
 export class ConnectionStateService {
+  private readonly platformResolver = inject(PlatformResolverService);
   private readonly chatListService = inject(ChatListService);
   private readonly authorizationService = inject(AuthorizationService);
 
@@ -161,7 +164,20 @@ export class ConnectionStateService {
 
     // Note: Uses sync version - accounts are loaded when channels are connected
     const account = this.authorizationService.getAccountByIdSync(channel.accountId);
-    const capabilities = getChannelAccountCapabilities(channel, account);
+    const isAuthorized = account?.authStatus === "authorized";
+    const base = isAuthorized
+      ? this.platformResolver.getCapabilities(channel.platform)
+      : { canListen: true, canReply: false, canDelete: false };
+
+    const moderation = channel.accountCapabilities;
+
+    const capabilities: ChannelAccountCapabilities = {
+      ...base,
+      canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
+      canModerate: moderation?.verified === true && moderation.canModerate,
+      moderationRole: moderation?.moderationRole ?? "viewer",
+      verified: moderation?.verified ?? false,
+    };
 
     this.updateConnection(channelId, {
       status: "connecting",
@@ -200,7 +216,20 @@ export class ConnectionStateService {
 
       // Note: Uses sync version - accounts are loaded when channels are connected
       const account = this.authorizationService.getAccountByIdSync(channel.accountId);
-      const capabilities = getChannelAccountCapabilities(channel, account);
+      const isAuthorized = account?.authStatus === "authorized";
+      const base = isAuthorized
+        ? this.platformResolver.getCapabilities(channel.platform)
+        : { canListen: true, canReply: false, canDelete: false };
+
+      const moderation = channel.accountCapabilities;
+
+      const capabilities: ChannelAccountCapabilities = {
+        ...base,
+        canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
+        canModerate: moderation?.verified === true && moderation.canModerate,
+        moderationRole: moderation?.moderationRole ?? "viewer",
+        verified: moderation?.verified ?? false,
+      };
 
       this.updateConnection(channelId, {
         status: "connected",

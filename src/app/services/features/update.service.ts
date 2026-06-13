@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { LoggingService } from "@app/shared/services/logging.service";
 
 export interface UpdateInfo {
   current_version: string;
@@ -37,6 +38,7 @@ export type UpdateStatus =
   providedIn: "root",
 })
 export class UpdateService {
+  private readonly logging = inject(LoggingService);
   private readonly currentVersion = signal<string>("");
   private readonly latestVersion = signal<string>("");
   private readonly status = signal<UpdateStatus>("idle");
@@ -52,7 +54,7 @@ export class UpdateService {
       const version = await invoke<string>("getCurrentVersion");
       this.currentVersion.set(version);
     } catch (e) {
-      console.error("Failed to get current version:", e);
+      this.logging.error("UpdateService", "Failed to get current version:", e);
     }
   }
 

@@ -3,6 +3,7 @@ import { Injectable, computed, effect, inject, signal, untracked } from "@angula
 
 /* models */
 import {
+  ChannelAccountCapabilities,
   ChatChannel,
   ChatMessage,
   MessageAction,
@@ -12,18 +13,14 @@ import {
 
 /* services */
 import { LoggerService } from "@services/core/logger.service";
+import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatProviderCoordinatorService } from "@services/providers/chat-provider-coordinator.service";
 
 /* helpers */
-import {
-  buildSplitFeed,
-  createMessageActionState,
-  generateTimestamp,
-  getChannelAccountCapabilities,
-} from "@helpers/chat.helper";
+import { buildSplitFeed, createMessageActionState, generateTimestamp } from "@helpers/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
 function generateUuidV4(): string {
@@ -54,6 +51,7 @@ function generateUuidV4(): string {
 })
 export class ChatStateService {
   private readonly logger = inject(LoggerService);
+  private readonly platformResolver = inject(PlatformResolverService);
   private readonly chatListService = inject(ChatListService);
   private readonly authorizationService = inject(AuthorizationService);
   private readonly chatStorageService = inject(ChatStorageService);
@@ -357,7 +355,20 @@ export class ChatStateService {
       }
 
       const account = this.authorizationService.getAccountByIdSync(channel.accountId);
-      const capabilities = getChannelAccountCapabilities(channel, account);
+      const isAuthorized = account?.authStatus === "authorized";
+      const base = isAuthorized
+        ? this.platformResolver.getCapabilities(channel.platform)
+        : { canListen: true, canReply: false, canDelete: false };
+
+      const moderation = channel.accountCapabilities;
+
+      const capabilities: ChannelAccountCapabilities = {
+        ...base,
+        canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
+        canModerate: moderation?.verified === true && moderation.canModerate,
+        moderationRole: moderation?.moderationRole ?? "viewer",
+        verified: moderation?.verified ?? false,
+      };
 
       const messageUpdate = {
         messageId: message.id,

@@ -2,7 +2,7 @@
 import { ErrorHandler, Injectable, inject } from "@angular/core";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LoggingService } from "@app/shared/services/logging.service";
 
 /**
  * Global error handler for uncaught exceptions
@@ -10,25 +10,21 @@ import { LoggerService } from "@services/core/logger.service";
  */
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LoggingService);
 
-  handleError(error: any): void {
-    // Extract error details
+  handleError(error: unknown): void {
     const errorDetails = this.extractErrorDetails(error);
 
-    // Log with context
     this.logger.error("GlobalErrorHandler", "Uncaught exception", errorDetails);
 
-    // Show user-friendly notification (only for user-facing errors)
     if (this.shouldShowNotification(error)) {
       this.showErrorNotification(errorDetails);
     }
 
-    // Report to monitoring service (if configured)
     this.reportToMonitoring(error, errorDetails);
   }
 
-  private extractErrorDetails(error: any): ErrorDetails {
+  private extractErrorDetails(error: unknown): ErrorDetails {
     if (error instanceof Error) {
       return {
         name: error.name,
@@ -53,31 +49,21 @@ export class GlobalErrorHandler implements ErrorHandler {
     };
   }
 
-  private shouldShowNotification(error: any): boolean {
-    // Don't show notifications for:
-    // - Network errors that will be handled by the service
-    // - Expected validation errors
-    // - Errors during development (let devtools handle them)
-
+  private shouldShowNotification(error: unknown): boolean {
     if (error instanceof Error) {
-      // Don't show for expected errors
       if (error.name === "HttpErrorResponse") {
         return false;
       }
     }
 
-    // Show for unexpected errors
     return true;
   }
 
   private showErrorNotification(details: ErrorDetails): void {
-    // In a real implementation, this would show a toast/snackbar
-    // For now, we just log it - the UI layer should handle notifications
-    console.warn("[User Notification]", this.getUserFriendlyMessage(details));
+    this.logger.warn("UserNotification", this.getUserFriendlyMessage(details));
   }
 
   private getUserFriendlyMessage(details: ErrorDetails): string {
-    // Map technical errors to user-friendly messages
     const message = details.message.toLowerCase();
 
     if (message.includes("network") || message.includes("fetch")) {
@@ -99,20 +85,9 @@ export class GlobalErrorHandler implements ErrorHandler {
     return "An unexpected error occurred. Please try again.";
   }
 
-  private reportToMonitoring(error: any, details: ErrorDetails): void {
-    // Hook for error reporting services (Sentry, LogRocket, etc.)
-    // Example:
-    // if (typeof Sentry !== 'undefined') {
-    //   Sentry.captureException(error, {
-    //     tags: {
-    //       error_type: details.name,
-    //     },
-    //   });
-    // }
-
-    // For now, just log to console in development
+  private reportToMonitoring(error: unknown, details: ErrorDetails): void {
     if (!this.isProduction()) {
-      console.error("[Error Report]", details);
+      this.logger.error("ErrorReport", details.message, details);
     }
   }
 
@@ -125,5 +100,5 @@ interface ErrorDetails {
   name: string;
   message: string;
   stack?: string;
-  originalError: any;
+  originalError: unknown;
 }
