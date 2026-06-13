@@ -4,6 +4,7 @@ import { Injectable, OnDestroy, signal } from "@angular/core";
 /* models */
 import { WidgetFilter, PlatformType, ChatMessageEmote } from "@models/chat.model";
 import { ReconnectionManager } from "@utils/reconnection-manager.util";
+import { POLLING_INTERVAL_MS } from "@app/shared/utils/constants";
 export interface OverlayChatMessage {
   id: string;
   platform: PlatformType;
@@ -50,7 +51,7 @@ export class OverlayWsStateService implements OnDestroy {
   private currentKey: string | null = null;
   private readonly reconnectionManager = new ReconnectionManager({
     maxRetries: 10,
-    baseDelayMs: 2000,
+    baseDelayMs: POLLING_INTERVAL_MS,
     maxDelayMs: 30000,
   });
   private pendingOptions: OverlayConnectOptions | null = null;

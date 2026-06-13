@@ -6,6 +6,7 @@ import { ChatMessage, PlatformType } from "@models/chat.model";
 import { ReconnectionManager } from "@utils/reconnection-manager.util";
 import { LoggerService } from "@services/core/logger.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
+import { POLLING_INTERVAL_MS } from "@app/shared/utils/constants";
 type OverlaySourcePayload = {
   type: "chatMessage";
   message: {
@@ -31,7 +32,7 @@ export class OverlaySourceBridgeService implements OnDestroy {
   private connectedPort: number | null = null;
   private readonly reconnectionManager = new ReconnectionManager({
     maxRetries: 10,
-    baseDelayMs: 2000,
+    baseDelayMs: POLLING_INTERVAL_MS,
     maxDelayMs: 30000,
   });
   private connectionState: "disconnected" | "connecting" | "connected" = "disconnected";
