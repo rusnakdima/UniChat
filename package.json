@@ -55,7 +55,6 @@
     "@tauri-apps/cli": "^2.10.1",
     "@types/dompurify": "^3.2.0",
     "@types/tmi.js": "^1.8.6",
-    "flowbite": "^4.0.1",
     "postcss": "^8.5.8",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
