@@ -30,6 +30,7 @@ export class AppSidebarComponent implements OnInit {
     { path: "/export", icon: "download", label: "Export Chat" },
     { path: "/settings", icon: "settings", label: "Settings" },
     { path: "/updates", icon: "system_update", label: "Updates" },
+    { path: "/about", icon: "info", label: "About" },
   ];
 
   readonly themeMode = this.themeService.themeMode;

@@ -91,8 +91,11 @@ export const TWITCH_CONFIG = {
 /**
  * GitHub repository for update checks
  */
-export const GITHUB_REPO = "rusnakdima/UniChat";
+export const GITHUB_USERNAME = "TechCraft-Solutions";
+export const GITHUB_REPO_NAME = "UniChat";
+export const GITHUB_REPO = `${GITHUB_USERNAME}/${GITHUB_REPO_NAME}`;
 export const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+export const GITHUB_RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
 
 /**
  * Type-safe access to app config

@@ -31,6 +31,7 @@ export class AppMobileNavComponent implements OnInit {
     { path: "/analytics", icon: "bar_chart", label: "Stats" },
     { path: "/export", icon: "download", label: "Export" },
     { path: "/settings", icon: "settings", label: "Settings" },
+    { path: "/about", icon: "info", label: "About" },
   ];
 
   readonly themeMode = this.themeService.themeMode;
