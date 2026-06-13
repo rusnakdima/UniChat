@@ -161,7 +161,6 @@ export class KickChatMessageHandler {
       const channelInfo = await fetchChannelInfo(normalizedChannel, account.accessToken);
 
       const response = await invoke<boolean>("kickSendChatMessage", {
-        chatroomId: Number(channelInfo.chatroomId),
         content: trimmed,
         accessToken: account.accessToken,
         broadcasterUserId: Number(channelInfo.broadcasterUserId),

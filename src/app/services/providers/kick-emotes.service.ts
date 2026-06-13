@@ -15,7 +15,7 @@ export class KickEmotesService {
   private static readonly KICK_EMOTE_BRACKET = /\[emote:([^:\]]+):([^\]]*)\]/g;
 
   private static readonly kickEmoteUrl = (emoteId: string) =>
-    `https://files.kick.com/emotes/${encodeURIComponent(emoteId)}/fullsize`;
+    `https://files.kick.com/images/emotes/${encodeURIComponent(emoteId)}/full`;
 
   extractBracketEmotes(content: string): ChatMessageEmote[] {
     if (!content) {

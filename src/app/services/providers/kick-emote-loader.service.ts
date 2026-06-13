@@ -50,7 +50,7 @@ export class KickEmoteLoaderService {
         code: info.name,
         start: 0,
         end: 0,
-        url: `https://files.kick.com/emotes/${encodeURIComponent(String(info.id))}/fullsize`,
+        url: `https://files.kick.com/images/emotes/${encodeURIComponent(String(info.id))}/full`,
       }));
 
       // Cache the result

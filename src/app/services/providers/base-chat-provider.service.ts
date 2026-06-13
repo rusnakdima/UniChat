@@ -53,7 +53,7 @@ export abstract class BaseChatProviderService {
     delete: ReturnType<typeof createMessageActionState>;
   };
 
-  protected createMessage(channelId: string, data: Partial<ChatMessage>): ChatMessage {
+  public createMessage(channelId: string, data: Partial<ChatMessage>): ChatMessage {
     const timestamp = generateTimestamp();
     const userId = data.sourceUserId ?? `${this.platform}-user-${Date.now()}`;
     const sourceMessageId = data.sourceMessageId ?? `${this.platform}-${channelId}-${Date.now()}`;

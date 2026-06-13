@@ -184,7 +184,6 @@ export class KickChatService extends BaseChatProviderService {
       const channelInfo = await this.fetchChannelInfo(normalizedChannel);
 
       const response = await invoke<boolean>("kickSendChatMessage", {
-        chatroomId: Number(channelInfo.chatroomId),
         content: trimmed,
         accessToken: account.accessToken,
         broadcasterUserId: Number(channelInfo.broadcasterUserId),
