@@ -2,6 +2,7 @@ use log;
 use serde::{Deserialize, Serialize};
 
 use crate::helpers::http_client::shared_client;
+use crate::helpers::http_error_helper::handle_http_error;
 use crate::utils::validation::{validate_channel_slug, validate_oauth_token};
 
 #[derive(Debug, Deserialize)]
@@ -93,21 +94,11 @@ impl KickService {
 
     let status = response.status();
 
-    if status == 404 {
-      log::warn!("Channel '{}' not found on Kick", channel_slug);
-      return Err(format!("Channel '{}' not found on Kick", channel_slug));
-    } else if status == 429 {
-      log::warn!("Rate limit exceeded for channel '{}'", channel_slug);
-      return Err("Rate limit exceeded. Please try again later.".to_string());
-    } else if status == 401 || status == 403 {
-      log::error!("Auth failed for channel '{}': {}", channel_slug, status);
-      return Err(format!(
-        "Kick API returned {}. Authentication may be required.",
-        status
-      ));
-    } else if !status.is_success() {
-      log::error!("Kick API error for channel '{}': {}", channel_slug, status);
-      return Err(format!("Kick API error: {}", status));
+    if !status.is_success() {
+      let context = format!("Channel '{}' on Kick", channel_slug);
+      let err = handle_http_error(status, &context).unwrap_err();
+      log::error!("{}", &err);
+      return Err(err);
     }
 
     let data = response.json::<KickChannelResponse>().await.map_err(|e| {
@@ -160,10 +151,8 @@ impl KickService {
 
     let status = response.status();
 
-    if status == 404 {
-      return Err("User not found".to_string());
-    } else if !status.is_success() {
-      return Err(format!("Kick API error: {}", status));
+    if !status.is_success() {
+      return Err(handle_http_error(status, "User").unwrap_err());
     }
 
     let data = response
@@ -207,16 +196,11 @@ impl KickService {
 
     let status = response.status();
 
-    if status == 404 {
-      log::warn!("Channel '{}' not found on Kick", channel_slug);
-      return Err(format!("Channel '{}' not found on Kick", channel_slug));
-    } else if !status.is_success() {
-      log::error!(
-        "Kick API error fetching channel info for '{}': {}",
-        channel_slug,
-        status
-      );
-      return Err(format!("Kick API error: {}", status));
+    if !status.is_success() {
+      let context = format!("Channel '{}' on Kick", channel_slug);
+      let err = handle_http_error(status, &context).unwrap_err();
+      log::error!("{}", &err);
+      return Err(err);
     }
 
     let data = response.json::<KickChannelResponse>().await.map_err(|e| {

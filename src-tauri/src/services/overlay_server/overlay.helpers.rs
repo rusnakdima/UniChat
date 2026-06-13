@@ -30,7 +30,7 @@ pub fn filter_and_sort_messages(
     b_time.cmp(&a_time)
   });
 
-  let limit_value = limit.unwrap_or(50) as usize;
+  let limit_value = limit.unwrap_or(crate::constants::DEFAULT_MESSAGE_LIMIT as u32) as usize;
   if result.len() > limit_value {
     result.truncate(limit_value);
   }

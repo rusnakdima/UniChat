@@ -5,6 +5,7 @@ use crate::helpers::auth_twitch_helper::{
   normalize_twitch_cdn_url, twitch_app_access_token, twitch_client_credentials,
 };
 use crate::helpers::http_client::shared_client;
+use crate::helpers::http_error_helper::handle_http_error;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::platform_type_model::PlatformTypeModel;
 use crate::AppState;
@@ -124,14 +125,7 @@ impl TwitchService {
           .to_string(),
       )
     } else {
-      let error_text = response.text().await.unwrap_or_default();
-      log::error!(
-        "Delete failed for message {} ({}): {}",
-        message_id,
-        status,
-        error_text
-      );
-      Err(format!("Delete failed ({}): {}", status, error_text))
+      return Err(handle_http_error(status, "Twitch message delete").unwrap_err());
     }
   }
 
@@ -161,9 +155,7 @@ impl TwitchService {
       .map_err(|e| e.to_string())?;
 
     if !response.status().is_success() {
-      let status = response.status();
-      let error_text = response.text().await.unwrap_or_default();
-      return Err(format!("Twitch API error ({}): {}", status, error_text));
+      return Err(handle_http_error(response.status(), "Twitch API").unwrap_err());
     }
 
     let emotes_response: HelixChannelEmotesResponse =

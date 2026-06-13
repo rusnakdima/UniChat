@@ -29,7 +29,7 @@ use crate::routes::update_route::{
 use crate::routes::youtube_route::{
   youtubeFetchChannelInfoByApiKey, youtubeFetchChatMessages, youtubeFetchLiveVideoIdByApiKey,
 };
-use crate::services::auth::account_service::AccountService;
+use crate::services::auth::account::AccountService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
 use tauri::Emitter;
 use tauri_plugin_deep_link::DeepLinkExt;

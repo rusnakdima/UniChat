@@ -7,7 +7,7 @@ use axum::extract::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::{mpsc, RwLock};
 
-use crate::constants::WS_RECEIVE_TIMEOUT_SECS;
+use crate::constants::{MAX_WIDGET_IDS, MESSAGE_MAX_PER_WIDGET, WS_RECEIVE_TIMEOUT_SECS};
 use crate::helpers::sanitizer_helper::sanitize_for_overlay;
 use crate::models::overlay_message_model::{
   OverlayMessageModel, OverlayWidgetFilterModel, OverlayWsIncomingModel, OverlayWsSubscribeModel,
@@ -16,9 +16,6 @@ use crate::services::overlay_server::overlay_router::OverlayRouterState;
 use crate::services::overlay_server::overlay_subscriber_manager::{
   OverlayServerState, OverlaySubscriber,
 };
-
-const MAX_WIDGET_IDS: usize = 100;
-const MESSAGE_MAX_PER_WIDGET: usize = 100;
 
 /// Query parameters for overlay WebSocket connections
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -64,9 +61,7 @@ async fn handle_overlay_subscriber(ws: WebSocket, widget_id: String, state: Over
   let (mut ws_sender, mut ws_receiver) = ws.split();
 
   let widget_id_for_removal = widget_id.clone();
-  let mut subscribed = false;
 
-  // Spawn send task
   let send_task = tokio::task::spawn(async move {
     while let Some(msg) = out_rx.recv().await {
       if ws_sender.send(msg).await.is_err() {
@@ -75,60 +70,37 @@ async fn handle_overlay_subscriber(ws: WebSocket, widget_id: String, state: Over
     }
   });
 
-  // Use a timeout to detect dead connections
   let receive_timeout = tokio::time::Duration::from_secs(WS_RECEIVE_TIMEOUT_SECS);
 
+  let mut subscribed = false;
+
   loop {
-    // Use tokio::select to handle timeout
     let msg_result = tokio::time::timeout(receive_timeout, ws_receiver.next()).await;
 
     match msg_result {
       Ok(Some(Ok(msg))) => {
-        match msg {
-          Message::Text(text) => {
-            if let Ok(incoming) = serde_json::from_str::<OverlayWsIncomingModel>(&text) {
-              if incoming.kind == "subscribe" && !subscribed {
-                if let Some(subscribe) = incoming.subscribe {
-                  // First, update the filter and channel_ids
-                  handle_subscribe_message(subscribe, &filter, &channel_ids).await;
-
-                  // Then read the channel_ids that were just set
-                  let channel_ids_clone = {
-                    let guard = channel_ids.read().await;
-                    (*guard).clone()
-                  };
-
-                  // Update subscriber's channel_ids BEFORE registering
-                  *sub.channel_ids.write().await = channel_ids_clone.clone();
-
-                  // Now register the subscriber with updated channel_ids
-                  state
-                    .add_subscriber(widget_id.clone(), sub.clone(), channel_ids_clone.clone())
-                    .await;
-                  subscribed = true;
-                }
-              }
-            }
-          }
-          Message::Close(_close_frame) => {
-            break;
-          }
-          Message::Ping(data) => {
-            // Send pong through the channel to the send task
-            let _ = out_tx.send(Message::Pong(data));
-          }
-          Message::Pong(_) => {}
-          Message::Binary(_data) => {}
+        if let Message::Close(_) = msg {
+          break;
+        }
+        if let Message::Ping(data) = msg {
+          let _ = out_tx.send(Message::Pong(data));
+          continue;
+        }
+        if let Message::Text(text) = msg {
+          subscribed = process_subscribe_text(
+            &text,
+            &filter,
+            &channel_ids,
+            &state,
+            &widget_id,
+            &sub,
+            subscribed,
+          )
+          .await;
         }
       }
-      Ok(Some(Err(_e))) => {
-        break;
-      }
-      Ok(None) => {
-        break;
-      }
+      Ok(Some(Err(_))) | Ok(None) => break,
       Err(_) => {
-        // Timeout - send a ping to check if connection is still alive
         if out_tx.send(Message::Ping(vec![])).is_err() {
           break;
         }
@@ -140,6 +112,51 @@ async fn handle_overlay_subscriber(ws: WebSocket, widget_id: String, state: Over
     .remove_subscriber(&widget_id_for_removal, subscriber_id)
     .await;
   send_task.abort();
+}
+
+async fn process_subscribe_text(
+  text: &str,
+  filter: &Arc<RwLock<OverlayWidgetFilterModel>>,
+  channel_ids: &Arc<RwLock<Option<Vec<String>>>>,
+  state: &OverlayServerState,
+  widget_id: &str,
+  sub: &OverlaySubscriber,
+  subscribed: bool,
+) -> bool {
+  if subscribed {
+    return subscribed;
+  }
+
+  let Ok(incoming) = serde_json::from_str::<OverlayWsIncomingModel>(text) else {
+    return subscribed;
+  };
+
+  if incoming.kind != "subscribe" {
+    return subscribed;
+  }
+
+  let Some(subscribe) = incoming.subscribe else {
+    return subscribed;
+  };
+
+  handle_subscribe_message(subscribe, filter, channel_ids).await;
+
+  let channel_ids_clone = {
+    let guard = channel_ids.read().await;
+    (*guard).clone()
+  };
+
+  *sub.channel_ids.write().await = channel_ids_clone.clone();
+
+  state
+    .add_subscriber(
+      widget_id.to_string(),
+      sub.clone(),
+      channel_ids_clone.clone(),
+    )
+    .await;
+
+  true
 }
 
 /// Handle subscribe message from overlay client

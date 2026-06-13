@@ -74,36 +74,38 @@ impl OverlayServerState {
       map.values().flat_map(|vec| vec.clone()).collect()
     };
 
-    // Build the channel reference for this message
     let message_channel_ref = build_channel_ref(&message.platform, &message.source_channel_id);
 
     for sub in snapshot {
-      // Apply supporter filter
-      let filter: OverlayWidgetFilterModel = sub.filter.read().await.clone();
-      let allowed = match filter {
-        OverlayWidgetFilterModel::All => true,
-        OverlayWidgetFilterModel::Supporters => message.is_supporter,
-      };
-      if !allowed {
+      if !self.should_broadcast_to_subscriber(&sub, &message, &message_channel_ref) {
         continue;
       }
-
-      // Apply channel filter
-      let channel_ids = sub.channel_ids.read().await;
-      match &*channel_ids {
-        None => {
-          // No channel filter - allow all
-        }
-        Some(ids) => {
-          // Check if message channel is in the allowed list
-          let is_allowed = ids.contains(&message_channel_ref);
-          if !is_allowed {
-            continue;
-          }
-        }
-      };
-
       let _ = sub.tx.send(Message::Text(text.clone()));
+    }
+  }
+
+  fn should_broadcast_to_subscriber(
+    &self,
+    sub: &OverlaySubscriber,
+    message: &OverlayMessageModel,
+    message_channel_ref: &str,
+  ) -> bool {
+    if !self.passes_filter(sub, message) {
+      return false;
+    }
+
+    let channel_ids = sub.channel_ids.blocking_read();
+    match &*channel_ids {
+      None => true,
+      Some(ids) => ids.iter().any(|id| id.as_str() == message_channel_ref),
+    }
+  }
+
+  fn passes_filter(&self, sub: &OverlaySubscriber, message: &OverlayMessageModel) -> bool {
+    let filter = sub.filter.blocking_read();
+    match &*filter {
+      OverlayWidgetFilterModel::All => true,
+      OverlayWidgetFilterModel::Supporters => message.is_supporter,
     }
   }
 }

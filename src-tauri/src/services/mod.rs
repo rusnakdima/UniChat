@@ -9,4 +9,4 @@ pub mod overlay_server;
 
 pub mod twitch_service;
 
-pub mod update_service;
+pub mod update;
