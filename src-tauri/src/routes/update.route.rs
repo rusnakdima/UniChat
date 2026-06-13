@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::services::update_service::{
+use crate::services::update::{
   check_for_update, download_update_with_progress, get_temp_download_path, install_update,
   UpdateInfo,
 };

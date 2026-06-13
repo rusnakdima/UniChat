@@ -1,3 +1,4 @@
+use crate::constants::MAX_WIDGET_IDS;
 use crate::models::overlay_message_model::OverlayMessageModel;
 use crate::services::overlay_server::overlay_helpers::filter_and_sort_messages;
 use log;
@@ -144,13 +145,11 @@ pub async fn openOverlayWindow(
   Ok(())
 }
 
-const MAX_OVERLAY_IDS: usize = 100;
-
 async fn enforce_max_overlay_ids(
   configs: &mut std::collections::HashMap<String, OverlayFullConfigModel>,
   messages: &mut std::collections::HashMap<String, Vec<OverlayMessageModel>>,
 ) {
-  if configs.len() >= MAX_OVERLAY_IDS {
+  if configs.len() >= MAX_WIDGET_IDS {
     if let Some(oldest_id) = configs.keys().next().cloned() {
       configs.remove(&oldest_id);
       messages.remove(&oldest_id);

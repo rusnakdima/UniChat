@@ -3,6 +3,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::helpers::http_client::shared_client;
+use crate::helpers::http_error_helper::{build_fallback_urls, handle_http_error};
 use crate::utils::validation::{validate_message_id, validate_oauth_token};
 
 #[derive(Debug, Serialize)]
@@ -75,11 +76,13 @@ pub async fn kickFetchRecentMessages(
     }
   }
 
-  let urls = [
-    format!("https://kick.com/api/v2/chatrooms/{}/messages", chatroomId),
-    format!("https://kick.com/api/v1/chatrooms/{}/messages", chatroomId),
-    format!("https://kick.com/api/v2/channels/{}/messages", channelSlug),
+  let base = "https://kick.com";
+  let paths = [
+    &format!("/api/v2/chatrooms/{}/messages", chatroomId)[..],
+    &format!("/api/v1/chatrooms/{}/messages", chatroomId)[..],
+    &format!("/api/v2/channels/{}/messages", channelSlug)[..],
   ];
+  let urls = build_fallback_urls(base, &paths);
 
   for url in urls {
     let response = client
@@ -120,7 +123,6 @@ pub async fn kickFetchRecentMessages(
 
 #[tauri::command]
 pub async fn kickSendChatMessage(
-  _chatroom_id: i64,
   content: String,
   access_token: String,
   broadcaster_user_id: i64,
@@ -153,22 +155,8 @@ pub async fn kickSendChatMessage(
 
   let status = response.status();
 
-  if status == 429 {
-    log::warn!(
-      "Rate limit exceeded when sending message for broadcaster: {}",
-      broadcaster_user_id
-    );
-    return Err("Rate limit exceeded. Please wait before sending more messages.".to_string());
-  }
-
   if !status.is_success() {
-    let error_text = response.text().await.unwrap_or_default();
-    log::error!(
-      "Kick API error sending message ({}): {}",
-      status,
-      error_text
-    );
-    return Err(format!("Kick API error ({}): {}", status, error_text));
+    return Err(handle_http_error(status, "Kick message send").unwrap_err());
   }
 
   let data = response
@@ -219,20 +207,8 @@ pub async fn kickDeleteChatMessage(
 
   let status = response.status();
 
-  if status == 429 {
-    log::warn!("Rate limit exceeded when deleting message: {}", message_id);
-    return Err("Rate limit exceeded. Please try again later.".to_string());
-  }
-
   if !status.is_success() {
-    let error_text = response.text().await.unwrap_or_default();
-    log::error!(
-      "Kick API error deleting message {} ({}): {}",
-      message_id,
-      status,
-      error_text
-    );
-    return Err(format!("Kick API error {}: {}", status, error_text));
+    return Err(handle_http_error(status, "Kick message delete").unwrap_err());
   }
 
   log::info!("Message deleted successfully: {}", message_id);

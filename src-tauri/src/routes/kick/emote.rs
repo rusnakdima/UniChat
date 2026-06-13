@@ -3,6 +3,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::helpers::http_client::shared_client;
+use crate::helpers::http_error_helper::build_fallback_urls;
 
 #[derive(Debug, Deserialize)]
 struct KickEmoteResponse {
@@ -32,10 +33,12 @@ pub async fn kickFetchChannelEmotes(channelSlug: String) -> Result<Vec<KickEmote
   log::info!("Fetching channel emotes for: {}", channelSlug);
   let client = shared_client();
 
-  let urls = [
-    format!("https://kick.com/api/v2/channels/{}/emotes", channelSlug),
-    format!("https://kick.com/api/v1/channels/{}/emotes", channelSlug),
+  let base = "https://kick.com";
+  let paths = [
+    &format!("/api/v2/channels/{}/emotes", channelSlug)[..],
+    &format!("/api/v1/channels/{}/emotes", channelSlug)[..],
   ];
+  let urls = build_fallback_urls(base, &paths);
 
   for url in urls {
     let response = client
