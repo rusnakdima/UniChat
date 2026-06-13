@@ -1,11 +1,11 @@
 #![allow(non_snake_case)]
 
 use crate::services::update_service::{
-  check_for_update, download_update_with_progress, get_temp_download_path, UpdateInfo,
+  check_for_update, download_update_with_progress, get_temp_download_path, install_update,
+  UpdateInfo,
 };
 use crate::AppState;
 use tauri::{AppHandle, State};
-use tauri_plugin_shell::ShellExt;
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct CheckUpdateResult {
@@ -47,7 +47,7 @@ pub async fn downloadUpdate(url: String, app_handle: AppHandle) -> Result<String
   let url_clone = url.clone();
   let asset_name = url_clone
     .split('/')
-    .last()
+    .next_back()
     .unwrap_or("update.bin")
     .to_string();
 
@@ -60,76 +60,7 @@ pub async fn downloadUpdate(url: String, app_handle: AppHandle) -> Result<String
 
 #[tauri::command]
 pub async fn installUpdate(installer_path: String, app_handle: AppHandle) -> Result<bool, String> {
-  let path = std::path::Path::new(&installer_path);
-  if !path.exists() {
-    return Err("Installer file not found".to_string());
-  }
-
-  let extension = path
-    .extension()
-    .and_then(|e| e.to_str())
-    .unwrap_or("")
-    .to_lowercase();
-
-  #[cfg(target_os = "windows")]
-  {
-    if extension == "msi" {
-      let shell = app_handle.shell();
-      let _child = shell
-        .command("msiexec")
-        .args(["/i", &installer_path])
-        .spawn()
-        .map_err(|e| format!("Failed to run installer: {}", e))?;
-    } else {
-      let shell = app_handle.shell();
-      let _child = shell
-        .command(&installer_path)
-        .spawn()
-        .map_err(|e| format!("Failed to run installer: {}", e))?;
-    }
-  }
-
-  #[cfg(target_os = "macos")]
-  {
-    let shell = app_handle.shell();
-    let _child = shell
-      .command("open")
-      .args(["-W", &installer_path])
-      .spawn()
-      .map_err(|e| format!("Failed to open installer: {}", e))?;
-  }
-
-  #[cfg(target_os = "linux")]
-  {
-    let shell = app_handle.shell();
-    if extension == "AppImage" {
-      let _child = shell
-        .command("chmod")
-        .args(["+x", &installer_path])
-        .spawn()
-        .map_err(|e| format!("Failed to make executable: {}", e))?;
-      let _child = shell
-        .command(&installer_path)
-        .spawn()
-        .map_err(|e| format!("Failed to run installer: {}", e))?;
-    } else if extension == "deb" {
-      let _child = shell
-        .command("dpkg")
-        .args(["-i", &installer_path])
-        .spawn()
-        .map_err(|e| format!("Failed to install .deb: {}", e))?;
-    } else if extension == "rpm" {
-      let _child = shell
-        .command("rpm")
-        .args(["-U", &installer_path])
-        .spawn()
-        .map_err(|e| format!("Failed to install .rpm: {}", e))?;
-    } else {
-      return Err(format!("Unsupported installer format: {}", extension));
-    }
-  }
-
-  Ok(true)
+  install_update(&installer_path, &app_handle)
 }
 
 #[tauri::command]

@@ -80,10 +80,6 @@ pub async fn openOverlayWindow(
     return Err("widgetId required".to_string());
   }
 
-  // In dev mode, load from Angular dev server for live reload support
-  // In production, load from overlay HTTP server
-  // Use dev server only in debug builds (when running via `cargo run` or `bun run tauri:dev`)
-  // In release builds, always use the overlay HTTP server on 127.0.0.1
   #[cfg(debug_assertions)]
   let overlay_url = if let Some(dev_url) = app.config().build.dev_url.as_ref() {
     let origin = dev_url.to_string().trim_end_matches('/').to_string();
@@ -104,7 +100,6 @@ pub async fn openOverlayWindow(
 
   let window_label = format!("overlay-{}", widget_id.trim());
 
-  // Check if window already exists
   if let Some(existing) = app.get_webview_window(&window_label) {
     log::debug!(
       "Overlay window already exists for widget: {}, focusing",
@@ -117,7 +112,6 @@ pub async fn openOverlayWindow(
     return Ok(());
   }
 
-  // Create new overlay window
   let mut builder = WebviewWindowBuilder::new(
     &app,
     &window_label,
@@ -150,26 +144,15 @@ pub async fn openOverlayWindow(
   Ok(())
 }
 
-use lazy_static::lazy_static;
-use std::collections::HashMap;
-use tokio::sync::RwLock;
-
-lazy_static! {
-  pub static ref OVERLAY_CONFIGS: RwLock<HashMap<String, OverlayFullConfigModel>> =
-    RwLock::new(HashMap::new());
-  pub static ref OVERLAY_MESSAGES: RwLock<HashMap<String, Vec<OverlayMessageModel>>> =
-    RwLock::new(HashMap::new());
-}
-
 const MAX_OVERLAY_IDS: usize = 100;
 
-/// Enforce the maximum number of overlay IDs by evicting the oldest entry if needed.
-async fn enforce_max_overlay_ids() {
-  let mut configs = OVERLAY_CONFIGS.write().await;
+async fn enforce_max_overlay_ids(
+  configs: &mut std::collections::HashMap<String, OverlayFullConfigModel>,
+  messages: &mut std::collections::HashMap<String, Vec<OverlayMessageModel>>,
+) {
   if configs.len() >= MAX_OVERLAY_IDS {
     if let Some(oldest_id) = configs.keys().next().cloned() {
       configs.remove(&oldest_id);
-      let mut messages = OVERLAY_MESSAGES.write().await;
       messages.remove(&oldest_id);
     }
   }
@@ -180,6 +163,7 @@ async fn enforce_max_overlay_ids() {
 #[allow(clippy::too_many_arguments)]
 pub async fn emitOverlayConfigChanged(
   app: tauri::AppHandle,
+  state: tauri::State<'_, crate::AppState>,
   widget_id: String,
   timestamp: u64,
   filter: String,
@@ -191,7 +175,6 @@ pub async fn emitOverlayConfigChanged(
   max_messages: u32,
   transparent_bg: bool,
 ) -> Result<(), String> {
-  // Store full config in backend for overlay windows to fetch
   let config = OverlayFullConfigModel {
     widget_id: widget_id.clone(),
     filter,
@@ -206,12 +189,12 @@ pub async fn emitOverlayConfigChanged(
   };
 
   {
-    enforce_max_overlay_ids().await;
-    let mut configs = OVERLAY_CONFIGS.write().await;
+    let mut configs = state.overlay_server_service.overlay_configs.write().await;
+    let mut messages = state.overlay_server_service.overlay_messages.write().await;
+    enforce_max_overlay_ids(&mut configs, &mut messages).await;
     configs.insert(widget_id.clone(), config);
   }
 
-  // Emit event to all windows
   app
     .emit(
       "overlay-config-changed",
@@ -232,6 +215,7 @@ pub async fn emitOverlayConfigChanged(
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn initOverlayConfigFromStorage(
+  state: tauri::State<'_, crate::AppState>,
   widget_id: String,
   filter: String,
   custom_css: String,
@@ -242,14 +226,12 @@ pub async fn initOverlayConfigFromStorage(
   max_messages: u32,
   transparent_bg: bool,
 ) -> Result<(), String> {
-  // Only initialize if config doesn't already exist
-  let configs = OVERLAY_CONFIGS.read().await;
+  let configs = state.overlay_server_service.overlay_configs.read().await;
   if configs.get(&widget_id).is_some() {
-    return Ok(()); // Already initialized
+    return Ok(());
   }
   drop(configs);
 
-  // Store initial config
   let config = OverlayFullConfigModel {
     widget_id: widget_id.clone(),
     filter,
@@ -260,12 +242,13 @@ pub async fn initOverlayConfigFromStorage(
     animation_direction,
     max_messages,
     transparent_bg,
-    timestamp: 0, // Initial config, no timestamp
+    timestamp: 0,
   };
 
   {
-    enforce_max_overlay_ids().await;
-    let mut configs = OVERLAY_CONFIGS.write().await;
+    let mut configs = state.overlay_server_service.overlay_configs.write().await;
+    let mut messages = state.overlay_server_service.overlay_messages.write().await;
+    enforce_max_overlay_ids(&mut configs, &mut messages).await;
     configs.insert(widget_id, config);
   }
 
@@ -274,9 +257,12 @@ pub async fn initOverlayConfigFromStorage(
 
 /// Get overlay configuration for a widget
 #[tauri::command]
-pub async fn getOverlayConfig(widget_id: String) -> Result<Option<OverlayFullConfigModel>, String> {
+pub async fn getOverlayConfig(
+  state: tauri::State<'_, crate::AppState>,
+  widget_id: String,
+) -> Result<Option<OverlayFullConfigModel>, String> {
   log::debug!("Getting overlay config for widget: {}", widget_id);
-  let configs = OVERLAY_CONFIGS.read().await;
+  let configs = state.overlay_server_service.overlay_configs.read().await;
   Ok(configs.get(&widget_id).cloned())
 }
 
@@ -292,12 +278,13 @@ pub struct GetOverlayMessagesParams {
 /// Get overlay messages for a widget (filtered by channel selection)
 #[tauri::command]
 pub async fn getOverlayMessages(
+  state: tauri::State<'_, crate::AppState>,
   widget_id: String,
   limit: Option<u32>,
   channel_ids: Option<Vec<String>>,
 ) -> Result<Vec<OverlayMessageModel>, String> {
   log::debug!("Getting overlay messages for widget: {}", widget_id);
-  let messages = OVERLAY_MESSAGES.read().await;
+  let messages = state.overlay_server_service.overlay_messages.read().await;
   let Some(widget_messages) = messages.get(&widget_id) else {
     log::debug!("No messages found for widget: {}", widget_id);
     return Ok(Vec::new());

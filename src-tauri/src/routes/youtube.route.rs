@@ -3,11 +3,8 @@
 
 use crate::helpers::youtube_api_helper::YouTubeChannelInfo;
 use crate::helpers::youtube_api_helper::{
-  youtube_delete_message_with_oauth, youtube_fetch_channel_info_by_api_key,
-  youtube_fetch_channel_info_with_oauth, youtube_fetch_live_chat_id_by_api_key,
-  youtube_fetch_live_chat_id_with_oauth, youtube_fetch_live_chat_messages_by_api_key,
-  youtube_fetch_live_video_id_by_api_key, youtube_fetch_live_video_id_with_oauth,
-  youtube_send_message_with_oauth,
+  youtube_fetch_channel_info_by_api_key, youtube_fetch_live_chat_id_by_api_key,
+  youtube_fetch_live_chat_messages_by_api_key, youtube_fetch_live_video_id_by_api_key,
 };
 
 #[tauri::command]
@@ -20,30 +17,6 @@ pub async fn youtubeFetchLiveVideoIdByApiKey(
   }
 
   youtube_fetch_live_video_id_by_api_key(&channel_name, &api_key).await
-}
-
-#[tauri::command]
-pub async fn youtubeFetchLiveVideoId(
-  channel_name: String,
-  access_token: String,
-) -> Result<String, String> {
-  if access_token.is_empty() {
-    return Err("Access token is required".to_string());
-  }
-
-  youtube_fetch_live_video_id_with_oauth(&channel_name, &access_token).await
-}
-
-#[tauri::command]
-pub async fn youtubeFetchLiveChatId(
-  video_id: String,
-  access_token: String,
-) -> Result<String, String> {
-  if access_token.is_empty() {
-    return Err("Access token is required".to_string());
-  }
-
-  youtube_fetch_live_chat_id_with_oauth(&video_id, &access_token).await
 }
 
 #[tauri::command]
@@ -70,40 +43,6 @@ pub async fn youtubeFetchChatMessages(
 }
 
 #[tauri::command]
-pub async fn youtubeSendMessage(
-  live_chat_id: String,
-  message_text: String,
-  access_token: String,
-) -> Result<String, String> {
-  if access_token.is_empty() {
-    return Err(
-      "Access token is required. Please connect your YouTube account in Settings.".to_string(),
-    );
-  }
-
-  if message_text.trim().is_empty() {
-    return Err("Message text cannot be empty".to_string());
-  }
-
-  youtube_send_message_with_oauth(&live_chat_id, &message_text, &access_token).await
-}
-
-#[tauri::command]
-pub async fn youtubeDeleteMessage(
-  message_id: String,
-  access_token: String,
-) -> Result<bool, String> {
-  if access_token.is_empty() {
-    return Err(
-      "Access token is required. Please connect your YouTube account in Settings.".to_string(),
-    );
-  }
-
-  youtube_delete_message_with_oauth(&message_id, &access_token).await?;
-  Ok(true)
-}
-
-#[tauri::command]
 pub async fn youtubeFetchChannelInfoByApiKey(
   channel_name: String,
   api_key: String,
@@ -113,16 +52,4 @@ pub async fn youtubeFetchChannelInfoByApiKey(
   }
 
   youtube_fetch_channel_info_by_api_key(&channel_name, &api_key).await
-}
-
-#[tauri::command]
-pub async fn youtubeFetchChannelInfo(
-  channel_name: String,
-  access_token: String,
-) -> Result<YouTubeChannelInfo, String> {
-  if access_token.is_empty() {
-    return Err("Access token is required".to_string());
-  }
-
-  youtube_fetch_channel_info_with_oauth(&channel_name, &access_token).await
 }

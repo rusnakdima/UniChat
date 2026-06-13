@@ -13,7 +13,7 @@ pub mod icons_route;
 #[path = "youtube.route.rs"]
 pub mod youtube_route;
 
-#[path = "kick.route.rs"]
+#[path = "kick/mod.rs"]
 pub mod kick_route;
 
 #[path = "twitch.route.rs"]

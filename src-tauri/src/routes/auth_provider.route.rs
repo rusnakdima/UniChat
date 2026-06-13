@@ -10,7 +10,7 @@ pub async fn authStart(
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
   let auth_url = state
-    .oauth_provider_service
+    .account_service
     .start_auth(platform)
     .map_err(|e| e.to_string())?;
   Ok(AuthCommandResultModel {
@@ -29,7 +29,7 @@ pub async fn authComplete(
   callbackUrl: String,
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
-    .oauth_provider_service
+    .account_service
     .complete_auth(platform, callbackUrl)
     .await
     .map_err(|e| e.to_string())?;
@@ -48,7 +48,7 @@ pub async fn authAwaitCallback(
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
-    .oauth_provider_service
+    .account_service
     .await_loopback_and_complete(platform)
     .await
     .map_err(|e| e.to_string())?;
@@ -67,7 +67,7 @@ pub async fn authStatus(
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
   let accounts = state
-    .oauth_provider_service
+    .account_service
     .get_auth_status(platform)
     .map_err(|e| e.to_string())?;
   Ok(AuthCommandResultModel {
@@ -85,7 +85,7 @@ pub async fn authValidate(
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
   let accounts = state
-    .oauth_provider_service
+    .account_service
     .validate_auth_status(platform)
     .await
     .map_err(|e| e.to_string())?;
@@ -105,7 +105,7 @@ pub async fn authRefresh(
   accountId: String,
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
-    .oauth_provider_service
+    .account_service
     .refresh_token(&platform, &accountId)
     .await
     .map_err(|e| e.to_string())?;
@@ -125,7 +125,7 @@ pub async fn authDisconnect(
   accountId: String,
 ) -> Result<AuthCommandResultModel, String> {
   state
-    .oauth_provider_service
+    .account_service
     .disconnect(platform, accountId)
     .await
     .map_err(|e| e.to_string())?;
