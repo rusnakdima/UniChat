@@ -61,7 +61,7 @@ export class ImageCacheDbService {
       await this.updateStats();
       this.initialized = true;
     } catch (e) {
-      this.logger.error("ImageCacheDbService init failed", e);
+      this.logger.error("ImageCacheDbService", "init failed", e);
     }
   }
 
@@ -117,7 +117,7 @@ export class ImageCacheDbService {
       const db = await this.openDb();
       return this.getFromStore<AvatarEntry>(db, STORE_AVATARS, cacheKey);
     } catch (e) {
-      this.logger.error("ImageCacheDbService.getAvatar failed", e);
+      this.logger.error("ImageCacheDbService", "getAvatar failed", e);
       return null;
     }
   }
@@ -141,7 +141,7 @@ export class ImageCacheDbService {
       await this.enforceMaxEntries(db, STORE_AVATARS);
       this.updateStatsSilently();
     } catch (e) {
-      this.logger.error("ImageCacheDbService.setAvatar failed", e);
+      this.logger.error("ImageCacheDbService", "setAvatar failed", e);
     }
   }
 
@@ -150,7 +150,7 @@ export class ImageCacheDbService {
       const db = await this.openDb();
       return this.getFromStore<EmoteEntry>(db, STORE_EMOTES, emoteKey);
     } catch (e) {
-      this.logger.error("ImageCacheDbService.getEmote failed", e);
+      this.logger.error("ImageCacheDbService", "getEmote failed", e);
       return null;
     }
   }
@@ -174,7 +174,7 @@ export class ImageCacheDbService {
       await this.enforceMaxEntries(db, STORE_EMOTES);
       this.updateStatsSilently();
     } catch (e) {
-      this.logger.error("ImageCacheDbService.setEmote failed", e);
+      this.logger.error("ImageCacheDbService", "setEmote failed", e);
     }
   }
 
@@ -183,7 +183,7 @@ export class ImageCacheDbService {
       const db = await this.openDb();
       return this.getFromStore<BadgeEntry>(db, STORE_BADGES, badgeKey);
     } catch (e) {
-      this.logger.error("ImageCacheDbService.getBadge failed", e);
+      this.logger.error("ImageCacheDbService", "getBadge failed", e);
       return null;
     }
   }
@@ -201,7 +201,7 @@ export class ImageCacheDbService {
       await this.enforceMaxEntries(db, STORE_BADGES);
       this.updateStatsSilently();
     } catch (e) {
-      this.logger.error("ImageCacheDbService.setBadge failed", e);
+      this.logger.error("ImageCacheDbService", "setBadge failed", e);
     }
   }
 
@@ -214,7 +214,7 @@ export class ImageCacheDbService {
       await this.deleteExpiredInStore(db, STORE_EMOTES, cutoff);
       await this.deleteExpiredInStore(db, STORE_BADGES, cutoff);
     } catch (e) {
-      this.logger.error("ImageCacheDbService.evictExpired failed", e);
+      this.logger.error("ImageCacheDbService", "evictExpired failed", e);
     }
   }
 
@@ -225,7 +225,7 @@ export class ImageCacheDbService {
       await this.evictLRUFromStore(db, STORE_EMOTES);
       await this.evictLRUFromStore(db, STORE_BADGES);
     } catch (e) {
-      this.logger.error("ImageCacheDbService.evictLRU failed", e);
+      this.logger.error("ImageCacheDbService", "evictLRU failed", e);
     }
   }
 
@@ -237,7 +237,7 @@ export class ImageCacheDbService {
       await this.clearStore(db, STORE_BADGES);
       this.stats.set({ avatars: 0, emotes: 0, badges: 0, total: 0 });
     } catch (e) {
-      this.logger.error("ImageCacheDbService.clearAll failed", e);
+      this.logger.error("ImageCacheDbService", "clearAll failed", e);
     }
   }
 
@@ -249,7 +249,7 @@ export class ImageCacheDbService {
       const badges = await this.countInStore(db, STORE_BADGES);
       this.stats.set({ avatars, emotes, badges, total: avatars + emotes + badges });
     } catch (e) {
-      this.logger.error("ImageCacheDbService.updateStats failed", e);
+      this.logger.error("ImageCacheDbService", "updateStats failed", e);
     }
   }
 

@@ -172,7 +172,7 @@ export class AvatarCacheService {
       const base64Data = await imageToBase64(url);
       await this.imageDb.setAvatar(key, url, type, base64Data);
     } catch (e) {
-      this.logger.warn("Failed to persist avatar to IndexedDB", e);
+      this.logger.warn("AvatarCacheService", "Failed to persist avatar to IndexedDB", e);
     }
   }
 }
