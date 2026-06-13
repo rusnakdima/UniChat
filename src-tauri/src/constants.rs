@@ -21,3 +21,24 @@ pub const KICK_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) App
 
 /// Overlay server port
 pub const OVERLAY_SERVER_PORT: u16 = 1450;
+
+/// Maximum length for sanitized text (e.g., overlay messages)
+pub const MAX_LEN: usize = 260;
+
+/// Maximum live chat results per YouTube API request
+pub const MAX_LIVE_CHAT_RESULTS: usize = 200;
+
+/// Default message limit for overlay display
+pub const DEFAULT_MESSAGE_LIMIT: usize = 50;
+
+/// OAuth callback port for local server
+pub const CALLBACK_PORT: u16 = 3456;
+
+/// Polling interval in milliseconds for YouTube live chat
+pub const POLLING_INTERVAL_MS: u64 = 2000;
+
+/// Maximum number of widget/overlay IDs to track
+pub const MAX_WIDGET_IDS: usize = 100;
+
+/// Maximum messages per widget/overlay
+pub const MESSAGE_MAX_PER_WIDGET: usize = 100;

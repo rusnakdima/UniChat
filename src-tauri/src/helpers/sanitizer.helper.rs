@@ -1,11 +1,11 @@
 use regex::Regex;
 
+use crate::constants::MAX_LEN;
+
 /// Sanitize chat text specifically for overlay rendering.
 ///
 /// Order matters: strip URLs BEFORE escaping HTML to prevent entity reconstruction attacks.
 pub fn sanitize_for_overlay(text: &str) -> String {
-  const MAX_LEN: usize = 260;
-
   let without_links = strip_urls(text);
   let escaped = escape_html(&without_links);
   let trimmed = escaped.trim();

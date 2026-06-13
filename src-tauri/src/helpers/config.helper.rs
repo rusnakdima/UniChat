@@ -45,7 +45,12 @@ impl AppConfig {
       oauth_redirect_uri: env_vars
         .get("UNICHAT_OAUTH_REDIRECT_URI")
         .cloned()
-        .unwrap_or_else(|| "http://localhost:3456/callback".to_string()),
+        .unwrap_or_else(|| {
+          format!(
+            "http://localhost:{}/callback",
+            crate::constants::CALLBACK_PORT
+          )
+        }),
       twitch_client_id: env_vars.get("TWITCH_CLIENT_ID").cloned(),
       twitch_client_secret: env_vars.get("TWITCH_CLIENT_SECRET").cloned(),
       kick_client_id: env_vars.get("KICK_CLIENT_ID").cloned(),
