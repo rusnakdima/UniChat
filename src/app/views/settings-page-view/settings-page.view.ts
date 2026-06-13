@@ -146,4 +146,8 @@ export class SettingsPageView {
       }
     }
   }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
+  }
 }

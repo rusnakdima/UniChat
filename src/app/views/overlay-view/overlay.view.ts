@@ -19,7 +19,7 @@ import { ChatMessagePresentationService } from "@services/ui/chat-message-presen
 import { OverlayConfigManager } from "./overlay-config.manager";
 import { OverlayChatRenderer } from "./overlay-chat.renderer";
 import { migrateLegacyChannelRefs } from "@utils/channel-ref.util";
-import { OverlayStorageService } from "@shared/services/overlay-storage.service";
+import { OverlayStorageService } from "@app/shared/services/overlay-storage.service";
 
 @Component({
   selector: "app-overlay-view",

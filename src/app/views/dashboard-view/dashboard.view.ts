@@ -18,6 +18,7 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStateService } from "@services/data/chat-state.service";
 import { DashboardChatInteractionService } from "@services/ui/dashboard-chat-interaction.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
+import { OVERLAY_CONSTANTS } from "@app/config/app.constants";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.service";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
@@ -30,7 +31,7 @@ import { DashboardHeaderComponent } from "@components/dashboard-header/dashboard
 import { DashboardComponent } from "@components/dashboard/dashboard.component";
 import { KeyboardShortcutsHelpComponent } from "@components/keyboard-shortcuts-help/keyboard-shortcuts-help.component";
 import { PinnedMessagesPanelComponent } from "@components/pinned-messages-panel/pinned-messages-panel.component";
-import { UserProfilePopoverComponent } from "@components/user-profile-popover/user-profile-popover";
+import { UserProfilePopoverComponent } from "@components/user-profile-popover/user-profile-popover.component";
 @Component({
   selector: "app-dashboard-view",
   standalone: true,
@@ -73,7 +74,7 @@ export class DashboardView {
 
   constructor() {
     const featured = this.dashboardStateService.featuredWidget();
-    const port = featured?.port ?? 1450;
+    const port = featured?.port ?? OVERLAY_CONSTANTS.DEFAULT_PORT;
     void this.overlaySourceBridge.ensureConnected(port);
 
     const cleanups = [

@@ -19,7 +19,9 @@ import { DashboardStateService } from "@services/features/dashboard-state.servic
 import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
 import { migrateLegacyChannelRefs } from "@utils/channel-ref.util";
-import { OverlayStorageService } from "@shared/services/overlay-storage.service";
+import { OverlayStorageService } from "@app/shared/services/overlay-storage.service";
+import { POLLING_INTERVAL_MS } from "@app/shared/utils/constants";
+import { OVERLAY_CONSTANTS } from "@app/config/app.constants";
 
 @Injectable({ providedIn: "root" })
 export class OverlayConfigManager implements OnDestroy {
@@ -161,10 +163,14 @@ export class OverlayConfigManager implements OnDestroy {
             config = await response.json();
           }
         } catch (httpError) {
-          this.logger.debug("HTTP fallback unavailable for overlay config", {
-            tauriError,
-            httpError,
-          });
+          this.logger.debug(
+            "OverlayConfigManager",
+            "HTTP fallback unavailable for overlay config",
+            {
+              tauriError,
+              httpError,
+            }
+          );
         }
       }
 
@@ -219,7 +225,7 @@ export class OverlayConfigManager implements OnDestroy {
 
     this.configPollInterval = setInterval(async () => {
       await this.pollBackendConfig(widgetId);
-    }, 2000);
+    }, POLLING_INTERVAL_MS);
   }
 
   private async pollBackendConfig(widgetId: string): Promise<void> {
@@ -229,7 +235,7 @@ export class OverlayConfigManager implements OnDestroy {
         config = await this.tauriApi.invoke<WidgetConfig>("getOverlayConfig", { widgetId });
       } catch (tauriError) {
         try {
-          const port = this.widget?.port || 1450;
+          const port = this.widget?.port || OVERLAY_CONSTANTS.DEFAULT_PORT;
           const response = await fetch(
             `http://127.0.0.1:${port}/api/overlay/${encodeURIComponent(widgetId)}/config`
           );
@@ -237,10 +243,14 @@ export class OverlayConfigManager implements OnDestroy {
             config = await response.json();
           }
         } catch (httpError) {
-          this.logger.debug("HTTP fallback unavailable for pollBackendConfig", {
-            tauriError,
-            httpError,
-          });
+          this.logger.debug(
+            "OverlayConfigManager",
+            "HTTP fallback unavailable for pollBackendConfig",
+            {
+              tauriError,
+              httpError,
+            }
+          );
         }
       }
 
@@ -312,7 +322,7 @@ export class OverlayConfigManager implements OnDestroy {
         this.cdr.markForCheck();
       }
     } catch (pollError) {
-      this.logger.warn("Backend config poll failed", { error: pollError });
+      this.logger.warn("OverlayConfigManager", "Backend config poll failed", { error: pollError });
     }
   }
 

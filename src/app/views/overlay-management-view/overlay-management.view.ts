@@ -29,8 +29,8 @@ import { LoggerService } from "@services/core/logger.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
 import { findChannelByRef, migrateLegacyChannelRefs, toChannelRef } from "@utils/channel-ref.util";
 import { buildOverlayUrl } from "@helpers/chat.helper";
-import { OverlayStorageService } from "@shared/services/overlay-storage.service";
-import { parseIntOrNull } from "@shared/utils/parse-int.util";
+import { OverlayStorageService } from "@app/shared/services/overlay-storage.service";
+import { parseIntOrNull } from "@app/shared/utils/parse-int.util";
 
 /* components */
 import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
@@ -61,6 +61,7 @@ export class OverlayManagementView {
   private readonly tauriApi = inject(TauriApiService);
   readonly presentation = inject(ChatMessagePresentationService);
   readonly channelAvatars = inject(ChannelAvatarService);
+  private readonly overlayStorage = inject(OverlayStorageService);
 
   readonly saveSuccess = signal<boolean>(false);
 

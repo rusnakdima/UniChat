@@ -7,6 +7,42 @@
 >
   <div class="flex-1 space-y-6 overflow-y-auto p-6 pb-24 md:pb-6">
     <div class="space-y-6">
+      <!-- Theme Toggle -->
+      <div
+        class="flex items-center justify-between rounded-2xl border p-4"
+        [class.border-zinc-200]="themeMode() === 'light'"
+        [class.bg-white]="themeMode() === 'light'"
+        [class.glass]="themeMode() === 'dark'"
+      >
+        <div>
+          <div
+            class="font-bold"
+            [class.text-zinc-900]="themeMode() === 'light'"
+            [class.text-zinc-100]="themeMode() === 'dark'"
+          >
+            {{ themeMode() === "dark" ? "Dark Mode" : "Light Mode" }}
+          </div>
+          <div
+            class="text-xs"
+            [class.text-zinc-500]="themeMode() === 'light'"
+            [class.text-zinc-400]="themeMode() === 'dark'"
+          >
+            Toggle dark/light theme
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="toggleTheme()"
+          class="flex h-11 w-11 items-center justify-center rounded-xl transition"
+          [class.bg-zinc-100]="themeMode() === 'light'"
+          [class.text-zinc-700]="themeMode() === 'light'"
+          [class.dark:bg-white/10]="themeMode() === 'dark'"
+          [class.dark:text-zinc-100]="themeMode() === 'dark'"
+        >
+          <mat-icon [fontIcon]="themeMode() === 'dark' ? 'light_mode' : 'dark_mode'" />
+        </button>
+      </div>
+
       <!-- Aggregated Chat Mode -->
       <div
         class="flex items-center justify-between rounded-2xl border p-4"
