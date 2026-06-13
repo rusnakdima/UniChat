@@ -10,7 +10,6 @@ import {
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 import { ActivatedRoute } from "@angular/router";
-import { invoke } from "@tauri-apps/api/core";
 
 /* models */
 import {
@@ -27,14 +26,16 @@ import { DashboardStateService } from "@services/features/dashboard-state.servic
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
 import { LoggerService } from "@services/core/logger.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 import { findChannelByRef, migrateLegacyChannelRefs, toChannelRef } from "@utils/channel-ref.util";
 import { buildOverlayUrl } from "@helpers/chat.helper";
+import { OverlayStorageService } from "@shared/services/overlay-storage.service";
+import { parseIntOrNull } from "@shared/utils/parse-int.util";
 
 /* components */
 import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
 import { SharedHeaderComponent } from "@components/shared-header/shared-header.component";
 import {
-  overlayFilterOverrideKey,
   overlayCustomCssKey,
   overlayChannelIdsKey,
   overlayMaxMessagesKey,
@@ -57,6 +58,7 @@ export class OverlayManagementView {
   private readonly dashboardState = inject(DashboardStateService);
   private readonly chatList = inject(ChatListService);
   private readonly localStorageService = inject(LocalStorageService);
+  private readonly tauriApi = inject(TauriApiService);
   readonly presentation = inject(ChatMessagePresentationService);
   readonly channelAvatars = inject(ChannelAvatarService);
 
@@ -106,12 +108,12 @@ export class OverlayManagementView {
       return;
     }
 
-    const overrideFilter = this.readOverlayFilterOverride(w.id);
+    const overrideFilter = this.overlayStorage.readOverlayFilterOverride(w.id);
     this.filterModel.set(overrideFilter ?? w.filter);
 
     this.customCssModel.set(this.localStorageService.get(overlayCustomCssKey(w.id), ""));
 
-    const storedChannelIds = this.readOverlayChannelIds(w.id);
+    const storedChannelIds = this.overlayStorage.readOverlayChannelIds(w.id);
     let channelIdsToUse = migrateLegacyChannelRefs(
       storedChannelIds ?? w.channelIds,
       this.availableChannels()
@@ -128,98 +130,45 @@ export class OverlayManagementView {
     this.channelIdsModel.set(channelIdsToUse);
 
     // Load overlay appearance settings
-    this.maxMessagesModel.set(this.readOverlayMaxMessages(w.id) ?? 6);
-    this.textSizeModel.set(this.readOverlayTextSize(w.id) ?? 16);
-    this.animationTypeModel.set(this.readOverlayAnimationType(w.id) ?? "fade");
-    this.animationDirectionModel.set(this.readOverlayAnimationDirection(w.id) ?? "top");
-    this.transparentBgModel.set(this.readOverlayTransparentBg(w.id) ?? false);
+    this.maxMessagesModel.set(this.overlayStorage.readOverlayMaxMessages(w.id) ?? 6);
+    this.textSizeModel.set(this.overlayStorage.readOverlayTextSize(w.id) ?? 16);
+    this.animationTypeModel.set(this.overlayStorage.readOverlayAnimationType(w.id) ?? "fade");
+    this.animationDirectionModel.set(
+      this.overlayStorage.readOverlayAnimationDirection(w.id) ?? "top"
+    );
+    this.transparentBgModel.set(this.overlayStorage.readOverlayTransparentBg(w.id) ?? false);
 
     // Initialize backend config from localStorage (for overlay window to use)
     void this.initBackendConfigFromStorage(w.id);
 
     // Ensure overlay server is started so OBS can load the URL immediately.
-    void invoke("startOverlayServer", { port: w.port }).catch((error) => {
-      this.logger.warn("[OverlayManagement] Failed to start overlay server:", error);
-    });
+    void this.tauriApi
+      .invoke("startOverlayServer", { port: w.port }, { suppressError: true })
+      .catch((error) => {
+        this.logger.warn("[OverlayManagement] Failed to start overlay server:", error);
+      });
   }
 
   private async initBackendConfigFromStorage(widgetId: string): Promise<void> {
     try {
-      await invoke("initOverlayConfigFromStorage", {
-        widgetId,
-        filter: this.filterModel(),
-        customCss: this.customCssModel(),
-        channelIds: this.channelIdsModel() ?? null,
-        textSize: this.textSizeModel(),
-        animationType: this.animationTypeModel(),
-        animationDirection: this.animationDirectionModel(),
-        maxMessages: this.maxMessagesModel(),
-        transparentBg: this.transparentBgModel(),
-      });
+      await this.tauriApi.invoke(
+        "initOverlayConfigFromStorage",
+        {
+          widgetId,
+          filter: this.filterModel(),
+          customCss: this.customCssModel(),
+          channelIds: this.channelIdsModel() ?? null,
+          textSize: this.textSizeModel(),
+          animationType: this.animationTypeModel(),
+          animationDirection: this.animationDirectionModel(),
+          maxMessages: this.maxMessagesModel(),
+          transparentBg: this.transparentBgModel(),
+        },
+        { suppressError: true }
+      );
     } catch {
       /* backend config init optional */
     }
-  }
-
-  private readOverlayFilterOverride(widgetId: string): WidgetFilter | null {
-    const raw = this.localStorageService.get<string>(overlayFilterOverrideKey(widgetId), "");
-    if (raw === "all" || raw === "supporters") {
-      return raw;
-    }
-    return null;
-  }
-
-  private readOverlayChannelIds(widgetId: string): string[] | null {
-    const stored = this.localStorageService.get<string[] | null>(
-      overlayChannelIdsKey(widgetId),
-      null
-    );
-    if (Array.isArray(stored)) {
-      return stored;
-    }
-    return null;
-  }
-
-  private readOverlayMaxMessages(widgetId: string): number | null {
-    const raw = this.localStorageService.get<string>(overlayMaxMessagesKey(widgetId), "");
-    if (raw) {
-      const parsed = parseInt(raw, 10);
-      return isNaN(parsed) ? null : parsed;
-    }
-    return null;
-  }
-
-  private readOverlayTextSize(widgetId: string): number | null {
-    const raw = this.localStorageService.get<string>(overlayTextSizeKey(widgetId), "");
-    if (raw) {
-      const parsed = parseInt(raw, 10);
-      return isNaN(parsed) ? null : parsed;
-    }
-    return null;
-  }
-
-  private readOverlayAnimationType(widgetId: string): OverlayAnimationType | null {
-    const raw = this.localStorageService.get<string>(overlayAnimationTypeKey(widgetId), "");
-    if (raw === "none" || raw === "fade" || raw === "slide" || raw === "pop") {
-      return raw;
-    }
-    return null;
-  }
-
-  private readOverlayAnimationDirection(widgetId: string): OverlayDirection | null {
-    const raw = this.localStorageService.get<string>(overlayAnimationDirectionKey(widgetId), "");
-    if (raw === "top" || raw === "bottom" || raw === "left" || raw === "right") {
-      return raw;
-    }
-    return null;
-  }
-
-  private readOverlayTransparentBg(widgetId: string): boolean | null {
-    const raw = this.localStorageService.get<string>(overlayTransparentBgKey(widgetId), "");
-    if (raw === "true" || raw === "false") {
-      return raw === "true";
-    }
-    return null;
   }
 
   async copyOverlayUrl(): Promise<void> {
@@ -238,11 +187,17 @@ export class OverlayManagementView {
     }
 
     // Use Tauri command to open overlay in native window
-    invoke("openOverlayWindow", {
-      port: w.port,
-      widgetId: w.id,
-      transparentBg: this.transparentBgModel(),
-    }).catch(() => undefined);
+    this.tauriApi
+      .invoke(
+        "openOverlayWindow",
+        {
+          port: w.port,
+          widgetId: w.id,
+          transparentBg: this.transparentBgModel(),
+        },
+        { suppressError: true }
+      )
+      .catch(() => undefined);
   }
 
   saveConfig(): void {
@@ -251,32 +206,7 @@ export class OverlayManagementView {
       return;
     }
 
-    this.localStorageService.set(overlayFilterOverrideKey(w.id), this.filterModel());
-    this.localStorageService.set(overlayCustomCssKey(w.id), this.customCssModel());
-    if (this.channelIdsModel() === undefined) {
-      this.localStorageService.remove(overlayChannelIdsKey(w.id));
-    } else {
-      this.localStorageService.set(overlayChannelIdsKey(w.id), this.channelIdsModel());
-    }
-    this.localStorageService.set(overlayMaxMessagesKey(w.id), this.maxMessagesModel().toString());
-    this.localStorageService.set(overlayTextSizeKey(w.id), this.textSizeModel().toString());
-    this.localStorageService.set(overlayAnimationTypeKey(w.id), this.animationTypeModel());
-    this.localStorageService.set(
-      overlayAnimationDirectionKey(w.id),
-      this.animationDirectionModel()
-    );
-    this.localStorageService.set(
-      overlayTransparentBgKey(w.id),
-      this.transparentBgModel().toString()
-    );
-
-    // Same-window updates (overlay view already listens for this).
-    window.dispatchEvent(new Event("unichat-overlay-config-changed"));
-
-    // Store config in backend and emit event to all windows
-    invoke("emitOverlayConfigChanged", {
-      widgetId: w.id,
-      timestamp: Date.now(),
+    this.overlayStorage.saveOverlayConfig(w.id, {
       filter: this.filterModel(),
       customCss: this.customCssModel(),
       channelIds: this.channelIdsModel() ?? null,
@@ -285,7 +215,30 @@ export class OverlayManagementView {
       animationDirection: this.animationDirectionModel(),
       maxMessages: this.maxMessagesModel(),
       transparentBg: this.transparentBgModel(),
-    }).catch(() => undefined);
+    });
+
+    // Same-window updates (overlay view already listens for this).
+    window.dispatchEvent(new Event("unichat-overlay-config-changed"));
+
+    // Store config in backend and emit event to all windows
+    this.tauriApi
+      .invoke(
+        "emitOverlayConfigChanged",
+        {
+          widgetId: w.id,
+          timestamp: Date.now(),
+          filter: this.filterModel(),
+          customCss: this.customCssModel(),
+          channelIds: this.channelIdsModel() ?? null,
+          textSize: this.textSizeModel(),
+          animationType: this.animationTypeModel(),
+          animationDirection: this.animationDirectionModel(),
+          maxMessages: this.maxMessagesModel(),
+          transparentBg: this.transparentBgModel(),
+        },
+        { suppressError: true }
+      )
+      .catch(() => undefined);
 
     // Show visual confirmation
     this.saveSuccess.set(true);

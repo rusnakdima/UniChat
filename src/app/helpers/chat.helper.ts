@@ -1,7 +1,5 @@
 /* models */
 import {
-  ChannelAccountCapabilities,
-  ChatAccount,
   ChatChannel,
   ChatMessage,
   DensityMode,
@@ -161,41 +159,6 @@ export function getDensityTextClasses(densityMode: DensityMode): string {
 export function buildOverlayUrl(port: number, widgetId: string): string {
   const encodedWidgetId = encodeURIComponent(widgetId);
   return `http://127.0.0.1:${port}/overlay?widgetId=${encodedWidgetId}`;
-}
-
-export function getProviderCapabilities(
-  platform: PlatformType,
-  isAuthorized: boolean
-): PlatformCapabilities {
-  const resolver = getPlatformResolver();
-  const capabilities = resolver.getCapabilities(platform);
-
-  // If not authorized, downgrade capabilities to listen-only
-  if (!isAuthorized) {
-    return {
-      canListen: true,
-      canReply: false,
-      canDelete: false,
-    };
-  }
-
-  return capabilities;
-}
-
-export function getChannelAccountCapabilities(
-  channel: Pick<ChatChannel, "platform" | "accountCapabilities">,
-  account?: Pick<ChatAccount, "authStatus">
-): ChannelAccountCapabilities {
-  const base = getProviderCapabilities(channel.platform, account?.authStatus === "authorized");
-  const moderation = channel.accountCapabilities;
-
-  return {
-    ...base,
-    canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
-    canModerate: moderation?.verified === true && moderation.canModerate,
-    moderationRole: moderation?.moderationRole ?? "viewer",
-    verified: moderation?.verified ?? false,
-  };
 }
 
 export interface CreateMessageOptions {

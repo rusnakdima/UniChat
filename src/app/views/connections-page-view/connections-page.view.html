@@ -1,27 +1,14 @@
 <div
-  class="flex h-full min-h-0 w-full flex-col overflow-hidden"
-  [class.bg-white]="themeMode() === 'light'"
-  [class.text-zinc-900]="themeMode() === 'light'"
-  [class.bg-zinc-950]="themeMode() === 'dark'"
-  [class.text-zinc-100]="themeMode() === 'dark'"
+  class="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
 >
   <div class="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">
-    <h3
-      class="mb-4 text-xl font-bold"
-      [class.text-zinc-900]="themeMode() === 'light'"
-      [class.text-zinc-100]="themeMode() === 'dark'"
-    >
-      Streaming Platforms
-    </h3>
+    <h3 class="mb-4 text-xl font-bold text-zinc-900 dark:text-zinc-100">Streaming Platforms</h3>
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       @for (conn of connections(); track conn.platform) {
         <div
-          class="rounded-2xl border p-6"
-          [class.border-zinc-200]="themeMode() === 'light'"
-          [class.bg-white]="themeMode() === 'light'"
+          class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5"
           [class.border-l-4]="true"
           [class]="getPlatformBorderClass(conn.platform)"
-          [class.glass]="themeMode() === 'dark'"
         >
           <div class="mb-6 flex items-start justify-between">
             <div class="text-4xl font-bold" [class]="getPlatformColor(conn.platform)">
@@ -29,55 +16,68 @@
             </div>
             @if (conn.connected) {
               <span
-                class="rounded-full bg-green-500/20 px-3 py-1 text-[10px] font-bold text-green-400"
+                class="rounded-full bg-green-500/20 px-3 py-1 text-[10px] font-bold text-green-600 dark:text-green-400"
               >
                 CONNECTED
               </span>
             } @else {
               <span
-                class="rounded-full bg-zinc-800 px-3 py-1 text-[10px] font-bold text-zinc-500"
-                [class.text-zinc-500]="themeMode() === 'light'"
+                class="rounded-full bg-zinc-200 px-3 py-1 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500"
               >
                 DISCONNECTED
               </span>
             }
           </div>
-          <h4
-            class="text-lg font-bold"
-            [class.text-zinc-900]="themeMode() === 'light'"
-            [class.text-zinc-100]="themeMode() === 'dark'"
-          >
+          <h4 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
             {{ conn.label }}
           </h4>
-          @if (conn.connected && conn.username) {
-            <p
-              class="mb-6 text-sm"
-              [class.text-zinc-400]="themeMode() === 'dark'"
-              [class.text-zinc-600]="themeMode() === 'light'"
-            >
-              Linked as <span class="text-white dark:text-zinc-100">{{ conn.username }}</span>
+          @if (conn.connected && conn.accounts.length > 0) {
+            <p class="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              Linked accounts:
             </p>
+            <div class="mb-3 space-y-1.5">
+              @for (account of conn.accounts; track account.id) {
+                <div
+                  class="flex items-center justify-between gap-2 rounded-lg bg-zinc-100 px-3 py-2 dark:bg-zinc-800"
+                >
+                  <div class="flex min-w-0 items-center gap-2">
+                    @if (account.avatarUrl) {
+                      <img
+                        [src]="account.avatarUrl"
+                        [alt]="account.username"
+                        class="h-5 w-5 shrink-0 rounded-full object-cover"
+                      />
+                    } @else {
+                      <div
+                        class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-300 text-[9px] font-bold text-zinc-700 uppercase dark:bg-zinc-700 dark:text-zinc-300"
+                      >
+                        {{ getAccountInitial(account.username) }}
+                      </div>
+                    }
+                    <span class="truncate text-sm text-zinc-900 dark:text-zinc-100">
+                      {{ account.username }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="disconnectAccount(account.id, conn.platform)"
+                    class="shrink-0 rounded-md px-2.5 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              }
+            </div>
           } @else {
-            <p
-              class="mb-6 text-sm"
-              [class.text-zinc-400]="themeMode() === 'dark'"
-              [class.text-zinc-600]="themeMode() === 'light'"
-            >
-              No account linked
-            </p>
+            <p class="mb-6 text-sm text-zinc-600 dark:text-zinc-400">No account linked</p>
           }
           @if (conn.connected) {
             <button
               type="button"
-              class="w-full rounded-xl py-2 text-sm font-medium transition"
-              [class.bg-zinc-100]="themeMode() === 'light'"
-              [class.text-zinc-900]="themeMode() === 'light'"
-              [class.hover-bg-zinc-200]="themeMode() === 'light'"
-              [class.bg-zinc-800]="themeMode() === 'dark'"
-              [class.text-zinc-100]="themeMode() === 'dark'"
-              [class.hover-bg-zinc-700]="themeMode() === 'dark'"
+              (click)="authorize(conn.platform)"
+              class="mt-2 w-full rounded-xl bg-zinc-100 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
             >
-              Configure Sync
+              + Connect Another Account
             </button>
           } @else {
             <button
@@ -95,36 +95,23 @@
 
     <!-- Channel List Section -->
     <div class="mt-8">
-      <h3
-        class="mb-4 text-xl font-bold"
-        [class.text-zinc-900]="themeMode() === 'light'"
-        [class.text-zinc-100]="themeMode() === 'dark'"
-      >
-        Active Channels
-      </h3>
+      <h3 class="mb-4 text-xl font-bold text-zinc-900 dark:text-zinc-100">Active Channels</h3>
 
       <div class="mb-4 flex items-center gap-3">
-        <span
-          class="text-sm font-medium"
-          [class.text-zinc-400]="themeMode() === 'dark'"
-          [class.text-zinc-600]="themeMode() === 'light'"
-        >
-          Filter:
-        </span>
+        <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400"> Filter: </span>
         <select
           [ngModel]="selectedChannelFilter()"
           (ngModelChange)="selectedChannelFilter.set($event)"
-          class="glass rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-100 transition outline-none focus:border-indigo-500"
-          [class.border-zinc-300]="themeMode() === 'light'"
-          [class.bg-white]="themeMode() === 'light'"
-          [class.text-zinc-900]="themeMode() === 'light'"
+          class="glass rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 transition outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-zinc-100"
         >
           <option value="all">All Platforms</option>
           @for (platform of platforms; track platform) {
             <option [value]="platform">{{ getPlatformLbl(platform) }}</option>
           }
         </select>
-        <span class="text-sm text-zinc-500"> ({{ filteredChannels().length }} channels) </span>
+        <span class="text-sm text-zinc-600 dark:text-zinc-500">
+          ({{ filteredChannels().length }} channels)
+        </span>
       </div>
 
       <!-- Add Channel Form -->
@@ -137,7 +124,7 @@
         />
         <select
           [(ngModel)]="selectedPlatform"
-          class="glass rounded-lg border border-zinc-800 px-4 py-2 text-sm text-zinc-100 transition outline-none focus:border-indigo-500"
+          class="glass rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 transition outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-zinc-100"
         >
           @for (platform of platforms; track platform) {
             <option [value]="platform">{{ getPlatformLbl(platform) }}</option>
@@ -145,7 +132,7 @@
         </select>
         <select
           [(ngModel)]="selectedAccountId"
-          class="glass rounded-lg border border-zinc-800 px-4 py-2 text-sm text-zinc-100 transition outline-none focus:border-indigo-500"
+          class="glass rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 transition outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-zinc-100"
         >
           <option value="">Watch-only</option>
           @for (account of getAuthorizedAccounts(selectedPlatform); track account.id) {
@@ -157,7 +144,7 @@
             type="text"
             [(ngModel)]="newChannelName"
             [placeholder]="getChannelNamePlaceholder()"
-            class="glass flex-1 rounded-lg border border-zinc-800 px-4 py-2 text-sm text-zinc-100 transition outline-none placeholder:text-zinc-500 focus:border-indigo-500"
+            class="glass flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 transition outline-none placeholder:text-zinc-500 focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-zinc-100 dark:placeholder:text-zinc-500"
             (keydown.enter)="addChannel()"
           />
           <button
@@ -174,7 +161,7 @@
       <div class="space-y-2">
         @for (channel of filteredChannels(); track channel.id) {
           <div
-            class="glass flex flex-col items-center justify-between gap-3 rounded-xl border border-zinc-800 p-3 sm:flex-row"
+            class="glass flex flex-col items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 sm:flex-row dark:border-zinc-800 dark:bg-zinc-950/80"
           >
             @if (editingChannelId === channel.id) {
               <div class="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
@@ -188,7 +175,7 @@
                   type="text"
                   [(ngModel)]="editingChannelName"
                   [placeholder]="channel.channelName"
-                  class="glass flex-1 rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-100 transition outline-none focus:border-indigo-500"
+                  class="glass flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 transition outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-zinc-100"
                   (keydown.enter)="saveEditChannel()"
                   (keydown.escape)="cancelEditChannel()"
                   autofocus
@@ -206,7 +193,7 @@
                 <button
                   type="button"
                   (click)="cancelEditChannel()"
-                  class="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-700"
+                  class="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                   title="Cancel"
                 >
                   <mat-icon [fontIcon]="'close'" class="h-6! w-5! text-xl!" />
@@ -229,13 +216,13 @@
                   />
                 } @else {
                   <div
-                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[9px] font-bold text-zinc-200 uppercase"
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[9px] font-bold text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-200"
                     [title]="channel.channelName"
                   >
                     {{ channelAvatars.getChannelInitial(channel.channelName) }}
                   </div>
                 }
-                <span class="text-sm font-medium text-zinc-100">
+                <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {{ channel.channelName }}
                 </span>
               </div>
@@ -261,7 +248,9 @@
           </div>
         }
         @if (channels().length === 0) {
-          <p class="py-4 text-center text-sm text-zinc-500">No channels added yet</p>
+          <p class="py-4 text-center text-sm text-zinc-600 dark:text-zinc-500">
+            No channels added yet
+          </p>
         }
       </div>
     </div>

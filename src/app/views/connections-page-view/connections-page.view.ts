@@ -8,8 +8,7 @@ import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
-import { ThemeService } from "@services/core/theme.service";
-import { PlatformType } from "@models/chat.model";
+import { ChatAccount, PlatformType } from "@models/chat.model";
 
 /* helpers */
 import { getPlatformLabel } from "@helpers/chat.helper";
@@ -20,6 +19,7 @@ interface PlatformConnection {
   icon: string;
   connected: boolean;
   username?: string;
+  accounts: ChatAccount[];
 }
 
 @Component({
@@ -34,8 +34,6 @@ export class ConnectionsPageView {
   readonly chatListService = inject(ChatListService);
   readonly presentation = inject(ChatMessagePresentationService);
   readonly channelAvatars = inject(ChannelAvatarService);
-  readonly themeService = inject(ThemeService);
-  readonly themeMode = this.themeService.themeMode;
 
   readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
 
@@ -59,13 +57,16 @@ export class ConnectionsPageView {
 
   readonly connections = computed(() => {
     return this.platforms.map((platform) => {
-      const accounts = this.authorizationService.accounts().filter((a) => a.platform === platform);
+      const platformAccounts = this.authorizationService
+        .accounts()
+        .filter((a) => a.platform === platform);
       return {
         platform,
         label: getPlatformLabel(platform),
         icon: this.getPlatformIcon(platform),
-        connected: accounts.length > 0,
-        username: accounts[0]?.username,
+        connected: platformAccounts.length > 0,
+        username: platformAccounts[0]?.username,
+        accounts: platformAccounts,
       };
     });
   });
@@ -96,32 +97,16 @@ export class ConnectionsPageView {
     }
   }
 
-  getPlatformBgColor(platform: PlatformType): string {
-    switch (platform) {
-      case "twitch":
-        return "bg-[#9146ff]";
-      case "kick":
-        return "bg-[#53fc18]";
-      case "youtube":
-        return "bg-[#ff0000]";
-      default:
-        return "";
-    }
-  }
-
   authorize(platform: PlatformType): void {
     void this.authorizationService.authorize(platform);
   }
 
-  getAccountIcon(accountId: string): string {
-    const account = this.authorizationService.accounts().find((a) => a.id === accountId);
-    if (!account) {
-      return "";
-    }
-    if (account.avatarUrl && account.avatarUrl.trim()) {
-      return account.avatarUrl;
-    }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(account.username)}&background=random&size=32`;
+  disconnectAccount(accountId: string, platform: PlatformType): void {
+    void this.authorizationService.deauthorizeAccount(accountId, platform);
+  }
+
+  getAccountInitial(username: string): string {
+    return username?.charAt(0)?.toUpperCase() ?? "?";
   }
 
   getPlatformAccounts(platform: PlatformType) {

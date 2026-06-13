@@ -3,14 +3,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  OnDestroy,
   inject,
   signal,
+  effect,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterOutlet, NavigationEnd } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
-import { Subscription, filter } from "rxjs";
+import { toSignal } from "@angular/core/rxjs-interop";
+import { filter } from "rxjs/operators";
 
 /* services */
 import { ThemeService } from "@services/core/theme.service";
@@ -41,11 +42,10 @@ const SIDEBAR_WIDTH = 64;
   templateUrl: "./dashboard-layout.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardLayoutComponent implements OnDestroy {
+export class DashboardLayoutComponent {
   readonly themeService = inject(ThemeService);
   readonly themeMode = this.themeService.themeMode;
   private readonly router = inject(Router);
-  private readonly subscriptions = new Subscription();
 
   readonly currentPath = signal<string>("");
   readonly showShortcutDialog = signal(false);
@@ -62,18 +62,21 @@ export class DashboardLayoutComponent implements OnDestroy {
   readonly SIDEBAR_WIDTH = SIDEBAR_WIDTH;
 
   constructor() {
-    this.subscriptions.add(
-      this.router.events
-        .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-        .subscribe((event: NavigationEnd) => {
-          this.currentPath.set(event.urlAfterRedirects);
-        })
+    const navigationEndEvents = toSignal(
+      this.router.events.pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+      ),
+      { initialValue: null }
     );
-    this.currentPath.set(this.router.url);
-  }
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+    effect(() => {
+      const event = navigationEndEvents();
+      if (event) {
+        this.currentPath.set(event.urlAfterRedirects);
+      }
+    });
+
+    this.currentPath.set(this.router.url);
   }
 
   openShortcutDialog(): void {
