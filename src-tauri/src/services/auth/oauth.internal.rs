@@ -105,7 +105,6 @@ pub async fn exchange_code_for_token(
 
 pub async fn refresh_access_token(
   http: &Client,
-  _platform: &PlatformTypeModel,
   refresh_token: &str,
   config: &OAuthProviderConfig,
 ) -> Result<OAuthTokenModel, String> {
