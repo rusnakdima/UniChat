@@ -1,19 +1,22 @@
 //! Account Service
-//! Handles account management and authentication status validation
-
-use reqwest::Client;
+//! Handles account management, authentication status validation, and OAuth orchestration
 
 use log;
+use reqwest::Client;
 
 use crate::helpers::config_helper::SharedConfig;
+use crate::helpers::http_client::shared_client;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::auth_account_model::{AuthAccountModel, AuthStatusModel};
+use crate::models::auth_oauth_model::OAuthTokenModel;
 use crate::models::platform_type_model::PlatformTypeModel;
-use crate::services::auth::oauth_token_exchange::refresh_access_token;
+use crate::services::auth::oauth_internal::refresh_access_token;
+use crate::services::auth::oauth_service::OAuthService;
 use crate::services::auth::token_vault_service::TokenVaultService;
 
 pub struct AccountService {
   http: Client,
+  oauth_service: OAuthService,
   token_vault_service: TokenVaultService,
   config: SharedConfig,
 }
@@ -27,7 +30,8 @@ impl Default for AccountService {
 impl AccountService {
   pub fn new() -> Self {
     Self {
-      http: Client::new(),
+      http: shared_client(),
+      oauth_service: OAuthService::new(),
       token_vault_service: TokenVaultService::new(),
       config: SharedConfig::default(),
     }
@@ -35,10 +39,45 @@ impl AccountService {
 
   pub fn new_with_config(config: SharedConfig) -> Self {
     Self {
-      http: Client::new(),
+      http: shared_client(),
+      oauth_service: OAuthService::new(),
       token_vault_service: TokenVaultService::new(),
       config,
     }
+  }
+
+  pub fn start_auth(&self, platform: PlatformTypeModel) -> Result<String, String> {
+    self.oauth_service.start_auth(platform)
+  }
+
+  pub async fn await_loopback_and_complete(
+    &self,
+    platform: PlatformTypeModel,
+  ) -> Result<AuthAccountModel, String> {
+    log::debug!("Waiting for OAuth callback for {:?}", platform);
+    let callback_url = self.oauth_service.wait_for_callback(platform.clone())?;
+    self.complete_auth(platform, callback_url).await
+  }
+
+  pub async fn complete_auth(
+    &self,
+    platform: PlatformTypeModel,
+    callback_url: String,
+  ) -> Result<AuthAccountModel, String> {
+    let account = self
+      .oauth_service
+      .complete_auth(platform.clone(), callback_url, &self.config)
+      .await?;
+    self.upsert_account(&account)?;
+    self.token_vault_service.save_token(
+      &account,
+      &OAuthTokenModel {
+        access_token: account.access_token.clone().unwrap_or_default(),
+        refresh_token: account.refresh_token.clone(),
+        expires_in_seconds: None,
+      },
+    )?;
+    Ok(account)
   }
 
   pub fn list_accounts(
@@ -170,8 +209,7 @@ impl AccountService {
       .refresh_token
       .ok_or_else(|| "No refresh token available. Please re-authenticate.".to_string())?;
 
-    #[allow(clippy::needless_borrow)]
-    let config = get_oauth_provider_config(&platform, &self.config)?;
+    let config = get_oauth_provider_config(platform, &self.config)?;
 
     log::debug!("Performing token refresh for account {}", account_id);
     let new_token = refresh_access_token(&self.http, platform, &refresh_token, &config).await?;
@@ -201,27 +239,60 @@ impl AccountService {
     Ok(account)
   }
 
-  pub fn save_token(
+  pub async fn disconnect(
     &self,
-    account: &AuthAccountModel,
-    token: &crate::models::auth_oauth_model::OAuthTokenModel,
+    platform: PlatformTypeModel,
+    account_id: String,
   ) -> Result<(), String> {
-    self.token_vault_service.save_token(account, token)
+    log::info!("Disconnecting account {} on {:?}", account_id, platform);
+    let token = self
+      .token_vault_service
+      .read_token(&platform, &account_id)?;
+    if let Some(saved_token) = token {
+      let config = get_oauth_provider_config(&platform, &SharedConfig::default())?;
+      if let Some(revoke_url) = config.revoke_url {
+        log::debug!(
+          "Revoking token for account {} on {:?}",
+          account_id,
+          platform
+        );
+        let mut form: Vec<(&str, &str)> = vec![
+          ("client_id", &config.client_id),
+          ("token", &saved_token.access_token),
+        ];
+        if let Some(ref secret) = config.client_secret {
+          form.push(("client_secret", secret));
+        }
+        match self.http.post(revoke_url).form(&form).send().await {
+          Ok(response) => {
+            if !response.status().is_success() {
+              log::warn!("Token revoke request failed for account {}", account_id);
+            }
+          }
+          Err(e) => {
+            log::warn!(
+              "Token revoke request error for account {}: {}",
+              account_id,
+              e
+            );
+          }
+        }
+      }
+    }
+
+    self
+      .token_vault_service
+      .delete_token(&platform, &account_id)?;
+    self
+      .token_vault_service
+      .remove_account(&platform, &account_id)?;
+    log::info!("Account {} disconnected successfully", account_id);
+    Ok(())
   }
 
-  pub fn read_token(
-    &self,
-    platform: &PlatformTypeModel,
-    account_id: &str,
-  ) -> Result<Option<crate::models::auth_oauth_model::OAuthTokenModel>, String> {
-    self.token_vault_service.read_token(platform, account_id)
-  }
-
-  pub fn delete_token(&self, platform: &PlatformTypeModel, account_id: &str) -> Result<(), String> {
-    self.token_vault_service.delete_token(platform, account_id)
-  }
-
-  pub fn get_token_vault(&self) -> &TokenVaultService {
-    &self.token_vault_service
+  pub fn validate_token_for_role(&self, token: &str, role: &str) -> Result<(), String> {
+    self
+      .token_vault_service
+      .validate_token_for_role(token, role)
   }
 }
