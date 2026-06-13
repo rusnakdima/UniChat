@@ -1,9 +1,10 @@
 //! Overlay WebSocket handlers module
 //! Handles WebSocket connections for overlay subscribers and message sources
 
+use std::sync::Arc;
+
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
-use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
 
 use crate::constants::WS_RECEIVE_TIMEOUT_SECS;
@@ -11,7 +12,7 @@ use crate::helpers::sanitizer_helper::sanitize_for_overlay;
 use crate::models::overlay_message_model::{
   OverlayMessageModel, OverlayWidgetFilterModel, OverlayWsIncomingModel, OverlayWsSubscribeModel,
 };
-use crate::routes::overlay_route::{OVERLAY_CONFIGS, OVERLAY_MESSAGES};
+use crate::services::overlay_server::overlay_router::OverlayRouterState;
 use crate::services::overlay_server::overlay_subscriber_manager::{
   OverlayServerState, OverlaySubscriber,
 };
@@ -28,7 +29,12 @@ pub struct OverlayWsQuery {
 }
 
 /// Route WebSocket connection to appropriate handler based on role
-pub async fn handle_overlay_ws(ws: WebSocket, query: OverlayWsQuery, state: OverlayServerState) {
+pub async fn handle_overlay_ws(
+  ws: WebSocket,
+  query: OverlayWsQuery,
+  state: OverlayServerState,
+  router_state: OverlayRouterState,
+) {
   if query.role == "overlay" {
     if let Some(widget_id) = query.widget_id {
       handle_overlay_subscriber(ws, widget_id, state).await;
@@ -37,7 +43,7 @@ pub async fn handle_overlay_ws(ws: WebSocket, query: OverlayWsQuery, state: Over
   }
 
   if query.role == "source" {
-    handle_overlay_source(ws, state).await;
+    handle_overlay_source(ws, state, router_state).await;
   }
 }
 
@@ -148,7 +154,11 @@ async fn handle_subscribe_message(
 }
 
 /// Handle message source connection (chat provider)
-async fn handle_overlay_source(ws: WebSocket, state: OverlayServerState) {
+async fn handle_overlay_source(
+  ws: WebSocket,
+  state: OverlayServerState,
+  router_state: OverlayRouterState,
+) {
   let (_mut_ws_sender, mut ws_receiver) = ws.split();
 
   while let Some(Ok(msg)) = ws_receiver.next().await {
@@ -170,7 +180,7 @@ async fn handle_overlay_source(ws: WebSocket, state: OverlayServerState) {
                 channel_image_url: message.channel_image_url,
                 emotes: message.emotes,
               };
-              persist_overlay_message(overlay_message.clone()).await;
+              persist_overlay_message(overlay_message.clone(), &router_state).await;
               state.broadcast_message(overlay_message).await;
             }
           }
@@ -184,9 +194,9 @@ async fn handle_overlay_source(ws: WebSocket, state: OverlayServerState) {
   }
 }
 
-async fn persist_overlay_message(message: OverlayMessageModel) {
+async fn persist_overlay_message(message: OverlayMessageModel, state: &OverlayRouterState) {
   let widget_ids: Vec<String> = {
-    let configs = OVERLAY_CONFIGS.read().await;
+    let configs = state.overlay_configs.read().await;
     configs.keys().cloned().collect()
   };
 
@@ -194,7 +204,7 @@ async fn persist_overlay_message(message: OverlayMessageModel) {
     return;
   }
 
-  let mut messages = OVERLAY_MESSAGES.write().await;
+  let mut messages = state.overlay_messages.write().await;
 
   if messages.len() >= MAX_WIDGET_IDS {
     if let Some(oldest) = widget_ids.first().cloned() {

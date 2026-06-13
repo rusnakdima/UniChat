@@ -74,10 +74,6 @@ impl OverlayServerState {
       map.values().flat_map(|vec| vec.clone()).collect()
     };
 
-    let mut _sent_count = 0;
-    let mut _filtered_supporter = 0;
-    let mut _filtered_channel = 0;
-
     // Build the channel reference for this message
     let message_channel_ref = build_channel_ref(&message.platform, &message.source_channel_id);
 
@@ -89,30 +85,25 @@ impl OverlayServerState {
         OverlayWidgetFilterModel::Supporters => message.is_supporter,
       };
       if !allowed {
-        _filtered_supporter += 1;
         continue;
       }
 
       // Apply channel filter
       let channel_ids = sub.channel_ids.read().await;
-      let _channel_allowed = match &*channel_ids {
+      match &*channel_ids {
         None => {
           // No channel filter - allow all
-          true
         }
         Some(ids) => {
           // Check if message channel is in the allowed list
           let is_allowed = ids.contains(&message_channel_ref);
           if !is_allowed {
-            _filtered_channel += 1;
             continue;
           }
-          true
         }
       };
 
       let _ = sub.tx.send(Message::Text(text.clone()));
-      _sent_count += 1;
     }
   }
 }
