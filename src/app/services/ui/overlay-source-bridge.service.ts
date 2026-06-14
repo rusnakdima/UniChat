@@ -4,9 +4,13 @@ import { Injectable, OnDestroy, inject } from "@angular/core";
 /* models */
 import { ChatMessage, PlatformType } from "@models/chat.model";
 import { ReconnectionManager } from "@utils/reconnection-manager.util";
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
-import { POLLING_INTERVAL_MS } from "@app/shared/utils/constants";
+import {
+  POLLING_INTERVAL_MS,
+  RECONNECTION_MAX_DELAY_MS,
+  SAVE_SUCCESS_TIMEOUT_MS,
+} from "@shared/utils/constants";
 type OverlaySourcePayload = {
   type: "chatMessage";
   message: {
@@ -26,14 +30,14 @@ type OverlaySourcePayload = {
   providedIn: "root",
 })
 export class OverlaySourceBridgeService implements OnDestroy {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly tauriApi = inject(TauriApiService);
   private socket: WebSocket | null = null;
   private connectedPort: number | null = null;
   private readonly reconnectionManager = new ReconnectionManager({
     maxRetries: 10,
     baseDelayMs: POLLING_INTERVAL_MS,
-    maxDelayMs: 30000,
+    maxDelayMs: RECONNECTION_MAX_DELAY_MS,
   });
   private connectionState: "disconnected" | "connecting" | "connected" = "disconnected";
   private messageQueue: ChatMessage[] = []; // Queue messages when disconnected
@@ -84,7 +88,7 @@ export class OverlaySourceBridgeService implements OnDestroy {
         // Flush the message queue before clearing it
         this.flushMessageQueue();
         resolve();
-      }, 3000);
+      }, SAVE_SUCCESS_TIMEOUT_MS);
 
       const onOpen = () => {
         clearTimeout(timeout);
@@ -225,7 +229,7 @@ export class OverlaySourceBridgeService implements OnDestroy {
       // Attempt reconnection on send failure
       if (this.connectedPort) {
         this.attemptReconnect(this.connectedPort).catch((error) => {
-          this.logger.warn("[OverlaySourceBridge] Reconnection attempt failed:", error);
+          this.logger.warn("Reconnection attempt failed:", error, { source: "OverlaySourceBridge" });
         });
       }
     }

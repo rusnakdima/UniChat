@@ -6,7 +6,7 @@ import { ChatPruningService } from "@services/data/chat-pruning.service";
 import { HighlightNotificationService } from "@services/ui/highlight-notification.service";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
 
-import { APP_CONFIG } from "@config/app.constants";
+import { APP_CONFIG } from "@shared/utils/constants";
 
 @Injectable({
   providedIn: "root",

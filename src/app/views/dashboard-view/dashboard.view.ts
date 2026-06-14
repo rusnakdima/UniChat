@@ -18,7 +18,7 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStateService } from "@services/data/chat-state.service";
 import { DashboardChatInteractionService } from "@services/ui/dashboard-chat-interaction.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
-import { OVERLAY_CONSTANTS } from "@app/config/app.constants";
+import { OVERLAY_CONSTANTS } from "@shared/utils/constants";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.service";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";

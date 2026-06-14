@@ -1,8 +1,8 @@
 /* sys lib */
 import { Injectable, inject } from "@angular/core";
 import { ImageCacheDbService, AvatarType } from "@services/core/image-cache-db.service";
-import { LoggerService } from "@services/core/logger.service";
-import { imageToBase64, isValidBase64Image } from "@helpers/image-to-base64.helper";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { imageToBase64, isValidBase64Image } from "@shared/utils/image-to-base64.util";
 
 interface CacheEntry {
   url: string;
@@ -23,7 +23,7 @@ const AVATAR_CACHE_CONFIG = {
 })
 export class AvatarCacheService {
   private readonly imageDb = inject(ImageCacheDbService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private userCache = new Map<string, CacheEntry>();
   private channelCache = new Map<string, CacheEntry>();
   private maxSize = AVATAR_CACHE_CONFIG.maxSize;
@@ -172,7 +172,7 @@ export class AvatarCacheService {
       const base64Data = await imageToBase64(url);
       await this.imageDb.setAvatar(key, url, type, base64Data);
     } catch (e) {
-      this.logger.warn("AvatarCacheService", "Failed to persist avatar to IndexedDB", e);
+      this.logger.warn("Failed to persist avatar to IndexedDB", { source: "AvatarCacheService", error: e });
     }
   }
 }

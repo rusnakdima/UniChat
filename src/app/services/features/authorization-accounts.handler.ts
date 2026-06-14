@@ -1,6 +1,6 @@
 import { inject, signal } from "@angular/core";
 import { PlatformType, ChatAccount, AuthStatus } from "@models/chat.model";
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
@@ -34,7 +34,7 @@ export class AuthorizationAccountsHandler {
   private readonly accountsSignal = signal<ChatAccount[]>([]);
   private readonly chatListService = inject(ChatListService);
   private readonly feedData = inject(DashboardFeedDataService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly localStorageService = inject(LocalStorageService);
 
   accountsLoaded = false;
@@ -132,32 +132,28 @@ export class AuthorizationAccountsHandler {
     );
 
     this.logger.debug(
-      "AuthorizationService",
       "ensureChannelForAuthorizedAccount",
-      account.username
+      { source: "AuthorizationService", username: account.username }
     );
 
     if (matchingChannel) {
       if (matchingChannel.accountId !== account.id) {
         this.logger.debug(
-          "AuthorizationService",
           "Linking existing channel to account",
-          matchingChannel.channelName
+          { source: "AuthorizationService", channelName: matchingChannel.channelName }
         );
         this.chatListService.updateChannelAccount(matchingChannel.id, account.id, account.username);
       }
 
       this.logger.debug(
-        "AuthorizationService",
         "Loading messages for existing channel",
-        matchingChannel.channelId
+        { source: "AuthorizationService", channelId: matchingChannel.channelId }
       );
       this.feedData.loadChannelMessages(account.platform, matchingChannel.channelId);
     } else {
       this.logger.debug(
-        "AuthorizationService",
         "Creating new channel for account",
-        account.username
+        { source: "AuthorizationService", username: account.username }
       );
       const providerChannelId = account.username.toLowerCase();
       this.chatListService.addChannel(
@@ -168,9 +164,8 @@ export class AuthorizationAccountsHandler {
         account.username
       );
       this.logger.debug(
-        "AuthorizationService",
         "Loading messages for new channel",
-        providerChannelId
+        { source: "AuthorizationService", providerChannelId }
       );
       this.feedData.loadChannelMessages(account.platform, providerChannelId);
     }
@@ -189,10 +184,8 @@ export class AuthorizationAccountsHandler {
       for (const channel of channels) {
         if (!channel.accountId) {
           this.logger.debug(
-            "AuthorizationService",
             "Linking channel to account",
-            channel.channelName,
-            account.username
+            { source: "AuthorizationService", channelName: channel.channelName, username: account.username }
           );
           this.chatListService.updateChannelAccount(channel.id, account.id, account.username);
         }

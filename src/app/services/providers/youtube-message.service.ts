@@ -1,10 +1,10 @@
 /* sys lib */
 import { inject, Injectable } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { AuthorizationService } from "@services/features/authorization.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 
 /* helpers */
 import { extractYoutubeVideoId } from "@utils/youtube-url-parser.util";
@@ -13,19 +13,20 @@ import { extractYoutubeVideoId } from "@utils/youtube-url-parser.util";
   providedIn: "root",
 })
 export class YouTubeMessageService {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly authorizationService = inject(AuthorizationService);
+  private readonly tauriApi = inject(TauriApiService);
 
   sendMessage(channelId: string, text: string, accountId?: string): boolean {
     const account = this.authorizationService.getAccountByIdSync(accountId);
     if (account?.authStatus !== "authorized" || !account.accessToken) {
       this.logger.warn(
-        "YouTubeMessageService",
-        "Cannot send message: account not authorized or no access token"
+        "Cannot send message: account not authorized or no access token",
+        { source: "YouTubeMessageService" }
       );
       return false;
     }
-    this.logger.info("YouTubeMessageService", "Sending message to channel", channelId);
+    this.logger.info("Sending message to channel", { source: "YouTubeMessageService", channelId });
     void this.sendMessageAsync(channelId, text, account.accessToken);
     return true;
   }
@@ -34,17 +35,14 @@ export class YouTubeMessageService {
     const account = this.authorizationService.getAccountByIdSync(accountId);
     if (account?.authStatus !== "authorized" || !account.accessToken) {
       this.logger.warn(
-        "YouTubeMessageService",
-        "Cannot delete message: account not authorized or no access token"
+        "Cannot delete message: account not authorized or no access token",
+        { source: "YouTubeMessageService" }
       );
       return false;
     }
     this.logger.info(
-      "YouTubeMessageService",
       "Deleting message",
-      messageId,
-      "from channel",
-      channelId
+      { source: "YouTubeMessageService", messageId, channelId }
     );
     return this.deleteMessageAsync(channelId, messageId, account.accessToken);
   }
@@ -56,38 +54,38 @@ export class YouTubeMessageService {
   ): Promise<boolean> {
     const trimmed = text.trim();
     if (!trimmed) {
-      this.logger.warn("YouTubeMessageService", "Cannot send empty message");
+      this.logger.warn("Cannot send empty message", { source: "YouTubeMessageService" });
       return false;
     }
 
     try {
       const videoId = this.normalizeVideoId(channelId);
       if (!videoId) {
-        this.logger.error("YouTubeMessageService", "Invalid video ID", channelId);
+        this.logger.error("Invalid video ID", null, { source: "YouTubeMessageService", channelId });
         return false;
       }
 
-      this.logger.info("YouTubeMessageService", "Fetching live chat ID for video", videoId);
-      const liveChatId = await invoke<string>("youtubeFetchLiveChatId", {
+      this.logger.info("Fetching live chat ID for video", { source: "YouTubeMessageService", videoId });
+      const liveChatId = await this.tauriApi.youtubeFetchLiveChatId({
         videoId,
         accessToken,
       });
       if (!liveChatId) {
-        this.logger.error("YouTubeMessageService", "No live chat ID returned");
+        this.logger.error("No live chat ID returned", null, { source: "YouTubeMessageService" });
         return false;
       }
 
-      this.logger.info("YouTubeMessageService", "Sending message to chat", liveChatId);
-      await invoke<string>("youtubeSendMessage", {
+      this.logger.info("Sending message to chat", { source: "YouTubeMessageService", liveChatId });
+      await this.tauriApi.youtubeSendMessage({
         liveChatId,
         messageText: trimmed,
         accessToken,
       });
 
-      this.logger.info("YouTubeMessageService", "Message sent successfully");
+      this.logger.info("Message sent successfully", { source: "YouTubeMessageService" });
       return true;
     } catch (error) {
-      this.logger.error("YouTubeMessageService", "Error sending message", error);
+      this.logger.error("Error sending message", error, { source: "YouTubeMessageService" });
       return false;
     }
   }
@@ -100,30 +98,30 @@ export class YouTubeMessageService {
     try {
       const videoId = this.normalizeVideoId(channelId);
       if (!videoId) {
-        this.logger.error("YouTubeMessageService", "Invalid video ID", channelId);
+        this.logger.error("Invalid video ID", null, { source: "YouTubeMessageService", channelId });
         return false;
       }
 
-      this.logger.info("YouTubeMessageService", "Fetching live chat ID for video", videoId);
-      const liveChatId = await invoke<string>("youtubeFetchLiveChatId", {
+      this.logger.info("Fetching live chat ID for video", { source: "YouTubeMessageService", videoId });
+      const liveChatId = await this.tauriApi.youtubeFetchLiveChatId({
         videoId,
         accessToken,
       });
       if (!liveChatId) {
-        this.logger.error("YouTubeMessageService", "No live chat ID returned");
+        this.logger.error("No live chat ID returned", null, { source: "YouTubeMessageService" });
         return false;
       }
 
-      this.logger.info("YouTubeMessageService", "Deleting message", messageId);
-      await invoke<string>("youtubeDeleteMessage", {
+      this.logger.info("Deleting message", { source: "YouTubeMessageService", messageId });
+      await this.tauriApi.youtubeDeleteMessage({
         messageId,
         accessToken,
       });
 
-      this.logger.info("YouTubeMessageService", "Message deleted successfully");
+      this.logger.info("Message deleted successfully", { source: "YouTubeMessageService" });
       return true;
     } catch (error) {
-      this.logger.error("YouTubeMessageService", "Error deleting message", error);
+      this.logger.error("Error deleting message", error, { source: "YouTubeMessageService" });
       return false;
     }
   }

@@ -2,20 +2,20 @@ import { Injectable, inject } from "@angular/core";
 
 import { ChatMessage, ChannelAccountCapabilities } from "@models/chat.model";
 
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 
-import { createMessageActionState } from "@helpers/chat.helper";
+import { createMessageActionState } from "@shared/utils/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
 @Injectable({
   providedIn: "root",
 })
 export class MessageCapabilitiesService {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly platformResolver = inject(PlatformResolverService);
   private readonly chatListService = inject(ChatListService);
   private readonly authorizationService = inject(AuthorizationService);

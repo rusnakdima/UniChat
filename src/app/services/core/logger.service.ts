@@ -1,3 +1,8 @@
-export type { LogLevel, LogEntry } from "@app/shared/services/logging.service";
-export { LoggingService } from "@app/shared/services/logging.service";
-export { LoggingService as LoggerService } from "@app/shared/services/logging.service";
+import { getLoggingService } from "@tauri-apps/logger";
+import { InjectionToken } from "@angular/core";
+
+export const LOGGER_SERVICE = new InjectionToken<ReturnType<typeof getLoggingService>>("LoggerService", {
+  factory: () => getLoggingService(),
+});
+
+export { getLoggingService };

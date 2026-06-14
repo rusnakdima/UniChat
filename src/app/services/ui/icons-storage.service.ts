@@ -1,8 +1,8 @@
 /* sys lib */
 import { Injectable, inject } from "@angular/core";
 import { ImageCacheDbService } from "@services/core/image-cache-db.service";
-import { LoggerService } from "@services/core/logger.service";
-import { imageToBase64 } from "@helpers/image-to-base64.helper";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { imageToBase64 } from "@shared/utils/image-to-base64.util";
 export interface IconsEmoteIcon {
   id: string;
   url: string;
@@ -35,7 +35,7 @@ const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 })
 export class IconsStorageService {
   private readonly imageDb = inject(ImageCacheDbService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private dbInitialized = false;
   private initPromise: Promise<void> | null = null;
 
@@ -132,7 +132,7 @@ export class IconsStorageService {
       await this.imageDb.setEmote(emoteKey, fallbackUrl, "twitch", base64);
       return base64;
     } catch (e) {
-      this.logger.warn("Failed to cache emote", emoteKey, e);
+      this.logger.warn("Failed to cache emote", { source: "IconsStorageService", emoteKey }, e);
       return fallbackUrl;
     }
   }
@@ -148,7 +148,7 @@ export class IconsStorageService {
       await this.imageDb.setBadge(badgeKey, fallbackUrl, base64);
       return base64;
     } catch (e) {
-      this.logger.warn("Failed to cache badge", badgeKey, e);
+      this.logger.warn("Failed to cache badge", { source: "IconsStorageService", badgeKey }, e);
       return fallbackUrl;
     }
   }
@@ -178,7 +178,7 @@ export class IconsStorageService {
       const base64 = await imageToBase64(url);
       await this.imageDb.setEmote(emoteKey, url, "twitch", base64);
     } catch (e) {
-      this.logger.warn("Failed to cache emote image", emoteKey, e);
+      this.logger.warn("Failed to cache emote image", { source: "IconsStorageService", emoteKey }, e);
     }
   }
 
@@ -190,7 +190,7 @@ export class IconsStorageService {
       const base64 = await imageToBase64(url);
       await this.imageDb.setBadge(badgeKey, url, base64);
     } catch (e) {
-      this.logger.warn("Failed to cache badge image", badgeKey, e);
+      this.logger.warn("Failed to cache badge image", { source: "IconsStorageService", badgeKey }, e);
     }
   }
 }

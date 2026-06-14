@@ -17,7 +17,7 @@ import { ThemeService } from "@services/core/theme.service";
 import { PlatformType } from "@models/chat.model";
 
 /* helpers */
-import { getPlatformLabel } from "@helpers/chat.helper";
+import { getPlatformLabel } from "@shared/utils/chat.helper";
 
 @Component({
   selector: "app-export-page-view",

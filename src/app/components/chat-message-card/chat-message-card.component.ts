@@ -22,7 +22,7 @@ import { UserProfilePopoverService } from "@services/ui/user-profile-popover.ser
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
 
 /* helpers */
-import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@helpers/chat.helper";
+import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@shared/utils/chat.helper";
 @Component({
   selector: "app-chat-message-card",
   standalone: true,

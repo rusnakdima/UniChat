@@ -2,10 +2,10 @@
 import { Routes } from "@angular/router";
 
 /* layouts */
-import { DashboardLayoutComponent } from "@layouts/dashboard-layout.component";
+import { DashboardLayoutComponent } from "@shared/components/dashboard-layout.component";
 
 /* resolvers */
-import { ChatDataResolver } from "@resolvers/chat-data.resolver";
+import { ChatDataResolver } from "@features/chat/services/chat-data.resolver";
 
 export const routes: Routes = [
   {

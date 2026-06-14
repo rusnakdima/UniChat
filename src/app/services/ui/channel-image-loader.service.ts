@@ -1,19 +1,19 @@
 /* sys lib */
 import { Injectable, inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
 import { LocalStorageService } from "@services/core/local-storage.service";
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 
 /* models */
 import { PlatformType } from "@models/chat.model";
 import { KickChannelInfoWithImage, YouTubeChannelInfo } from "@models/platform-api.model";
 
 /* helpers */
-import { YOUTUBE_DATA_API_KEY_STORAGE_KEY } from "@helpers/chat.helper";
+import { YOUTUBE_DATA_API_KEY_STORAGE_KEY } from "@shared/utils/chat.helper";
 
 /**
  * Channel Image Loader Service
@@ -27,7 +27,8 @@ export class ChannelImageLoaderService {
   private readonly avatarCache = inject(AvatarCacheService);
   private readonly localStorage = inject(LocalStorageService);
   private readonly twitchChat = inject(TwitchChatService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
+  private readonly tauriApi = inject(TauriApiService);
 
   /**
    * Load channel profile image for any platform
@@ -78,10 +79,8 @@ export class ChannelImageLoaderService {
       }
     } catch (error) {
       this.logger.warn(
-        "ChannelImageLoaderService",
-        "Failed to load Twitch channel image for",
-        channelName,
-        error
+        "Failed to load Twitch channel image",
+        { source: "ChannelImageLoaderService", channelName, error }
       );
     }
     return null;
@@ -96,9 +95,9 @@ export class ChannelImageLoaderService {
     cacheKey: string
   ): Promise<string | null> {
     try {
-      const result = await invoke<KickChannelInfoWithImage>("kickFetchChannelInfo", {
+      const result = await this.tauriApi.kickFetchChannelInfo({
         channelSlug: channelName,
-      });
+      }) as KickChannelInfoWithImage;
 
       if (result.profile_pic_url) {
         this.avatarCache.setChannelAvatar(cacheKey, result.profile_pic_url);
@@ -106,10 +105,8 @@ export class ChannelImageLoaderService {
       }
     } catch (error) {
       this.logger.warn(
-        "ChannelImageLoaderService",
-        "Failed to load Kick channel image for",
-        channelName,
-        error
+        "Failed to load Kick channel image",
+        { source: "ChannelImageLoaderService", channelName, error }
       );
     }
     return null;
@@ -127,10 +124,10 @@ export class ChannelImageLoaderService {
     const apiKey = this.localStorage.get<string>(YOUTUBE_DATA_API_KEY_STORAGE_KEY, "");
     if (apiKey && apiKey.trim()) {
       try {
-        const result = await invoke<YouTubeChannelInfo>("youtubeFetchChannelInfoByApiKey", {
+        const result = await this.tauriApi.youtubeFetchChannelInfoByApiKey({
           channel_name: channelName,
           api_key: apiKey,
-        });
+        }) as YouTubeChannelInfo;
 
         if (result.thumbnailUrl) {
           this.avatarCache.setChannelAvatar(cacheKey, result.thumbnailUrl);
@@ -138,10 +135,8 @@ export class ChannelImageLoaderService {
         }
       } catch (error) {
         this.logger.warn(
-          "ChannelImageLoaderService",
-          "Failed to load YouTube channel image (API key) for",
-          channelName,
-          error
+          "Failed to load YouTube channel image (API key)",
+          { source: "ChannelImageLoaderService", channelName, error }
         );
       }
     }

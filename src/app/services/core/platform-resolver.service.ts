@@ -6,7 +6,7 @@ import {
   PLATFORM_TWITCH_ICON,
   PLATFORM_KICK_ICON,
   PLATFORM_YOUTUBE_ICON,
-} from "@constants/platform-icons.constants";
+} from "@shared/utils/constants";
 
 /* models */
 import {

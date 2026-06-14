@@ -6,7 +6,7 @@ import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { migrateLegacyChannelRefs } from "@utils/channel-ref.util";
 import { RegexCompilationService, RegexRule } from "@services/ui/regex-compilation.service";
-import { generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@shared/utils/chat.helper";
 export interface BlockedWordRule {
   id: string;
   pattern: string;

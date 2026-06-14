@@ -6,7 +6,7 @@ import tmi from "tmi.js";
 import { ChatBadgeIcon, ChatMessage, ChatMessageEmote } from "@models/chat.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { ReconnectionService } from "@services/core/reconnection.service";
 import { IconsCatalogService } from "@services/ui/icons-catalog.service";
@@ -21,7 +21,7 @@ import {
   extractIrcTagMapFromLine,
   parseRecentMessagesPrivmsg,
 } from "@services/providers/twitch-robotty-privmsg.parser";
-import { createMessageActionState } from "@helpers/chat.helper";
+import { createMessageActionState } from "@shared/utils/chat.helper";
 
 @Injectable({
   providedIn: "root",
@@ -30,7 +30,7 @@ export class TwitchMessageParserService {
   private static readonly ROBOTTY_RECENT_MESSAGES =
     "https://recent-messages.robotty.de/api/v2/recent-messages";
 
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly errorService = inject(ConnectionErrorService);
   private readonly reconnectionService = inject(ReconnectionService);
   private readonly iconsCatalog = inject(IconsCatalogService);

@@ -9,7 +9,7 @@ import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.ser
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
 
 /* helpers */
-import { normalizeYouTubeProviderInput, generateTimestamp } from "@helpers/chat.helper";
+import { normalizeYouTubeProviderInput, generateTimestamp } from "@shared/utils/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
 import { normalizeChannelId } from "@utils/channel-normalization.util";
 import { LocalStorageService } from "../core/local-storage.service";
@@ -19,6 +19,7 @@ import { DashboardPreferencesService } from "../ui/dashboard-preferences.service
  * Channel list is stored between sessions using localStorage.
  */
 const storageKey = "unichat-chat-channels";
+const OVERLAY_CHANNEL_IDS_PATTERN = /^unichat-overlay-channel-ids:/;
 
 @Injectable({
   providedIn: "root",
@@ -164,20 +165,24 @@ export class ChatListService {
   }
 
   private removeEnabledFromAllOverlays(channelRef: string): void {
-    const overlayChannelIdsPattern = /^unichat-overlay-channel-ids:/;
+    this.iterateOverlayStorageKeys((key) => {
+      const stored = this.localStorageService.get<string[] | null>(key, null);
+      if (stored && Array.isArray(stored)) {
+        const filtered = stored.filter((id) => id !== channelRef);
+        if (filtered.length === 0) {
+          this.localStorageService.remove(key);
+        } else {
+          this.localStorageService.set(key, filtered);
+        }
+      }
+    });
+  }
 
+  private iterateOverlayStorageKeys(callback: (key: string) => void): void {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && overlayChannelIdsPattern.test(key)) {
-        const stored = this.localStorageService.get<string[] | null>(key, null);
-        if (stored && Array.isArray(stored)) {
-          const filtered = stored.filter((id) => id !== channelRef);
-          if (filtered.length === 0) {
-            this.localStorageService.remove(key);
-          } else {
-            this.localStorageService.set(key, filtered);
-          }
-        }
+      if (key && OVERLAY_CHANNEL_IDS_PATTERN.test(key)) {
+        callback(key);
       }
     }
   }

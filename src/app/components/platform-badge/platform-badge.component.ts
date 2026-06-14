@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component, input } from "@angular/core";
 import { PlatformType } from "@models/chat.model";
 
 /* helpers */
-import { getPlatformBadgeClasses, getPlatformLabel } from "@helpers/chat.helper";
+import { getPlatformBadgeClasses, getPlatformLabel } from "@shared/utils/chat.helper";
 @Component({
   selector: "app-platform-badge",
   templateUrl: "./platform-badge.component.html",

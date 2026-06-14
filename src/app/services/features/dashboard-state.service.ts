@@ -8,7 +8,7 @@ import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.
 
 /* models */
 import { WidgetConfig } from "@models/chat.model";
-import { OVERLAY_CONSTANTS } from "@app/config/app.constants";
+import { OVERLAY_CONSTANTS } from "@shared/utils/constants";
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   {

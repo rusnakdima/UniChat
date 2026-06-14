@@ -1,10 +1,10 @@
 /* sys lib */
 import { inject, Injectable } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { AuthorizationService } from "@services/features/authorization.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 
 /* helpers */
 import { extractYoutubeVideoId } from "@utils/youtube-url-parser.util";
@@ -13,45 +13,46 @@ import { extractYoutubeVideoId } from "@utils/youtube-url-parser.util";
   providedIn: "root",
 })
 export class YouTubeVideoResolverService {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly authorizationService = inject(AuthorizationService);
+  private readonly tauriApi = inject(TauriApiService);
 
   async fetchVideoIdFromChannelName(channelName: string): Promise<string | null> {
-    this.logger.debug("YouTubeVideoResolverService", "Fetching video ID for channel", channelName);
+    this.logger.debug("Fetching video ID for channel", { source: "YouTubeVideoResolverService", channelName });
 
     try {
       const account = this.authorizationService.getPrimaryAccount("youtube");
       if (account?.accessToken) {
-        this.logger.debug("YouTubeVideoResolverService", "Using OAuth authentication");
-        const videoId = await invoke<string>("youtubeFetchLiveVideoId", {
+        this.logger.debug("Using OAuth authentication", { source: "YouTubeVideoResolverService" });
+        const videoId = await this.tauriApi.youtubeFetchLiveVideoId({
           channelName,
           accessToken: account.accessToken,
         });
         if (videoId) {
-          this.logger.debug("YouTubeVideoResolverService", "Found video ID via OAuth", videoId);
+          this.logger.debug("Found video ID via OAuth", { source: "YouTubeVideoResolverService", videoId });
           return videoId;
         }
       }
 
       const apiKey = this.getApiKey();
       if (apiKey) {
-        this.logger.debug("YouTubeVideoResolverService", "Using API key authentication");
-        const videoId = await invoke<string>("youtubeFetchLiveVideoIdByApiKey", {
+        this.logger.debug("Using API key authentication", { source: "YouTubeVideoResolverService" });
+        const videoId = await this.tauriApi.youtubeFetchLiveVideoIdByApiKey({
           channelName,
           apiKey,
         });
         if (videoId) {
-          this.logger.debug("YouTubeVideoResolverService", "Found video ID via API key", videoId);
+          this.logger.debug("Found video ID via API key", { source: "YouTubeVideoResolverService", videoId });
           return videoId;
         }
       } else {
         this.logger.warn(
-          "YouTubeVideoResolverService",
-          "No API key configured. Please add your YouTube Data API key in Settings."
+          "No API key configured. Please add your YouTube Data API key in Settings.",
+          { source: "YouTubeVideoResolverService" }
         );
       }
     } catch (error) {
-      this.logger.error("YouTubeVideoResolverService", "Error fetching video ID", error);
+      this.logger.error("Error fetching video ID", error, { source: "YouTubeVideoResolverService" });
     }
     return null;
   }
@@ -60,13 +61,13 @@ export class YouTubeVideoResolverService {
     try {
       const key = localStorage.getItem("unichat-youtube-api-key") || null;
       if (key) {
-        this.logger.debug("YouTubeVideoResolverService", "API key found (length: %d)", key.length);
+        this.logger.debug("API key found (length: %d)", { source: "YouTubeVideoResolverService", "key.length": key.length });
       } else {
-        this.logger.debug("YouTubeVideoResolverService", "No API key found in localStorage");
+        this.logger.debug("No API key found in localStorage", { source: "YouTubeVideoResolverService" });
       }
       return key;
     } catch (error) {
-      this.logger.error("YouTubeVideoResolverService", "Error getting API key", error);
+      this.logger.error("Error getting API key", error, { source: "YouTubeVideoResolverService" });
       return null;
     }
   }

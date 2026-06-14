@@ -9,6 +9,7 @@ import { PlatformType } from "@models/chat.model";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { KickChatService } from "@services/providers/kick-chat.service";
+import { PlatformModerationHandler } from "./platform-moderation-handler.service";
 
 /**
  * Moderation action types
@@ -33,7 +34,7 @@ export interface ModerationResult {
   channel: string;
   targetUser: string;
   reason?: string;
-  duration?: number; // seconds for timeout
+  duration?: number;
   error?: string;
 }
 
@@ -44,7 +45,7 @@ export interface ModerationMacro {
   id: string;
   name: string;
   action: ModerationAction;
-  duration?: number; // seconds
+  duration?: number;
   reason?: string;
   shortcut?: string;
   color?: string;
@@ -123,8 +124,6 @@ export class ModerationService {
         };
       }
 
-      // Check if user is authorized to moderate
-      // Note: Uses sync version - accounts are loaded when channels are connected
       const account = this.authorization.getAccountByIdSync(channel.accountId);
       if (!account || account.authStatus !== "authorized") {
         return {
@@ -137,7 +136,6 @@ export class ModerationService {
         };
       }
 
-      // Execute platform-specific moderation
       switch (platform) {
         case "twitch":
           return this.executeTwitchModeration(channelId, targetUser, action, options);
@@ -196,7 +194,6 @@ export class ModerationService {
     action: ModerationAction,
     options?: { duration?: number; reason?: string; messageId?: string }
   ): Promise<ModerationResult> {
-    // Handle delete message action
     if (action === "delete" && options?.messageId) {
       const account = this.authorization
         .accounts()
@@ -226,7 +223,6 @@ export class ModerationService {
       };
     }
 
-    // Other moderation actions (timeout, ban, etc.) - not yet implemented
     return {
       success: false,
       action,
@@ -246,7 +242,6 @@ export class ModerationService {
     action: ModerationAction,
     options?: { duration?: number; reason?: string }
   ): Promise<ModerationResult> {
-    // YouTube doesn't support timeout, only ban/delete
     if (action === "timeout") {
       return {
         success: false,
@@ -287,7 +282,6 @@ export class ModerationService {
    * Get available macros for a platform
    */
   getMacrosForPlatform(platform: PlatformType): ModerationMacro[] {
-    // YouTube doesn't support timeout
     if (platform === "youtube") {
       return DEFAULT_MODERATION_MACROS.filter((m) => m.action !== "timeout");
     }
@@ -301,7 +295,6 @@ export class ModerationService {
     const channel = this.chatList.getChannels(platform).find((ch) => ch.channelId === channelId);
     if (!channel) return false;
 
-    // Note: Uses sync version - accounts are loaded when channels are connected
     const account = this.authorization.getAccountByIdSync(channel.accountId);
     if (!account || account.authStatus !== "authorized") return false;
 
@@ -321,24 +314,7 @@ export class ModerationService {
     canVip: boolean;
     canMod: boolean;
   } {
-    // YouTube has limited moderation
-    if (platform === "youtube") {
-      return {
-        canTimeout: false,
-        canBan: true,
-        canDelete: true,
-        canVip: false,
-        canMod: false,
-      };
-    }
-
-    // Twitch and Kick have full moderation
-    return {
-      canTimeout: true,
-      canBan: true,
-      canDelete: true,
-      canVip: true,
-      canMod: true,
-    };
+    const handler = new PlatformModerationHandler(platform);
+    return handler.getCapabilities();
   }
 }

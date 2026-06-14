@@ -5,7 +5,7 @@ import { Injectable, inject } from "@angular/core";
 import { ChatMessage } from "@models/chat.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
 import { YouTubeVideoResolverService } from "@services/providers/youtube-video-resolver.service";
@@ -13,7 +13,7 @@ import { YouTubePollingService } from "@services/providers/youtube-polling.servi
 import { YouTubeMessageService } from "@services/providers/youtube-message.service";
 
 /* helpers */
-import { createMessageActionState } from "@helpers/chat.helper";
+import { createMessageActionState } from "@shared/utils/chat.helper";
 
 @Injectable({
   providedIn: "root",
@@ -23,7 +23,7 @@ export class YouTubeChatService extends BaseChatProviderService {
   private readonly pollAbortByChannel = new Map<string, AbortController>();
   private readonly nextPageTokenByChannel = new Map<string, string>();
   private readonly errorService = inject(ConnectionErrorService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly videoResolver = inject(YouTubeVideoResolverService);
   private readonly pollingService = inject(YouTubePollingService);
   private readonly messageService = inject(YouTubeMessageService);
@@ -54,7 +54,7 @@ export class YouTubeChatService extends BaseChatProviderService {
       return;
     }
 
-    this.logger.info("YouTubeChatService", "Reconnecting channel", key, "with new token");
+    this.logger.info("Reconnecting channel", { source: "YouTubeChatService", key, "with new token": true });
     this.disconnect(key);
     this.connect(key);
   }
@@ -78,24 +78,24 @@ export class YouTubeChatService extends BaseChatProviderService {
     const abortController = new AbortController();
     this.pollAbortByChannel.set(storageKey, abortController);
 
-    this.logger.debug("YouTubeChatService", "Starting session for", storageKey);
+    this.logger.debug("Starting session for", { source: "YouTubeChatService", storageKey });
 
     try {
       let videoId: string | null = this.videoResolver.normalizeVideoId(storageKey);
-      this.logger.debug("YouTubeChatService", "Normalized video ID", videoId || "none");
+      this.logger.debug("Normalized video ID", { source: "YouTubeChatService", videoId: videoId || "none" });
 
       if (!videoId) {
-        this.logger.debug("YouTubeChatService", "Fetching video ID from channel name", storageKey);
+        this.logger.debug("Fetching video ID from channel name", { source: "YouTubeChatService", storageKey });
         videoId = await this.videoResolver.fetchVideoIdFromChannelName(storageKey);
       }
 
       if (!videoId) {
-        this.logger.error("YouTubeChatService", "Could not find video ID for", storageKey);
+        this.logger.error("Could not find video ID", null, { source: "YouTubeChatService", storageKey });
         this.errorService.reportChannelNotFound(storageKey, "youtube");
         return;
       }
 
-      this.logger.debug("YouTubeChatService", "Starting chat polling for video", videoId);
+      this.logger.debug("Starting chat polling for video", { source: "YouTubeChatService", videoId });
       await this.pollingService.drainLiveChat(
         videoId,
         storageKey,
@@ -105,7 +105,7 @@ export class YouTubeChatService extends BaseChatProviderService {
         this
       );
     } catch (error) {
-      this.logger.error("YouTubeChatService", "Session error", error);
+      this.logger.error("Session error", error, { source: "YouTubeChatService" });
       this.errorService.reportNetworkError(storageKey, "Failed to start chat session", true);
     } finally {
       this.pollAbortByChannel.delete(storageKey);

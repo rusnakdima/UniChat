@@ -1,16 +1,21 @@
 /* sys lib */
 import { inject, Injectable } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
+import {
+  POLLING_INTERVAL_MS,
+  YOUTUBE_BACKOFF_MAX_MS,
+  RATE_LIMIT_CODE,
+} from "@shared/utils/constants";
 
 /* helpers */
-import { POLLING_INTERVAL_MS } from "@app/shared/utils/constants";
+import { POLLING_INTERVAL_MS as CONSTPolling_INTERVAL_MS } from "@app/shared/utils/constants";
 
 interface YouTubeChatApiResponse {
   items?: Array<{
@@ -35,10 +40,11 @@ interface YouTubeChatApiResponse {
   providedIn: "root",
 })
 export class YouTubePollingService {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly errorService = inject(ConnectionErrorService);
   private readonly chatStorageService = inject(ChatStorageService);
   private readonly authorizationService = inject(AuthorizationService);
+  private readonly tauriApi = inject(TauriApiService);
 
   private readonly rateLimitState = new Map<
     string,
@@ -65,7 +71,7 @@ export class YouTubePollingService {
       lastRetryAt: 0,
     });
 
-    this.logger.debug("YouTubePollingService", "Starting live chat polling for video", videoId);
+    this.logger.debug("Starting live chat polling for video", { source: "YouTubePollingService", videoId });
 
     while (connectedChannels.has(storageKey) && !signal.aborted) {
       try {
@@ -73,13 +79,12 @@ export class YouTubePollingService {
         const pageToken = stored && stored !== "" ? stored : undefined;
 
         this.logger.debug(
-          "YouTubePollingService",
           "Fetching chat messages, pageToken",
-          pageToken || "initial"
+          { source: "YouTubePollingService", pageToken: pageToken || "initial" }
         );
 
         const apiKey = this.getApiKey();
-        const responseJson = await invoke<string>("youtubeFetchChatMessages", {
+        const responseJson = await this.tauriApi.youtubeFetchChatMessages({
           videoId,
           pageToken,
           apiKey: apiKey || undefined,
@@ -97,7 +102,7 @@ export class YouTubePollingService {
         }
 
         const messageCount = response.items?.length ?? 0;
-        this.logger.debug("YouTubePollingService", "Received %d messages", messageCount);
+        this.logger.debug("Received %d messages", { source: "YouTubePollingService", messageCount });
 
         for (const item of response.items ?? []) {
           const sourceMessageId = item.id;
@@ -145,18 +150,18 @@ export class YouTubePollingService {
         }
 
         const waitMillis = Number(response.pollingIntervalMillis ?? POLLING_INTERVAL_MS);
-        this.logger.debug("YouTubePollingService", "Waiting %d ms before next poll", waitMillis);
+        this.logger.debug("Waiting %d ms before next poll", { source: "YouTubePollingService", waitMillis });
         await this.delay(Math.max(500, waitMillis), signal);
       } catch (error: unknown) {
         consecutiveErrors++;
-        this.logger.error("YouTubePollingService", "Error fetching chat messages", error);
+        this.logger.error("Error fetching chat messages", error, { source: "YouTubePollingService" });
 
         const isRateLimited = this.isRateLimitError(error);
         if (isRateLimited) {
           const state = this.rateLimitState.get(storageKey);
           if (state) {
             state.consecutive429s++;
-            state.backoffMs = Math.min(32000, state.backoffMs * 2);
+            state.backoffMs = Math.min(YOUTUBE_BACKOFF_MAX_MS, state.backoffMs * 2);
             state.lastRetryAt = Date.now();
             this.rateLimitState.set(storageKey, state);
 
@@ -181,14 +186,16 @@ export class YouTubePollingService {
       }
     }
 
-    this.logger.info("YouTubePollingService", "Stopping live chat polling for", storageKey);
+    this.logger.info("Stopping live chat polling for", { source: "YouTubePollingService", storageKey });
     this.rateLimitState.delete(storageKey);
   }
 
   isRateLimitError(error: unknown): boolean {
     const errorMsg = String(error);
     return (
-      errorMsg.includes("429") || errorMsg.includes("rate limit") || errorMsg.includes("quota")
+      errorMsg.includes(RATE_LIMIT_CODE.toString()) ||
+      errorMsg.includes("rate limit") ||
+      errorMsg.includes("quota")
     );
   }
 

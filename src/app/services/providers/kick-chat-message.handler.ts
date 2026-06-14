@@ -1,12 +1,13 @@
 import { inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { KickChatEventMapper } from "@services/providers/kick-chat-event.mapper";
 import { normalizeChannelId } from "@utils/channel-normalization.util";
 import { RecentlySentMessage, KickUserInfo, KickChannelInfo } from "@models/platform-api.model";
-import { generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@shared/utils/chat.helper";
 import { PlatformType, RawPayloadMetadata, ChatMessageEmote } from "@models/chat.model";
+import { TauriApiService } from "@app/api/tauri-api.service";
+import { RATE_LIMIT_CODE, ECHO_DETECTION_TIMEOUT_MS } from "@shared/utils/constants";
 
 interface OutgoingChatMessage {
   id: string;
@@ -38,8 +39,9 @@ export class KickChatMessageHandler {
   private readonly historyNoticeLoggedChannels = new Set<string>();
 
   private readonly errorService = inject(ConnectionErrorService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly kickChatEventMapper = inject(KickChatEventMapper);
+  private readonly tauriApi = inject(TauriApiService);
 
   onOutgoingMessage?: (channelSlug: string, message: OutgoingChatMessage) => void;
   onMessageUpdate?: (channelSlug: string, messageId: string, updates: ChatMessageUpdates) => void;
@@ -69,24 +71,22 @@ export class KickChatMessageHandler {
     }
 
     this.logger.debug(
-      "KickChatService",
       "Processing message",
-      mapped.sourceMessageId,
-      mapped.content
+      { source: "KickChatService", mappedSourceMessageId: mapped.sourceMessageId, content: mapped.content }
     );
 
     const messageKey = `${mapped.author}:${mapped.content}`;
     const sentInfo = this.recentlySentMessages.get(`${channelSlug}:${messageKey}`);
 
-    this.logger.debug("KickChatService", "Sent info check", sentInfo ? "FOUND" : "NOT FOUND");
+    this.logger.debug("Sent info check", { source: "KickChatService", sentInfo: sentInfo ? "FOUND" : "NOT FOUND" });
 
     if (sentInfo) {
       const now = Date.now();
       const sentTime = sentInfo.timestamp;
-      if (now - sentTime < 5000) {
+      if (now - sentTime < ECHO_DETECTION_TIMEOUT_MS) {
         this.logger.debug(
-          "KickChatService",
-          "Echo detected - updating existing message, skipping add"
+          "Echo detected - updating existing message, skipping add",
+          { source: "KickChatService" }
         );
 
         this.onMessageUpdate?.(channelSlug, sentInfo.content, {
@@ -102,7 +102,7 @@ export class KickChatMessageHandler {
       this.recentlySentMessages.delete(`${channelSlug}:${messageKey}`);
     }
 
-    this.logger.debug("KickChatService", "Adding new message to storage", mapped.sourceMessageId);
+    this.logger.debug("Adding new message to storage", { source: "KickChatService", mappedSourceMessageId: mapped.sourceMessageId });
 
     this.onOutgoingMessage?.(channelSlug, {
       id: `msg-${mapped.sourceMessageId}`,
@@ -160,7 +160,7 @@ export class KickChatMessageHandler {
     try {
       const channelInfo = await fetchChannelInfo(normalizedChannel, account.accessToken);
 
-      const response = await invoke<boolean>("kickSendChatMessage", {
+      const response = await this.tauriApi.kickSendChatMessage({
         content: trimmed,
         accessToken: account.accessToken,
         broadcasterUserId: Number(channelInfo.broadcasterUserId),
@@ -193,10 +193,10 @@ export class KickChatMessageHandler {
       return response;
     } catch (error) {
       const errorMessage = String(error ?? "");
-      this.logger.error("KickChatService", "Send message failed", error);
+      this.logger.error("Send message failed", error, { source: "KickChatService" });
 
-      if (errorMessage.includes("429") || errorMessage.includes("Rate limit")) {
-        this.logger.warn("KickChatService", "Rate limit exceeded");
+      if (errorMessage.includes(RATE_LIMIT_CODE.toString()) || errorMessage.includes("Rate limit")) {
+        this.logger.warn("Rate limit exceeded", { source: "KickChatService" });
       }
 
       return false;
@@ -227,7 +227,7 @@ export class KickChatMessageHandler {
         }
       }
 
-      const userInfo = await invoke<KickUserInfo>("kickFetchUserInfo", { username });
+      const userInfo = await this.tauriApi.kickFetchUserInfo({ username }) as KickUserInfo;
       return userInfo;
     } catch {
       return null;

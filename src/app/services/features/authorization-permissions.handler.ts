@@ -1,8 +1,9 @@
 import { inject, signal, DestroyRef } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 import { PlatformType, ChatAccount, AuthStatus } from "@models/chat.model";
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { AuthorizationAccountsHandler, RawAccount } from "./authorization-accounts.handler";
+import { TauriApiService } from "@app/api/tauri-api.service";
+import { WAIT_FOR_ACCOUNTS_TIMEOUT_MS } from "@shared/utils/constants";
 
 export interface AuthCommandResultPayload {
   success: boolean;
@@ -19,8 +20,9 @@ export interface TokenRefreshEvent {
 
 export class AuthorizationPermissionsHandler {
   private readonly accountsHandler: AuthorizationAccountsHandler;
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly tauriApi = inject(TauriApiService);
 
   private autoRefreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -46,7 +48,7 @@ export class AuthorizationPermissionsHandler {
 
   async getAccountById(
     accountId: string | undefined,
-    timeoutMs: number = 5000
+    timeoutMs: number = WAIT_FOR_ACCOUNTS_TIMEOUT_MS
   ): Promise<ChatAccount | undefined> {
     if (!accountId) {
       return undefined;
@@ -78,7 +80,7 @@ export class AuthorizationPermissionsHandler {
 
     for (const platform of platforms) {
       try {
-        const result = await invoke<AuthCommandResultPayload>("authValidate", { platform });
+        const result = await this.tauriApi.authValidate({ platform }) as AuthCommandResultPayload;
         if (result.accounts?.length) {
           for (const account of result.accounts) {
             this.accountsHandler.upsertAccount(account);
@@ -92,7 +94,7 @@ export class AuthorizationPermissionsHandler {
 
   async validatePlatform(platform: PlatformType): Promise<boolean> {
     try {
-      const result = await invoke<AuthCommandResultPayload>("authValidate", { platform });
+      const result = await this.tauriApi.authValidate({ platform }) as AuthCommandResultPayload;
       if (result.accounts?.length) {
         const account = result.accounts[0];
         this.accountsHandler.upsertAccount(account);
@@ -106,23 +108,21 @@ export class AuthorizationPermissionsHandler {
 
   async refreshAccountToken(accountId: string, platform: PlatformType): Promise<boolean> {
     try {
-      const result = await invoke<AuthCommandResultPayload>("authRefresh", {
+      const result = await this.tauriApi.authRefresh({
         platform,
         accountId,
-      });
+      }) as AuthCommandResultPayload;
       if (result.account) {
         this.accountsHandler.upsertAccount(result.account);
         this.logger.info(
-          "AuthorizationService",
           "Token refreshed for",
-          platform,
-          result.account.username
+          { source: "AuthorizationService", platform, username: result.account.username }
         );
         return result.account.authStatus === "authorized";
       }
       return false;
     } catch (error) {
-      this.logger.error("AuthorizationService", "Failed to refresh token for", platform, error);
+      this.logger.error("Failed to refresh token for", error, { source: "AuthorizationService", platform });
       return false;
     }
   }
@@ -131,9 +131,8 @@ export class AuthorizationPermissionsHandler {
     const success = await this.refreshAccountToken(accountId, platform);
     if (success) {
       this.logger.info(
-        "AuthorizationService",
         "Token refreshed, emitting reconnect event for account",
-        accountId
+        { source: "AuthorizationService", accountId }
       );
       this.tokenRefreshedSignal.set({ accountId, platform });
     }
@@ -165,7 +164,7 @@ export class AuthorizationPermissionsHandler {
 
     const THIRTY_MINUTES = 30 * 60 * 1000;
     this.autoRefreshIntervalId = setInterval(() => {
-      this.logger.info("AuthorizationService", "Running periodic token refresh check");
+      this.logger.info("Running periodic token refresh check", { source: "AuthorizationService" });
       void this.refreshAllExpiredTokens();
     }, THIRTY_MINUTES);
 

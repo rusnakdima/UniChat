@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { LoggingService } from "@app/shared/services/logging.service";
+import { getLoggingService } from "@tauri-apps/logger";
+import { TauriApiService } from "@app/api/tauri-api.service";
 
 export interface UpdateInfo {
   current_version: string;
@@ -38,7 +38,8 @@ export type UpdateStatus =
   providedIn: "root",
 })
 export class UpdateService {
-  private readonly logging = inject(LoggingService);
+  private readonly logging = getLoggingService();
+  private readonly tauriApi = inject(TauriApiService);
   private readonly currentVersion = signal<string>("");
   private readonly latestVersion = signal<string>("");
   private readonly status = signal<UpdateStatus>("idle");
@@ -51,10 +52,10 @@ export class UpdateService {
 
   async initialize(): Promise<void> {
     try {
-      const version = await invoke<string>("getCurrentVersion");
+      const version = await this.tauriApi.getCurrentVersion();
       this.currentVersion.set(version);
     } catch (e) {
-      this.logging.error("UpdateService", "Failed to get current version:", e);
+      this.logging.error("Failed to get current version:", e, { source: "UpdateService" });
     }
   }
 
@@ -63,7 +64,7 @@ export class UpdateService {
     this.errorMessage.set(null);
 
     try {
-      const result = await invoke<CheckUpdateResult>("checkForUpdate");
+      const result = await this.tauriApi.checkForUpdate() as CheckUpdateResult;
 
       if (result.error) {
         this.status.set("error");
@@ -111,7 +112,7 @@ export class UpdateService {
     });
 
     try {
-      const path = await invoke<string>("downloadUpdate", {
+      const path = await this.tauriApi.downloadUpdate({
         url: result.update_info.download_url,
       });
       this.downloadPath.set(path);
@@ -134,7 +135,7 @@ export class UpdateService {
     this.status.set("installing");
 
     try {
-      await invoke<boolean>("installUpdate", { installerPath: path });
+      await this.tauriApi.installUpdate({ installerPath: path });
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
       this.status.set("error");

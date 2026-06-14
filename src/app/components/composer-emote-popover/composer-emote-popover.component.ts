@@ -7,7 +7,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { ChatChannel, ChatMessageEmote, PlatformType } from "@models/chat.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import {
   CustomEmoteManagerService,
   CustomEmote,
@@ -33,7 +33,7 @@ export class ComposerEmotePopoverComponent {
   private readonly twitchViewerCard = inject(TwitchViewerCardService);
   private readonly kickEmoteLoader = inject(KickEmoteLoaderService);
   private readonly twitchEmotesCatalog = inject(TwitchEmotesCatalogService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
 
   readonly platform = input.required<PlatformType>();
   readonly channel = input<ChatChannel | null>(null);
@@ -163,7 +163,7 @@ export class ComposerEmotePopoverComponent {
             this.kickEmotes.set(emotes);
           } catch (error) {
             this.kickEmotesError.set("Could not load Kick emotes.");
-            this.logger.warn("ComposerEmotePopoverComponent", "Failed to load Kick emotes", error);
+            this.logger.warn("Failed to load Kick emotes", { source: "ComposerEmotePopoverComponent", error });
           }
         }
       }

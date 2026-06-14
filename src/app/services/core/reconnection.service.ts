@@ -10,6 +10,7 @@ import {
   ConnectionErrorService,
   ConnectionErrorCode,
 } from "@services/core/connection-error.service";
+import { RECONNECTION_MAX_DELAY_MS, DISCONNECT_GAP_THRESHOLD_MS } from "@shared/utils/constants";
 
 /**
  * Track message sequence per channel for gap detection
@@ -77,7 +78,7 @@ export class ReconnectionService {
       const timeGap = now - tracker.lastReceivedAt;
 
       // Detect time-based gap (>30 seconds without messages)
-      if (timeGap > 30000 && tracker.messageCount > 10) {
+      if (timeGap > RECONNECTION_MAX_DELAY_MS && tracker.messageCount > 10) {
         this.reportTimeGap(channelId, platform, timeGap);
       }
     }
@@ -91,7 +92,7 @@ export class ReconnectionService {
    */
   reportReconnected(channelId: string, platform: PlatformType, disconnectDuration: number): void {
     // If disconnected for more than 5 seconds, likely missed messages
-    if (disconnectDuration > 5000) {
+    if (disconnectDuration > DISCONNECT_GAP_THRESHOLD_MS) {
       const tracker = this.trackers.get(channelId);
       if (tracker) {
         tracker.gapDetected = true;

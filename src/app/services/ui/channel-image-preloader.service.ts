@@ -2,7 +2,7 @@
 import { Injectable, inject } from "@angular/core";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.service";
 
@@ -17,7 +17,7 @@ import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.ser
 export class ChannelImagePreloaderService {
   private readonly chatListService = inject(ChatListService);
   private readonly channelImageLoader = inject(ChannelImageLoaderService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
 
   private preloadComplete = false;
 
@@ -37,10 +37,8 @@ export class ChannelImagePreloaderService {
     }
 
     this.logger.info(
-      "ChannelImagePreloaderService",
       "Preloading images for",
-      channels.length,
-      "channels"
+      { source: "ChannelImagePreloaderService", channels: channels.length }
     );
 
     // Load in batches to avoid rate limits
@@ -68,7 +66,7 @@ export class ChannelImagePreloaderService {
     }
 
     this.preloadComplete = true;
-    this.logger.info("ChannelImagePreloaderService", "Preload complete");
+    this.logger.info("Preload complete", { source: "ChannelImagePreloaderService" });
   }
 
   /**

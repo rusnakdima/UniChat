@@ -5,7 +5,7 @@ import { Injectable, signal, computed, inject } from "@angular/core";
 import { ChatMessage } from "@models/chat.model";
 
 /* helpers */
-import { generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@shared/utils/chat.helper";
 
 /* services */
 import { LocalStorageService } from "@services/core/local-storage.service";

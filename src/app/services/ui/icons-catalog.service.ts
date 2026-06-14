@@ -7,8 +7,8 @@ import {
   IconsStorageService,
 } from "./icons-storage.service";
 import { Injectable, inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 import { TwitchEmotesCatalogService } from "@services/providers/twitch-emotes-catalog.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 export interface ResolveSevenTvEmoteResult {
   id: string;
   url: string;
@@ -33,6 +33,7 @@ export interface PickableIconsEmote {
 export class IconsCatalogService {
   private readonly storage = inject(IconsStorageService);
   private readonly twitchEmotesCatalog = inject(TwitchEmotesCatalogService);
+  private readonly tauriApi = inject(TauriApiService);
 
   private globalEmotes: Record<string, IconsEmoteIcon> = {};
   private globalBadges: Record<string, IconsBadgeIcon> = {};
@@ -80,7 +81,7 @@ export class IconsCatalogService {
 
     this.globalLoadPromise = (async () => {
       try {
-        const res = await invoke<IconsPayload>("twitchFetchGlobalIcons");
+        const res = await this.tauriApi.twitchFetchGlobalIcons() as IconsPayload;
         const payloadWithMeta: IconsPayloadWithMeta = {
           ...res,
           fetchedAtMs: Date.now(),
@@ -130,7 +131,7 @@ export class IconsCatalogService {
 
     const loadPromise = (async () => {
       try {
-        const res = await invoke<IconsPayload>("twitchFetchChannelIcons", { roomId: rid });
+        const res = await this.tauriApi.twitchFetchChannelIcons({ roomId: rid }) as IconsPayload;
         const payloadWithMeta: IconsPayloadWithMeta = {
           ...res,
           fetchedAtMs: Date.now(),

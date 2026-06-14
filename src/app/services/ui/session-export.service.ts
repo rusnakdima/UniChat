@@ -7,7 +7,7 @@ import { ChatMessage } from "@models/chat.model";
 /* services */
 import { ChatStorageService } from "@services/data/chat-storage.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
-import { generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@shared/utils/chat.helper";
 export interface ExportOptions {
   format: "json" | "csv";
   includeMetadata?: boolean;

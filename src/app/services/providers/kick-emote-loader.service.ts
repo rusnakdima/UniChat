@@ -1,14 +1,14 @@
 /* sys lib */
 import { Injectable, inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* models */
 import { ChatMessageEmote } from "@models/chat.model";
 import { KickEmoteInfo } from "@models/platform-api.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { normalizeChannelId } from "@utils/channel-normalization.util";
+import { TauriApiService } from "@app/api/tauri-api.service";
 
 /**
  * Kick Emote Loader Service
@@ -23,7 +23,8 @@ export class KickEmoteLoaderService {
     { emotes: ChatMessageEmote[]; timestamp: number }
   >();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
+  private readonly tauriApi = inject(TauriApiService);
 
   /**
    * Fetch emotes for a Kick channel
@@ -40,9 +41,9 @@ export class KickEmoteLoaderService {
     }
 
     try {
-      const emotesInfo = await invoke<KickEmoteInfo[]>("kickFetchChannelEmotes", {
+      const emotesInfo = await this.tauriApi.kickFetchChannelEmotes({
         channelSlug: normalizedSlug,
-      });
+      }) as KickEmoteInfo[];
 
       const emotes: ChatMessageEmote[] = emotesInfo.map((info) => ({
         provider: "kick",
@@ -60,16 +61,13 @@ export class KickEmoteLoaderService {
       });
 
       this.logger.info(
-        "KickEmoteLoaderService",
         "Loaded",
-        emotes.length,
-        "emotes for",
-        channelSlug
+        { source: "KickEmoteLoaderService", emotesCount: emotes.length, channelSlug }
       );
 
       return emotes;
     } catch (error) {
-      this.logger.warn("KickEmoteLoaderService", "Failed to fetch emotes for", channelSlug, error);
+      this.logger.warn("Failed to fetch emotes", { source: "KickEmoteLoaderService", channelSlug, error });
       return [];
     }
   }

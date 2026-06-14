@@ -1,8 +1,8 @@
 /* sys lib */
-import { ErrorHandler, Injectable, inject } from "@angular/core";
+import { ErrorHandler, Injectable } from "@angular/core";
 
 /* services */
-import { LoggingService } from "@app/shared/services/logging.service";
+import { getLoggingService } from "@tauri-apps/logger";
 
 /**
  * Global error handler for uncaught exceptions
@@ -10,12 +10,12 @@ import { LoggingService } from "@app/shared/services/logging.service";
  */
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-  private readonly logger = inject(LoggingService);
+  private readonly logger = getLoggingService();
 
   handleError(error: unknown): void {
     const errorDetails = this.extractErrorDetails(error);
 
-    this.logger.error("GlobalErrorHandler", "Uncaught exception", errorDetails);
+    this.logger.error("Uncaught exception", errorDetails, { source: "GlobalErrorHandler" });
 
     if (this.shouldShowNotification(error)) {
       this.showErrorNotification(errorDetails);
@@ -60,7 +60,7 @@ export class GlobalErrorHandler implements ErrorHandler {
   }
 
   private showErrorNotification(details: ErrorDetails): void {
-    this.logger.warn("UserNotification", this.getUserFriendlyMessage(details));
+    this.logger.warn(this.getUserFriendlyMessage(details), { source: "UserNotification" });
   }
 
   private getUserFriendlyMessage(details: ErrorDetails): string {
@@ -87,7 +87,7 @@ export class GlobalErrorHandler implements ErrorHandler {
 
   private reportToMonitoring(error: unknown, details: ErrorDetails): void {
     if (!this.isProduction()) {
-      this.logger.error("ErrorReport", details.message, details);
+      this.logger.error(details.message, details, { source: "ErrorReport" });
     }
   }
 

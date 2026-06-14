@@ -9,7 +9,7 @@ import {
   overlayAnimationTypeKey,
   overlayAnimationDirectionKey,
   overlayTransparentBgKey,
-} from "@constants/overlay-storage.constants";
+} from "@shared/utils/constants";
 
 export interface OverlayConfig {
   filter: WidgetFilter;

@@ -25,17 +25,14 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
 import { findChannelByRef, migrateLegacyChannelRefs, toChannelRef } from "@utils/channel-ref.util";
-import { buildOverlayUrl } from "@helpers/chat.helper";
+import { buildOverlayUrl } from "@shared/utils/chat.helper";
 import { OverlayStorageService } from "@app/shared/services/overlay-storage.service";
 import { parseIntOrNull } from "@app/shared/utils/parse-int.util";
-
-/* components */
-import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
-import { SharedHeaderComponent } from "@components/shared-header/shared-header.component";
 import {
+  SAVE_SUCCESS_TIMEOUT_MS,
   overlayCustomCssKey,
   overlayChannelIdsKey,
   overlayMaxMessagesKey,
@@ -43,7 +40,9 @@ import {
   overlayAnimationTypeKey,
   overlayAnimationDirectionKey,
   overlayTransparentBgKey,
-} from "@constants/overlay-storage.constants";
+} from "@shared/utils/constants";
+import { CheckboxComponent } from "@components/ui/checkbox/checkbox.component";
+import { SharedHeaderComponent } from "@components/shared-header/shared-header.component";
 
 @Component({
   selector: "app-overlay-management-view",
@@ -53,7 +52,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OverlayManagementView {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly route = inject(ActivatedRoute);
   private readonly dashboardState = inject(DashboardStateService);
   private readonly chatList = inject(ChatListService);
@@ -146,7 +145,7 @@ export class OverlayManagementView {
     void this.tauriApi
       .invoke("startOverlayServer", { port: w.port }, { suppressError: true })
       .catch((error) => {
-        this.logger.warn("[OverlayManagement] Failed to start overlay server:", error);
+        this.logger.warn("Failed to start overlay server:", error, { source: "[OverlayManagement]" });
       });
   }
 
@@ -243,7 +242,7 @@ export class OverlayManagementView {
 
     // Show visual confirmation
     this.saveSuccess.set(true);
-    setTimeout(() => this.saveSuccess.set(false), 3000);
+    setTimeout(() => this.saveSuccess.set(false), SAVE_SUCCESS_TIMEOUT_MS);
   }
 
   get selectedFilter(): WidgetFilter {

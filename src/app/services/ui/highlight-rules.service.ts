@@ -2,7 +2,7 @@
 import { Injectable, signal, computed, inject, effect } from "@angular/core";
 
 /* helpers */
-import { generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@shared/utils/chat.helper";
 import { RegexCompilationService, RegexRule } from "@services/ui/regex-compilation.service";
 import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";

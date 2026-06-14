@@ -11,7 +11,7 @@ import {
 } from "@models/chat.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
@@ -22,7 +22,7 @@ import { ChatProviderCoordinatorService } from "@services/providers/chat-provide
 import { MessageHighlightService } from "@services/ui/message-highlight.service";
 
 /* helpers */
-import { buildSplitFeed, createMessageActionState } from "@helpers/chat.helper";
+import { buildSplitFeed, createMessageActionState } from "@shared/utils/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
 /**
@@ -45,7 +45,7 @@ import { buildChannelRef } from "@utils/channel-ref.util";
   providedIn: "root",
 })
 export class ChatStateService {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly platformResolver = inject(PlatformResolverService);
   private readonly chatListService = inject(ChatListService);
   private readonly authorizationService = inject(AuthorizationService);
@@ -85,8 +85,8 @@ export class ChatStateService {
     }
 
     this.logger.warn(
-      "ChatStateService",
-      "Reply functionality is currently unavailable for this platform."
+      "Reply functionality is currently unavailable for this platform.",
+      { source: "ChatStateService" }
     );
 
     this.updateMessageAction(messageId, "reply", {

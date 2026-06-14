@@ -4,10 +4,11 @@ import { Component, inject, signal, computed, OnInit, OnDestroy } from "@angular
 /* services */
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { AuthorizationService } from "@services/features/authorization.service";
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ThemeService } from "@services/core/theme.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
+import { ACTIVITY_TRACKING_INTERVAL_MS } from "@shared/utils/constants";
 
 interface ActivityEntry {
   time: string;
@@ -160,7 +161,7 @@ interface ActivityEntry {
 export class DebugPanelComponent implements OnInit, OnDestroy {
   private readonly connectionState = inject(ConnectionStateService);
   private readonly authService = inject(AuthorizationService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly chatList = inject(ChatListService);
   private readonly themeService = inject(ThemeService);
 
@@ -220,7 +221,7 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
       }
 
       this.activeTimerCount.set(3);
-    }, 5000);
+    }, ACTIVITY_TRACKING_INTERVAL_MS);
   }
 
   private addActivityEntry(type: ActivityEntry["type"], message: string): void {

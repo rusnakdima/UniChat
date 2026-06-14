@@ -6,6 +6,7 @@ import {
   ChannelAccountCapabilities,
   ChannelConnection,
   ChannelConnectionError,
+  ChatChannel,
   PlatformCapabilities,
   PlatformStatus,
   PlatformType,
@@ -18,7 +19,7 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 
 /* helpers */
-import { generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@shared/utils/chat.helper";
 import {
   buildChannelRef,
   findChannelByRef,
@@ -162,26 +163,11 @@ export class ConnectionStateService {
       return;
     }
 
-    // Note: Uses sync version - accounts are loaded when channels are connected
-    const account = this.authorizationService.getAccountByIdSync(channel.accountId);
-    const isAuthorized = account?.authStatus === "authorized";
-    const base = isAuthorized
-      ? this.platformResolver.getCapabilities(channel.platform)
-      : { canListen: true, canReply: false, canDelete: false };
-
-    const moderation = channel.accountCapabilities;
-
-    const capabilities: ChannelAccountCapabilities = {
-      ...base,
-      canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
-      canModerate: moderation?.verified === true && moderation.canModerate,
-      moderationRole: moderation?.moderationRole ?? "viewer",
-      verified: moderation?.verified ?? false,
-    };
+    const capabilities = this.buildChannelCapabilities(channel);
 
     this.updateConnection(channelId, {
       status: "connecting",
-      error: undefined, // Clear error on reconnect attempt
+      error: undefined,
     });
 
     setTimeout(() => {
@@ -190,7 +176,7 @@ export class ConnectionStateService {
         latencyMs: Math.floor(Math.random() * 100) + 200,
         viewers: Math.floor(Math.random() * 5000) + 100,
         capabilities,
-        error: undefined, // Clear error on successful connection
+        error: undefined,
       });
     }, 500);
   }
@@ -204,7 +190,7 @@ export class ConnectionStateService {
   reconnectChannel(channelId: string): void {
     this.updateConnection(channelId, {
       status: "reconnecting",
-      error: undefined, // Clear error on reconnect attempt
+      error: undefined,
     });
 
     setTimeout(() => {
@@ -214,31 +200,34 @@ export class ConnectionStateService {
         return;
       }
 
-      // Note: Uses sync version - accounts are loaded when channels are connected
-      const account = this.authorizationService.getAccountByIdSync(channel.accountId);
-      const isAuthorized = account?.authStatus === "authorized";
-      const base = isAuthorized
-        ? this.platformResolver.getCapabilities(channel.platform)
-        : { canListen: true, canReply: false, canDelete: false };
-
-      const moderation = channel.accountCapabilities;
-
-      const capabilities: ChannelAccountCapabilities = {
-        ...base,
-        canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
-        canModerate: moderation?.verified === true && moderation.canModerate,
-        moderationRole: moderation?.moderationRole ?? "viewer",
-        verified: moderation?.verified ?? false,
-      };
+      const capabilities = this.buildChannelCapabilities(channel);
 
       this.updateConnection(channelId, {
         status: "connected",
         latencyMs: Math.floor(Math.random() * 100) + 200,
         viewers: Math.floor(Math.random() * 5000) + 100,
         capabilities,
-        error: undefined, // Clear error on successful reconnect
+        error: undefined,
       });
     }, 800);
+  }
+
+  private buildChannelCapabilities(channel: ChatChannel): ChannelAccountCapabilities {
+    const account = this.authorizationService.getAccountByIdSync(channel.accountId);
+    const isAuthorized = account?.authStatus === "authorized";
+    const base = isAuthorized
+      ? this.platformResolver.getCapabilities(channel.platform)
+      : { canListen: true, canReply: false, canDelete: false };
+
+    const moderation = channel.accountCapabilities;
+
+    return {
+      ...base,
+      canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
+      canModerate: moderation?.verified === true && moderation.canModerate,
+      moderationRole: moderation?.moderationRole ?? "viewer",
+      verified: moderation?.verified ?? false,
+    };
   }
 
   private updateConnection(channelId: string, patch: Partial<ChannelConnection>): void {

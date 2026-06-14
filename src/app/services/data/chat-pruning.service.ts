@@ -5,10 +5,10 @@ import { Injectable } from "@angular/core";
 import { ChatMessage } from "@models/chat.model";
 
 /* config */
-import { APP_CONFIG } from "@config/app.constants";
+import { APP_CONFIG } from "@shared/utils/constants";
 
 /* helpers */
-import { sortMessagesChronological } from "@helpers/chat.helper";
+import { sortMessagesChronological } from "@shared/utils/chat.helper";
 
 /**
  * Chat Pruning Service

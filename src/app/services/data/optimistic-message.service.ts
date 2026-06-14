@@ -2,11 +2,12 @@ import { Injectable, inject } from "@angular/core";
 
 import { ChatMessage, PlatformType } from "@models/chat.model";
 
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 
-import { createMessageActionState, generateTimestamp } from "@helpers/chat.helper";
+import { createMessageActionState, generateTimestamp } from "@shared/utils/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
+import { OPTIMISTIC_MESSAGE_TIMEOUT_MS } from "@shared/utils/constants";
 
 function generateUuidV4(): string {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -20,7 +21,7 @@ function generateUuidV4(): string {
   providedIn: "root",
 })
 export class OptimisticMessageService {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly chatStorageService = inject(ChatStorageService);
 
   createOptimisticMessage(platform: PlatformType, channelId: string, text: string): void {
@@ -68,7 +69,7 @@ export class OptimisticMessageService {
       if (msg.author !== "You") return false;
       if (msg.text !== text) return false;
       const messageTime = new Date(msg.timestamp).getTime();
-      return Date.now() - messageTime < 5000;
+      return Date.now() - messageTime < OPTIMISTIC_MESSAGE_TIMEOUT_MS;
     });
 
     if (optimisticMessage) {
@@ -100,7 +101,7 @@ export class OptimisticMessageService {
       if (msg.author !== "You") return false;
       if (msg.text !== text) return false;
       const messageTime = new Date(msg.timestamp).getTime();
-      return Date.now() - messageTime < 5000;
+      return Date.now() - messageTime < OPTIMISTIC_MESSAGE_TIMEOUT_MS;
     });
 
     if (optimisticMessage) {

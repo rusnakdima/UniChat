@@ -12,7 +12,7 @@ import { AuthorizationService } from "@services/features/authorization.service";
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 
 /* helpers */
-import { createMessageActionState, generateTimestamp } from "@helpers/chat.helper";
+import { createMessageActionState, generateTimestamp } from "@shared/utils/chat.helper";
 export interface PlatformChatConfig {
   server?: string;
   port?: number;

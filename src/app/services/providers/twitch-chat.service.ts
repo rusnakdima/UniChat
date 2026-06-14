@@ -1,13 +1,12 @@
 /* sys lib */
 import { Injectable, inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 import tmi from "tmi.js";
 
 /* models */
 import { ChatMessage } from "@models/chat.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
 import { IconsCatalogService } from "@services/ui/icons-catalog.service";
@@ -17,9 +16,11 @@ import { TwitchConnectionService } from "@services/providers/twitch-connection.s
 import { TwitchMessageParserService } from "@services/providers/twitch-message-parser.service";
 import { TwitchRoomStateService } from "@services/providers/twitch-room-state.service";
 import { normalizeChannelId } from "@utils/channel-normalization.util";
+import { TauriApiService } from "@app/api/tauri-api.service";
+import { WAIT_FOR_ACCOUNTS_TIMEOUT_MS } from "@shared/utils/constants";
 
 /* helpers */
-import { createMessageActionState } from "@helpers/chat.helper";
+import { createMessageActionState } from "@shared/utils/chat.helper";
 
 export type { TwitchUserInfo } from "@models/platform-api.model";
 
@@ -36,12 +37,13 @@ export class TwitchChatService extends BaseChatProviderService {
 
   private readonly iconsCatalog = inject(IconsCatalogService);
   private readonly errorService = inject(ConnectionErrorService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly reconnectionService = inject(ReconnectionService);
   private readonly viewerCard = inject(TwitchViewerCardService);
   private readonly connectionService = inject(TwitchConnectionService);
   private readonly messageParser = inject(TwitchMessageParserService);
   private readonly roomStateService = inject(TwitchRoomStateService);
+  private readonly tauriApi = inject(TauriApiService);
 
   override connect(channelId: string): void {
     void this.connectAsync(channelId);
@@ -54,15 +56,12 @@ export class TwitchChatService extends BaseChatProviderService {
       return;
     }
 
-    await this.authorizationService.waitForAccounts(3000);
+    await this.authorizationService.waitForAccounts(WAIT_FOR_ACCOUNTS_TIMEOUT_MS);
 
     const account = this.resolveAccountForChannel(normalizedChannel);
     this.logger.info(
-      "TwitchChatService",
-      "Connecting to",
-      normalizedChannel,
-      "account:",
-      account ? { username: account.username, status: account.authStatus } : "none"
+      "Connecting to channel",
+      { source: "TwitchChatService", channel: normalizedChannel, account: account ? { username: account.username, status: account.authStatus } : null }
     );
 
     const messageListener = (
@@ -150,21 +149,21 @@ export class TwitchChatService extends BaseChatProviderService {
 
     if (!hasAuthIdentity) {
       if (account && (account.authStatus === "tokenExpired" || account.authStatus === "revoked")) {
-        this.logger.info("TwitchChatService", "Token expired, attempting refresh before send");
+        this.logger.info("Token expired, attempting refresh before send", { source: "TwitchChatService" });
         const refreshed = await this.authorizationService.refreshAndReconnect(account.id, "twitch");
         if (!refreshed) {
-          this.logger.warn("TwitchChatService", "Token refresh failed");
+          this.logger.warn("Token refresh failed", { source: "TwitchChatService" });
           this.errorService.reportAuthFailed(normalizedChannel);
           return false;
         }
         const refreshedAccount = this.authorizationService.getAccountByIdSync(account.id);
         if (!refreshedAccount || refreshedAccount.authStatus !== "authorized") {
-          this.logger.warn("TwitchChatService", "Refreshed account not authorized");
+          this.logger.warn("Refreshed account not authorized", { source: "TwitchChatService" });
           return false;
         }
-        this.logger.info("TwitchChatService", "Token refreshed successfully, proceeding with send");
+        this.logger.info("Token refreshed successfully, proceeding with send", { source: "TwitchChatService" });
       } else {
-        this.logger.warn("TwitchChatService", "No valid auth identity for", normalizedChannel);
+        this.logger.warn("No valid auth identity", { source: "TwitchChatService", channel: normalizedChannel });
         this.errorService.reportAuthFailed(normalizedChannel);
         return false;
       }
@@ -187,19 +186,17 @@ export class TwitchChatService extends BaseChatProviderService {
     } catch (error) {
       const message = String(error ?? "");
       this.logger.error(
-        "TwitchChatService",
-        "Send message failed for",
-        normalizedChannel,
-        "error:",
-        error
+        "Send message failed",
+        error,
+        { source: "TwitchChatService", channel: normalizedChannel }
       );
       if (
         message.toLowerCase().includes("anonymous") ||
         message.toLowerCase().includes("not connected")
       ) {
         this.logger.warn(
-          "TwitchChatService",
-          "Detected anonymous/not-connected state, reconnecting..."
+          "Detected anonymous/not-connected state, reconnecting...",
+          { source: "TwitchChatService" }
         );
         this.errorService.reportWebSocketError(normalizedChannel, "twitch", true);
         this.disconnect(normalizedChannel);
@@ -207,7 +204,7 @@ export class TwitchChatService extends BaseChatProviderService {
         await this.delay(900);
         client = this.connectionService.getClient(normalizedChannel);
         if (!client) {
-          this.logger.error("TwitchChatService", "Client still not available after reconnect");
+          this.logger.error("Client still not available after reconnect", null, { source: "TwitchChatService" });
           return false;
         }
 
@@ -215,7 +212,7 @@ export class TwitchChatService extends BaseChatProviderService {
           await client.say(normalizedChannel, trimmed);
           return true;
         } catch (retryError) {
-          this.logger.error("TwitchChatService", "Retry also failed:", retryError);
+          this.logger.error("Retry also failed", retryError, { source: "TwitchChatService" });
           this.errorService.reportNetworkError(
             normalizedChannel,
             "Failed to send message after reconnect"
@@ -238,13 +235,13 @@ export class TwitchChatService extends BaseChatProviderService {
     }
 
     try {
-      return await invoke<boolean>("twitchDeleteMessage", {
+      return await this.tauriApi.twitchDeleteMessage({
         channelId: normalizedChannel,
         messageId,
         accessToken: account.accessToken,
       });
     } catch (error) {
-      this.logger.error("TwitchChatService", "Delete message error", error);
+      this.logger.error("Delete message error", error, { source: "TwitchChatService" });
       return false;
     }
   }
@@ -327,10 +324,8 @@ export class TwitchChatService extends BaseChatProviderService {
     }
 
     this.logger.info(
-      "TwitchChatService",
       "Reconnecting channel",
-      normalizedChannel,
-      "with new token"
+      { source: "TwitchChatService", channel: normalizedChannel }
     );
     this.connectionService.reconnectChannel(normalizedChannel);
   }

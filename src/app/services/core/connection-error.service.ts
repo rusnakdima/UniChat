@@ -7,151 +7,39 @@ import { PlatformType, ChannelConnectionError } from "@models/chat.model";
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
-import { generateTimestamp } from "@helpers/chat.helper";
+import { generateTimestamp } from "@shared/utils/chat.helper";
+import {
+  USER_FRIENDLY_MESSAGES,
+  PLATFORM_NAMES,
+  UserFriendlyMessage,
+} from "./connection-error.messages";
 /**
  * Error codes for connection errors
  */
 export const ConnectionErrorCode = {
-  // Authentication errors
   AUTH_TOKEN_EXPIRED: "auth_token_expired",
   AUTH_TOKEN_INVALID: "auth_token_invalid",
   AUTH_SCOPE_MISSING: "auth_scope_missing",
   AUTH_FAILED: "auth_failed",
   AUTH_CREDENTIALS_MISSING: "auth_credentials_missing",
 
-  // Network errors
   NETWORK_OFFLINE: "network_offline",
   NETWORK_TIMEOUT: "network_timeout",
   NETWORK_UNREACHABLE: "network_unreachable",
   WEBSOCKET_CLOSED: "websocket_closed",
   WEBSOCKET_ERROR: "websocket_error",
 
-  // Platform-specific errors
   PLATFORM_RATE_LIMITED: "platform_rate_limited",
   PLATFORM_UNAVAILABLE: "platform_unavailable",
   CHANNEL_NOT_FOUND: "channel_not_found",
   CHANNEL_BANNED: "channel_banned",
 
-  // Generic errors
   UNKNOWN: "unknown",
   INTERNAL_ERROR: "internal_error",
 } as const;
 
 export type ConnectionErrorCodeType =
   (typeof ConnectionErrorCode)[keyof typeof ConnectionErrorCode];
-
-/**
- * User-friendly error messages mapped by error code and platform
- */
-const USER_FRIENDLY_MESSAGES: Record<
-  ConnectionErrorCodeType,
-  {
-    title: string;
-    message: string;
-    action: string;
-  }
-> = {
-  // Authentication errors
-  [ConnectionErrorCode.AUTH_TOKEN_EXPIRED]: {
-    title: "Authentication Expired",
-    message: "Your connection has expired. Please reconnect your account.",
-    action: "Reconnect in Settings",
-  },
-  [ConnectionErrorCode.AUTH_TOKEN_INVALID]: {
-    title: "Invalid Authentication",
-    message:
-      "Your authentication token is no longer valid. This may happen if you changed your password or revoked access.",
-    action: "Reconnect in Settings",
-  },
-  [ConnectionErrorCode.AUTH_SCOPE_MISSING]: {
-    title: "Missing Permissions",
-    message:
-      "Required permissions are missing from your account. The OAuth token doesn't have all required scopes.",
-    action: "Reconnect with Full Permissions",
-  },
-  [ConnectionErrorCode.AUTH_FAILED]: {
-    title: "Authentication Failed",
-    message:
-      "Unable to authenticate with the platform. Check your credentials and ensure the OAuth app is properly configured.",
-    action: "Check Credentials and Reconnect",
-  },
-  [ConnectionErrorCode.AUTH_CREDENTIALS_MISSING]: {
-    title: "OAuth Credentials Missing",
-    message:
-      "The application is missing OAuth credentials for this platform. Please configure the credentials in the .env file or environment variables.",
-    action: "Configure OAuth Credentials",
-  },
-
-  // Network errors
-  [ConnectionErrorCode.NETWORK_OFFLINE]: {
-    title: "No Internet Connection",
-    message: "Checking your internet connection...",
-    action: "Check Network Settings",
-  },
-  [ConnectionErrorCode.NETWORK_TIMEOUT]: {
-    title: "Connection Timeout",
-    message: "The connection took too long to respond. Retrying...",
-    action: "Retrying Automatically",
-  },
-  [ConnectionErrorCode.NETWORK_UNREACHABLE]: {
-    title: "Network Unreachable",
-    message: "Unable to reach the platform. Retrying...",
-    action: "Retrying Automatically",
-  },
-  [ConnectionErrorCode.WEBSOCKET_CLOSED]: {
-    title: "Connection Closed",
-    message: "The chat connection was closed unexpectedly.",
-    action: "Reconnecting...",
-  },
-  [ConnectionErrorCode.WEBSOCKET_ERROR]: {
-    title: "Connection Error",
-    message: "A connection error occurred. Attempting to reconnect...",
-    action: "Reconnecting...",
-  },
-
-  // Platform-specific errors
-  [ConnectionErrorCode.PLATFORM_RATE_LIMITED]: {
-    title: "Rate Limited",
-    message: "Too many requests. Waiting before retry...",
-    action: "Waiting to Retry",
-  },
-  [ConnectionErrorCode.PLATFORM_UNAVAILABLE]: {
-    title: "Platform Unavailable",
-    message: "The platform is temporarily unavailable. Please try again later.",
-    action: "Try Again Later",
-  },
-  [ConnectionErrorCode.CHANNEL_NOT_FOUND]: {
-    title: "Channel Not Found",
-    message: "This channel doesn't exist or has been deleted.",
-    action: "Verify Channel Name",
-  },
-  [ConnectionErrorCode.CHANNEL_BANNED]: {
-    title: "Channel Suspended",
-    message: "This channel has been suspended or banned.",
-    action: "Contact Support",
-  },
-
-  // Generic errors
-  [ConnectionErrorCode.UNKNOWN]: {
-    title: "Connection Issue",
-    message: "An unexpected error occurred. Retrying...",
-    action: "Retrying Automatically",
-  },
-  [ConnectionErrorCode.INTERNAL_ERROR]: {
-    title: "Internal Error",
-    message: "An internal error occurred. Please try restarting the application.",
-    action: "Restart Application",
-  },
-};
-
-/**
- * Platform-specific error message enhancements
- */
-const PLATFORM_NAMES: Record<PlatformType, string> = {
-  twitch: "Twitch",
-  kick: "Kick",
-  youtube: "YouTube",
-};
 
 /**
  * Connection Error Service - Centralized Error Handling
@@ -176,19 +64,15 @@ export class ConnectionErrorService {
   private readonly connectionStateService = inject(ConnectionStateService);
   private readonly chatListService = inject(ChatListService);
 
-  /**
-   * Get user-friendly error message
-   */
   getUserFriendlyMessage(
     code: ConnectionErrorCodeType,
     platform?: PlatformType,
     channelName?: string
-  ): { title: string; message: string; action: string } {
+  ): UserFriendlyMessage {
     const baseMessage = USER_FRIENDLY_MESSAGES[code];
     const platformName = platform ? PLATFORM_NAMES[platform] : "the platform";
     const context = channelName ? `"${channelName}"` : "the channel";
 
-    // Customize message based on platform and channel context
     return {
       title: baseMessage.title,
       message: baseMessage.message
@@ -199,9 +83,6 @@ export class ConnectionErrorService {
     };
   }
 
-  /**
-   * Report a connection error for a channel
-   */
   reportError(channelId: string, error: Omit<ChannelConnectionError, "occurredAt">): void {
     this.connectionStateService.reportError(channelId, {
       ...error,
@@ -209,16 +90,10 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Clear error for a channel
-   */
   clearError(channelId: string): void {
     this.connectionStateService.clearError(channelId);
   }
 
-  /**
-   * Report authentication token expired error
-   */
   reportTokenExpired(channelId: string): void {
     this.reportError(channelId, {
       code: ConnectionErrorCode.AUTH_TOKEN_EXPIRED,
@@ -227,9 +102,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Report authentication failed error
-   */
   reportAuthFailed(channelId: string): void {
     this.reportError(channelId, {
       code: ConnectionErrorCode.AUTH_FAILED,
@@ -238,9 +110,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Report authentication credentials missing error
-   */
   reportAuthCredentialsMissing(platform: PlatformType): void {
     this.reportError(platform, {
       code: ConnectionErrorCode.AUTH_CREDENTIALS_MISSING,
@@ -249,9 +118,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Report network timeout error
-   */
   reportNetworkTimeout(channelId: string, platform: PlatformType): void {
     this.reportError(channelId, {
       code: ConnectionErrorCode.NETWORK_TIMEOUT,
@@ -260,9 +126,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Report WebSocket connection error
-   */
   reportWebSocketError(channelId: string, platform: PlatformType, isRecoverable = true): void {
     this.reportError(channelId, {
       code: ConnectionErrorCode.WEBSOCKET_ERROR,
@@ -271,9 +134,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Report rate limit error
-   */
   reportRateLimited(channelId: string, platform: PlatformType): void {
     this.reportError(channelId, {
       code: ConnectionErrorCode.PLATFORM_RATE_LIMITED,
@@ -283,9 +143,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Report channel not found error
-   */
   reportChannelNotFound(channelId: string, platform: PlatformType, channelName?: string): void {
     this.reportError(channelId, {
       code: ConnectionErrorCode.CHANNEL_NOT_FOUND,
@@ -298,9 +155,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Report generic network error
-   */
   reportNetworkError(channelId: string, message: string, isRecoverable = true): void {
     this.reportError(channelId, {
       code: ConnectionErrorCode.NETWORK_UNREACHABLE,
@@ -309,9 +163,6 @@ export class ConnectionErrorService {
     });
   }
 
-  /**
-   * Handle error from a Promise (convenience method)
-   */
   handlePromiseError<T>(
     promise: Promise<T>,
     channelId: string,

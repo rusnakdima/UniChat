@@ -1,13 +1,12 @@
 /* sys lib */
 import { DestroyRef, Injectable, inject, signal } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 /* models */
 import { AuthStatus, ChatAccount, PlatformType } from "@models/chat.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
@@ -17,6 +16,8 @@ import {
   AuthorizationPermissionsHandler,
   AuthCommandResultPayload,
 } from "./authorization-permissions.handler";
+import { TauriApiService } from "@app/api/tauri-api.service";
+import { WAIT_FOR_ACCOUNTS_TIMEOUT_MS } from "@shared/utils/constants";
 
 @Injectable({
   providedIn: "root",
@@ -28,9 +29,10 @@ export class AuthorizationService {
 
   private readonly chatListService = inject(ChatListService);
   private readonly feedData = inject(DashboardFeedDataService);
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly destroyRef = inject(DestroyRef);
   private readonly localStorageService = inject(LocalStorageService);
+  private readonly tauriApi = inject(TauriApiService);
 
   readonly tokenRefreshed = this.permissionsHandler.tokenRefreshed;
 
@@ -46,9 +48,8 @@ export class AuthorizationService {
         newAccounts[accountIndex] = updatedAccount;
         this.accountsHandler.setAccounts(newAccounts);
         this.logger.info(
-          "AuthorizationService",
           "Kick OAuth updated username from channel",
-          username
+          { source: "AuthorizationService", username }
         );
       }
     };
@@ -56,17 +57,17 @@ export class AuthorizationService {
     void this.refreshStatuses();
 
     void listen<ChatAccount>("oauth-complete", (event) => {
-      this.logger.info("AuthorizationService", "Received oauth-complete event", event.payload);
+      this.logger.info("Received oauth-complete event", { source: "AuthorizationService", payload: event.payload });
       this.accountsHandler.upsertAccount(event.payload);
       this.accountsHandler.ensureChannelForAccount(event.payload);
     });
 
     void listen<string>("oauth-error", (event) => {
-      this.logger.error("AuthorizationService", "Received oauth-error event", event.payload);
+      this.logger.error("Received oauth-error event", event.payload, { source: "AuthorizationService" });
     });
   }
 
-  async waitForAccounts(timeoutMs = 5000): Promise<boolean> {
+  async waitForAccounts(timeoutMs = WAIT_FOR_ACCOUNTS_TIMEOUT_MS): Promise<boolean> {
     if (this.accountsHandler.accountsLoaded) {
       return true;
     }
@@ -92,7 +93,7 @@ export class AuthorizationService {
 
   async getAccountById(
     accountId: string | undefined,
-    timeoutMs: number = 5000
+    timeoutMs: number = WAIT_FOR_ACCOUNTS_TIMEOUT_MS
   ): Promise<ChatAccount | undefined> {
     return this.permissionsHandler.getAccountById(accountId, timeoutMs);
   }
@@ -109,15 +110,13 @@ export class AuthorizationService {
     const result = await this.authHandler.startAuthorization(platform);
     if (result.account) {
       this.logger.info(
-        "AuthorizationService",
         "Initial account from backend",
-        result.account.username
+        { source: "AuthorizationService", username: result.account.username }
       );
       if (platform === "kick") {
         this.logger.info(
-          "AuthorizationService",
-          "Kick account created with username",
-          result.account.username
+          "Kick account created",
+          { source: "AuthorizationService", username: result.account.username }
         );
       }
       this.accountsHandler.upsertAccount(result.account);
@@ -162,14 +161,14 @@ export class AuthorizationService {
     if (cachedAccounts.length > 0) {
       this.accountsHandler.setAccounts(cachedAccounts);
       this.accountsHandler.accountsLoaded = true;
-      this.logger.info("AuthorizationService", "Loaded cached accounts", cachedAccounts.length);
+      this.logger.info("Loaded cached accounts", { source: "AuthorizationService", count: cachedAccounts.length });
     }
 
     const loaded: ChatAccount[] = [];
 
     for (const platform of platforms) {
       try {
-        const result = await invoke<AuthCommandResultPayload>("authStatus", { platform });
+        const result = await this.tauriApi.authStatus({ platform }) as AuthCommandResultPayload;
         if (result.accounts?.length) {
           for (const account of result.accounts) {
             loaded.push(this.accountsHandler.toChatAccount(account));
@@ -177,7 +176,6 @@ export class AuthorizationService {
           }
         }
       } catch {
-        // Ignore initialization errors
       }
     }
 
@@ -187,12 +185,12 @@ export class AuthorizationService {
     }
 
     this.accountsHandler.accountsLoaded = true;
-    this.logger.info("AuthorizationService", "Accounts loaded", loaded.length, "accounts");
+    this.logger.info("Accounts loaded", { source: "AuthorizationService", count: loaded.length });
 
     void this.permissionsHandler.validateAllPlatforms().then(() => {
       this.logger.info(
-        "AuthorizationService",
-        "Validation complete, attempting auto-refresh of expired tokens"
+        "Validation complete, attempting auto-refresh of expired tokens",
+        { source: "AuthorizationService" }
       );
       void this.permissionsHandler.refreshAllExpiredTokens();
     });

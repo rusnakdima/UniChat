@@ -20,7 +20,7 @@ import { AuthorizationService } from "@services/features/authorization.service";
 import { ThemeService } from "@services/core/theme.service";
 
 /* helpers */
-import { YOUTUBE_DATA_API_KEY_STORAGE_KEY } from "@helpers/chat.helper";
+import { YOUTUBE_DATA_API_KEY_STORAGE_KEY } from "@shared/utils/chat.helper";
 
 /* components */
 import { BlockedWordsSettingsComponent } from "@components/blocked-words-settings/blocked-words-settings.component";

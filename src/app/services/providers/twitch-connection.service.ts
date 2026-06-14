@@ -3,7 +3,7 @@ import { Injectable, inject } from "@angular/core";
 import tmi from "tmi.js";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { ReconnectionService } from "@services/core/reconnection.service";
@@ -31,7 +31,7 @@ export class TwitchConnectionService {
   private readonly noticeListeners = new Map<string, (reason: string) => void>();
   private readonly statusListeners = new Set<StatusListener>();
 
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
   private readonly errorService = inject(ConnectionErrorService);
   private readonly connectionStateService = inject(ConnectionStateService);
   private readonly reconnectionService = inject(ReconnectionService);
@@ -47,13 +47,11 @@ export class TwitchConnectionService {
 
     this.emitStatus(normalizedChannel, "connecting");
 
-    this.logger.info(
-      "TwitchConnectionService",
-      "Connecting to",
+    this.logger.info("Connecting to", {
+      source: "TwitchConnectionService",
       normalizedChannel,
-      "account:",
-      account ? { username: account.username, hasToken: !!account.accessToken } : "none"
-    );
+      account: account ? { username: account.username, hasToken: !!account.accessToken } : "none",
+    });
 
     const client = new tmi.Client({
       options: {
@@ -78,13 +76,11 @@ export class TwitchConnectionService {
     this.connectedListeners.set(normalizedChannel, connectedListener);
 
     const disconnectedListener = (remoteAddress?: string) => {
-      this.logger.warn(
-        "TwitchConnectionService",
-        "Disconnected from Twitch",
+      this.logger.warn("Disconnected from Twitch", {
+        source: "TwitchConnectionService",
         normalizedChannel,
-        "remote:",
-        remoteAddress
-      );
+        remote: remoteAddress,
+      });
       this.emitStatus(normalizedChannel, "disconnected");
       this.connectionStateService.clearRoomState(normalizedChannel);
     };
@@ -102,13 +98,10 @@ export class TwitchConnectionService {
     };
 
     const failureListener = (err: unknown) => {
-      this.logger.error(
-        "TwitchConnectionService",
-        "Connection failure for",
+      this.logger.error("Connection failure for", err, {
+        source: "TwitchConnectionService",
         normalizedChannel,
-        "error:",
-        err
-      );
+      });
       this.errorService.reportNetworkTimeout(normalizedChannel, "twitch");
     };
     (client as unknown as TmiClientWithConnectionFailure).on("connectionfailure", failureListener);
@@ -187,12 +180,11 @@ export class TwitchConnectionService {
       return;
     }
 
-    this.logger.info(
-      "TwitchConnectionService",
-      "Reconnecting channel",
+    this.logger.info("Reconnecting channel", {
+      source: "TwitchConnectionService",
       normalizedChannel,
-      "with new token"
-    );
+      withNewToken: true,
+    });
     this.disconnect(normalizedChannel);
   }
 

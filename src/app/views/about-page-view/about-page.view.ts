@@ -3,7 +3,7 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import { UpdateService } from "@services/features/update.service";
 import { ThemeService } from "@services/core/theme.service";
-import { GITHUB_RELEASES_URL } from "@config/app.constants";
+import { GITHUB_RELEASES_URL } from "@shared/utils/constants";
 
 @Component({
   selector: "app-about-page-view",

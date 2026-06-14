@@ -3,7 +3,6 @@ import { computed, inject, Injectable, signal } from "@angular/core";
 import { ChatMessage, PlatformType, ChatHistoryLoadState } from "@models/chat.model";
 
 import { BlockedWordsService } from "@services/ui/blocked-words.service";
-import { ChatPersistenceService } from "@services/data/chat-persistence.service";
 import { ChatPruningService } from "@services/data/chat-pruning.service";
 import { HighlightNotificationService } from "@services/ui/highlight-notification.service";
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
@@ -13,9 +12,9 @@ import { ChatBatchingService } from "@services/data/chat-batching.service";
 import { ChatCacheService } from "@services/data/chat-cache.service";
 import { ChatMemoryService } from "@services/data/chat-memory.service";
 
-import { groupByPlatform } from "@helpers/chat.helper";
+import { groupByPlatform } from "@shared/utils/chat.helper";
 
-import { APP_CONFIG } from "@config/app.constants";
+import { APP_CONFIG } from "@shared/utils/constants";
 import { buildChannelRef, parseChannelRef } from "@utils/channel-ref.util";
 
 @Injectable({
@@ -29,7 +28,6 @@ export class ChatStorageService {
   private readonly messageTypeDetector = inject(MessageTypeDetectorService);
   private readonly blockedWordsService = inject(BlockedWordsService);
   private readonly highlightNotifications = inject(HighlightNotificationService);
-  private readonly persistence = inject(ChatPersistenceService);
   private readonly pruning = inject(ChatPruningService);
   private readonly batching = inject(ChatBatchingService);
   private readonly cache = inject(ChatCacheService);
@@ -155,6 +153,14 @@ export class ChatStorageService {
   addMessage(channelId: string, message: ChatMessage): void {
     const storageKey = buildChannelRef(message.platform, channelId);
 
+    this.processMessageFilters(message, storageKey);
+
+    this.batching.addToBatch(storageKey, message);
+    this.messageTypeDetector.updateLastMessageTime(message);
+    this.batching.scheduleBatchFlush();
+  }
+
+  private processMessageFilters(message: ChatMessage, storageKey: string): void {
     const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
       message.text,
       storageKey
@@ -166,10 +172,12 @@ export class ChatStorageService {
     const { type, reason } = this.messageTypeDetector.detectMessageType(message);
     message.messageType = type;
     message.messageTypeReason = reason;
+  }
 
-    this.batching.addToBatch(storageKey, message);
-    this.messageTypeDetector.updateLastMessageTime(message);
-    this.batching.scheduleBatchFlush();
+  private processMessagesBatch(messages: ChatMessage[], storageKey: string): void {
+    for (const message of messages) {
+      this.processMessageFilters(message, storageKey);
+    }
   }
 
   prependMessages(channelId: string, messages: ChatMessage[]): void {
@@ -182,18 +190,7 @@ export class ChatStorageService {
     const platform = messages.length > 0 ? messages[0].platform : "twitch";
     const storageKey = buildChannelRef(platform, channelId);
 
-    for (const message of sortedMessages) {
-      const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
-        message.text,
-        storageKey
-      );
-      if (wasFiltered) {
-        message.text = filtered;
-      }
-      const { type, reason } = this.messageTypeDetector.detectMessageType(message);
-      message.messageType = type;
-      message.messageTypeReason = reason;
-    }
+    this.processMessagesBatch(sortedMessages, storageKey);
 
     this.channelMessagesSignal.update((store) => {
       const channelMessages = store[storageKey] ?? [];

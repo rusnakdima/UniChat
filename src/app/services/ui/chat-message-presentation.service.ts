@@ -9,7 +9,7 @@ import {
   PLATFORM_TWITCH_ICON,
   PLATFORM_KICK_ICON,
   PLATFORM_YOUTUBE_ICON,
-} from "@constants/platform-icons.constants";
+} from "@shared/utils/constants";
 
 /* services */
 import { HighlightRulesService } from "@services/ui/highlight-rules.service";
@@ -19,7 +19,7 @@ import {
   getPlatformBadgeClasses,
   getPlatformBadgeClassesMixedFilter,
   getPlatformLabel,
-} from "@helpers/chat.helper";
+} from "@shared/utils/chat.helper";
 @Injectable({
   providedIn: "root",
 })

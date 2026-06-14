@@ -11,7 +11,7 @@ import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
 import { ChatAccount, PlatformType } from "@models/chat.model";
 
 /* helpers */
-import { getPlatformLabel } from "@helpers/chat.helper";
+import { getPlatformLabel } from "@shared/utils/chat.helper";
 
 interface PlatformConnection {
   platform: PlatformType;

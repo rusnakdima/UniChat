@@ -25,7 +25,7 @@ import {
   getPlatformBadgeClasses,
   getPlatformLabel,
   YOUTUBE_DATA_API_KEY_STORAGE_KEY,
-} from "@helpers/chat.helper";
+} from "@shared/utils/chat.helper";
 @Component({
   selector: "app-settings-modal",
   standalone: true,

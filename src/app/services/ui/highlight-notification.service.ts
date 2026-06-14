@@ -10,6 +10,10 @@ import { HighlightRulesService } from "@services/ui/highlight-rules.service";
 
 /* utils */
 import { buildChannelRef } from "@utils/channel-ref.util";
+import {
+  MAX_NOTIFICATION_TEXT_LENGTH,
+  MAX_NOTIFICATION_TEXT_TRUNCATE,
+} from "@shared/utils/constants";
 
 const STORAGE_KEY = "unichat.highlightNotifications.v1";
 
@@ -74,7 +78,9 @@ export class HighlightNotificationService {
   private showNotification(message: ChatMessage): void {
     const title = `Highlight: ${message.author}`;
     const body =
-      message.text.length > 180 ? `${message.text.slice(0, 177)}…` : message.text || "(no text)";
+      message.text.length > MAX_NOTIFICATION_TEXT_LENGTH
+        ? `${message.text.slice(0, MAX_NOTIFICATION_TEXT_TRUNCATE)}…`
+        : message.text || "(no text)";
     try {
       new Notification(title, { body, tag: message.id });
     } catch {

@@ -1,12 +1,12 @@
 /* sys lib */
 import { Injectable, inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 
 /* models */
 import { ChatMessageEmote } from "@models/chat.model";
 
 /* services */
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 
 export interface TwitchChannelEmote {
   id: string;
@@ -23,7 +23,8 @@ export class TwitchEmotesCatalogService {
     { emotes: TwitchChannelEmote[]; timestamp: number }
   >();
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
+  private readonly tauriApi = inject(TauriApiService);
 
   async fetchTwitchChannelEmotes(roomId: string): Promise<TwitchChannelEmote[]> {
     const trimmed = roomId?.trim();
@@ -37,31 +38,24 @@ export class TwitchEmotesCatalogService {
     }
 
     try {
-      const emotes = await invoke<TwitchChannelEmote[]>("twitchFetchChannelEmotes", {
+      const emotes = await this.tauriApi.twitchFetchChannelEmotes({
         roomId: trimmed,
-      });
+      }) as TwitchChannelEmote[];
 
       this.emotesCache.set(trimmed, {
         emotes,
         timestamp: Date.now(),
       });
 
-      this.logger.info(
-        "TwitchEmotesCatalogService",
-        "Loaded",
-        emotes.length,
-        "Twitch channel emotes for room",
-        roomId
-      );
+      this.logger.info("Loaded", {
+        source: "TwitchEmotesCatalogService",
+        count: emotes.length,
+        roomId,
+      });
 
       return emotes;
     } catch (error) {
-      this.logger.warn(
-        "TwitchEmotesCatalogService",
-        "Failed to fetch Twitch channel emotes for",
-        roomId,
-        error
-      );
+      this.logger.warn("Failed to fetch Twitch channel emotes", { source: "TwitchEmotesCatalogService", roomId, error });
       return [];
     }
   }

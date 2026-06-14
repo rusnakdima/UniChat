@@ -1,8 +1,8 @@
 import { inject } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { PlatformType, ChatAccount, AuthStatus } from "@models/chat.model";
-import { LoggerService } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { TauriApiService } from "@app/api/tauri-api.service";
 
 interface AuthAccountPayload {
   id: string;
@@ -26,19 +26,20 @@ interface AuthCommandResultPayload {
 }
 
 export class AuthorizationAuthHandler {
-  private readonly logger = inject(LoggerService);
+  private readonly logger = inject(LOGGER_SERVICE);
+  private readonly tauriApi = inject(TauriApiService);
 
   async startAuthorization(platform: PlatformType): Promise<AuthCommandResultPayload> {
-    const result = await invoke<AuthCommandResultPayload>("authStart", { platform });
+    const result = await this.tauriApi.authStart({ platform }) as AuthCommandResultPayload;
     if (result.authUrl) {
       const isDeepLink = result.authUrl.includes("unichat://");
       await openUrl(result.authUrl);
 
       if (isDeepLink) {
-        this.logger.info("AuthorizationService", "Started deep-link OAuth flow for", platform);
+        this.logger.info("Started deep-link OAuth flow for", { source: "AuthorizationService", platform });
         return result;
       } else {
-        const completed = await invoke<AuthCommandResultPayload>("authAwaitCallback", { platform });
+        const completed = await this.tauriApi.authAwaitCallback({ platform }) as AuthCommandResultPayload;
         return completed;
       }
     }
@@ -49,18 +50,18 @@ export class AuthorizationAuthHandler {
     platform: PlatformType,
     callbackUrl: string
   ): Promise<AuthCommandResultPayload> {
-    const result = await invoke<AuthCommandResultPayload>("authComplete", {
+    const result = await this.tauriApi.authComplete({
       platform,
       callbackUrl,
-    });
+    }) as AuthCommandResultPayload;
     return result;
   }
 
   async disconnect(platform: PlatformType, accountId: string): Promise<AuthCommandResultPayload> {
-    const result = await invoke<AuthCommandResultPayload>("authDisconnect", {
+    const result = await this.tauriApi.authDisconnect({
       platform,
       accountId,
-    });
+    }) as AuthCommandResultPayload;
     return result;
   }
 

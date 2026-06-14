@@ -5,7 +5,7 @@ import { DestroyRef, Injectable, inject } from "@angular/core";
 import { ChatStorageService } from "@services/data/chat-storage.service";
 
 /* config */
-import { APP_CONFIG } from "@config/app.constants";
+import { APP_CONFIG } from "@shared/utils/constants";
 
 /**
  * Memory Management Service

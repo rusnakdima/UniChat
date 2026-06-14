@@ -4,8 +4,8 @@
  */
 
 import { inject } from "@angular/core";
-import { APP_CONFIG } from "@config/app.constants";
-import { LoggerService } from "@services/core/logger.service";
+import { APP_CONFIG, RATE_LIMIT_CODE } from "@shared/utils/constants";
+import { getLoggingService } from "@services/core/logger.service";
 
 /**
  * Base error class for service-level errors
@@ -107,7 +107,7 @@ export function isServerErrorStatus(status: number): boolean {
  * Check if an error is a rate limit error (429)
  */
 export function isRateLimitError(error: unknown): boolean {
-  if (error instanceof NetworkError && error.status === 429) {
+  if (error instanceof NetworkError && error.status === RATE_LIMIT_CODE) {
     return true;
   }
 
@@ -153,12 +153,12 @@ export async function safeAsync<T>(
   defaultValue: T,
   context?: string
 ): Promise<T> {
-  const logger = inject(LoggerService);
+  const logger = getLoggingService();
   try {
     return await fn();
   } catch (error) {
     if (!APP_CONFIG.production) {
-      logger.warn("ErrorHandling", `[safeAsync] ${context || "Operation"} failed`, error);
+      logger.warn(`[safeAsync] ${context || "Operation"} failed`, { source: "ErrorHandling", error });
     }
     return defaultValue;
   }
