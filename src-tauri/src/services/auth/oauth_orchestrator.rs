@@ -1,8 +1,8 @@
 //! OAuth Orchestrator Service
 //! Handles the OAuth authentication flow orchestration (PKCE, state, coordination)
 
+use crate::{log_debug, log_info, log_warn};
 use chrono::{Duration, Utc};
-use log;
 use reqwest::Client;
 use url::Url;
 
@@ -41,7 +41,7 @@ impl OAuthService {
   }
 
   pub fn start_auth(&self, platform: PlatformTypeModel) -> Result<String, String> {
-    log::info!("Starting OAuth auth flow for platform: {:?}", platform);
+    log_info!("Starting OAuth auth flow for platform: {:?}", platform);
     let config = get_oauth_provider_config(&platform, &SharedConfig::default())?;
     let (host, port, path) = parse_loopback_redirect(&config.redirect_uri)?;
     self
@@ -63,12 +63,12 @@ impl OAuthService {
       .append_pair("code_challenge", &code_challenge)
       .append_pair("code_challenge_method", "S256");
 
-    log::debug!("Generated auth URL for {:?}", platform);
+    log_debug!("Generated auth URL for {:?}", platform);
     Ok(url.to_string())
   }
 
   pub fn wait_for_callback(&self, platform: PlatformTypeModel) -> Result<String, String> {
-    log::debug!("Waiting for OAuth callback for {:?}", platform);
+    log_debug!("Waiting for OAuth callback for {:?}", platform);
     self
       .oauth_loopback_service
       .wait_for_callback(platform.as_key(), OAUTH_CALLBACK_TIMEOUT_SECS)
@@ -80,7 +80,7 @@ impl OAuthService {
     callback_url: String,
     config: &SharedConfig,
   ) -> Result<AuthAccountModel, String> {
-    log::debug!("Completing OAuth for {:?}", platform);
+    log_debug!("Completing OAuth for {:?}", platform);
     let callback = Url::parse(&callback_url).map_err(|e| format!("invalid callback url: {e}"))?;
     let params = extract_callback_params(&callback);
 
@@ -89,7 +89,7 @@ impl OAuthService {
         .get("error_description")
         .cloned()
         .unwrap_or_else(|| "authorization failed at provider".to_string());
-      log::warn!(
+      log_warn!(
         "OAuth authorization denied for {:?}: {} - {}",
         platform,
         error_code,
@@ -107,11 +107,11 @@ impl OAuthService {
     let session = self.oauth_state_service.consume_session(state_param)?;
     let config = get_oauth_provider_config(&platform, config)?;
 
-    log::debug!("Exchanging code for token for {:?}", platform);
+    log_debug!("Exchanging code for token for {:?}", platform);
     let token =
       exchange_code_for_token(&self.http, &platform, code, &session.code_verifier, &config).await?;
 
-    log::debug!("Fetching identity for {:?}", platform);
+    log_debug!("Fetching identity for {:?}", platform);
     let (username, user_id, avatar_url) =
       fetch_identity(&self.http, &platform, &token, &config).await?;
 
@@ -131,7 +131,7 @@ impl OAuthService {
       authorized_at: Utc::now().to_rfc3339(),
     };
 
-    log::info!(
+    log_info!(
       "OAuth completed successfully for {:?}, user: {}",
       platform,
       account.username

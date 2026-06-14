@@ -1,4 +1,4 @@
-use log;
+use crate::{log_error, log_info};
 use serde::{Deserialize, Serialize};
 
 use crate::helpers::http_client::shared_client;
@@ -56,15 +56,15 @@ impl KickService {
     channel_slug: String,
     access_token: Option<String>,
   ) -> Result<KickChannelInfo, String> {
-    log::info!("Fetching chatroom ID for channel: {}", channel_slug);
+    log_info!("Fetching chatroom ID for channel: {}", channel_slug);
     validate_channel_slug(&channel_slug).map_err(|e| {
-      log::error!("Invalid channel slug '{}': {}", channel_slug, e);
+      log_error!("Invalid channel slug '{}': {}", channel_slug, e);
       format!("Invalid channel slug: {}", e)
     })?;
 
     if let Some(ref token) = access_token {
       validate_oauth_token(token).map_err(|e| {
-        log::error!("Invalid access token: {}", e);
+        log_error!("Invalid access token: {}", e);
         format!("Invalid access token: {}", e)
       })?;
     }
@@ -84,7 +84,7 @@ impl KickService {
     }
 
     let response = request.send().await.map_err(|e| {
-      log::error!(
+      log_error!(
         "Network error fetching chatroom ID for '{}': {}",
         channel_slug,
         e
@@ -97,12 +97,12 @@ impl KickService {
     if !status.is_success() {
       let context = format!("Channel '{}' on Kick", channel_slug);
       let err = handle_http_error(status, &context).unwrap_err();
-      log::error!("{}", &err);
+      log_error!("{}", &err);
       return Err(err);
     }
 
     let data = response.json::<KickChannelResponse>().await.map_err(|e| {
-      log::error!("JSON parse error for channel '{}': {}", channel_slug, e);
+      log_error!("JSON parse error for channel '{}': {}", channel_slug, e);
       format!("Failed to parse response: {}", e)
     })?;
 
@@ -111,7 +111,7 @@ impl KickService {
       .and_then(|c| c.id)
       .or(data.id)
       .ok_or_else(|| {
-        log::error!(
+        log_error!(
           "Chatroom ID not found in response for channel '{}'",
           channel_slug
         );
@@ -119,14 +119,14 @@ impl KickService {
       })?;
 
     let broadcaster_user_id = data.user.and_then(|u| u.id).ok_or_else(|| {
-      log::error!(
+      log_error!(
         "User ID not found in response for channel '{}'",
         channel_slug
       );
       "User ID not found in response".to_string()
     })?;
 
-    log::info!(
+    log_info!(
       "Successfully fetched chatroom ID for channel: {}",
       channel_slug
     );
@@ -175,7 +175,7 @@ impl KickService {
   pub async fn fetch_channel_info(
     channel_slug: String,
   ) -> Result<KickChannelInfoWithImage, String> {
-    log::info!("Fetching channel info for: {}", channel_slug);
+    log_info!("Fetching channel info for: {}", channel_slug);
     let client = shared_client();
 
     let url = format!("https://kick.com/api/v1/channels/{}", channel_slug);
@@ -186,7 +186,7 @@ impl KickService {
       .send()
       .await
       .map_err(|e| {
-        log::error!(
+        log_error!(
           "Network error fetching channel info for '{}': {}",
           channel_slug,
           e
@@ -199,12 +199,12 @@ impl KickService {
     if !status.is_success() {
       let context = format!("Channel '{}' on Kick", channel_slug);
       let err = handle_http_error(status, &context).unwrap_err();
-      log::error!("{}", &err);
+      log_error!("{}", &err);
       return Err(err);
     }
 
     let data = response.json::<KickChannelResponse>().await.map_err(|e| {
-      log::error!(
+      log_error!(
         "JSON parse error for channel info '{}': {}",
         channel_slug,
         e
@@ -213,14 +213,14 @@ impl KickService {
     })?;
 
     let user = data.user.ok_or_else(|| {
-      log::error!(
+      log_error!(
         "User data not found in response for channel '{}'",
         channel_slug
       );
       "User info not found in response"
     })?;
     let user_id = user.id.ok_or_else(|| {
-      log::error!("User ID not found for channel '{}'", channel_slug);
+      log_error!("User ID not found for channel '{}'", channel_slug);
       "User ID not found"
     })?;
     let username = user.username.unwrap_or_else(|| channel_slug.clone());
@@ -231,11 +231,11 @@ impl KickService {
       .and_then(|c| c.id)
       .or(data.id)
       .ok_or_else(|| {
-        log::error!("Channel ID not found in response for '{}'", channel_slug);
+        log_error!("Channel ID not found in response for '{}'", channel_slug);
         "Channel ID not found in response"
       })?;
 
-    log::info!("Successfully fetched channel info for: {}", channel_slug);
+    log_info!("Successfully fetched channel info for: {}", channel_slug);
     Ok(KickChannelInfoWithImage {
       id: channel_id,
       user_id,

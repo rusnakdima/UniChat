@@ -1,7 +1,7 @@
 //! Account Validation
 //! Handles token expiration checking and API validation
 
-use log;
+use crate::{log_debug, log_warn};
 
 use crate::helpers::oauth_config_helper::{get_oauth_provider_config, OAuthProviderConfig};
 use crate::models::auth_account_model::{AuthAccountModel, AuthStatusModel};
@@ -14,7 +14,7 @@ impl AccountService {
     &self,
     platform: PlatformTypeModel,
   ) -> Result<Vec<AuthAccountModel>, String> {
-    log::debug!("Validating auth status for {:?}", platform);
+    log_debug!("Validating auth status for {:?}", platform);
     let mut accounts = self.get_auth_status(platform.clone())?;
     let config = get_oauth_provider_config(&platform, &self.config)?;
     let now = chrono::Utc::now();
@@ -26,7 +26,7 @@ impl AccountService {
         .await
       {
         if !is_valid {
-          log::warn!("Token revoked for account {} on {:?}", account.id, platform);
+          log_warn!("Token revoked for account {} on {:?}", account.id, platform);
         }
       }
     }
@@ -47,9 +47,9 @@ impl AccountService {
     };
     if *now >= expires_at {
       if account.refresh_token.is_some() {
-        log::debug!("Token expired for account {} on {:?}", account.id, platform);
+        log_debug!("Token expired for account {} on {:?}", account.id, platform);
       } else {
-        log::debug!(
+        log_debug!(
           "Token expired without refresh for account {} on {:?}",
           account.id,
           platform

@@ -1,4 +1,4 @@
-use log;
+use crate::{log_debug, log_error, log_info};
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -44,7 +44,7 @@ pub async fn kickFetchRecentMessages(
   channelSlug: String,
   chatroomId: i64,
 ) -> Result<String, String> {
-  log::info!(
+  log_info!(
     "Fetching recent messages for chatroom: {} (channel: {})",
     chatroomId,
     channelSlug
@@ -66,7 +66,7 @@ pub async fn kickFetchRecentMessages(
     if response.status().is_success() {
       if let Ok(body) = response.text().await {
         if !body.trim().is_empty() {
-          log::debug!(
+          log_debug!(
             "Fetched messages from primary endpoint for chatroom {}",
             chatroomId
           );
@@ -106,7 +106,7 @@ pub async fn kickFetchRecentMessages(
       .map_err(|e| format!("Failed to read response: {}", e))?;
 
     if !body.trim().is_empty() {
-      log::debug!(
+      log_debug!(
         "Fetched messages from fallback endpoint for chatroom {}",
         chatroomId
       );
@@ -114,7 +114,7 @@ pub async fn kickFetchRecentMessages(
     }
   }
 
-  log::debug!(
+  log_debug!(
     "No messages found for chatroom {}, returning empty array",
     chatroomId
   );
@@ -128,7 +128,7 @@ pub async fn kickSendChatMessage(
   broadcaster_user_id: i64,
   reply_to_message_id: Option<String>,
 ) -> Result<KickSendMessageResponseData, String> {
-  log::info!(
+  log_info!(
     "Sending chat message for broadcaster: {}, content length: {}",
     broadcaster_user_id,
     content.len()
@@ -149,7 +149,7 @@ pub async fn kickSendChatMessage(
     .send()
     .await
     .map_err(|e| {
-      log::error!("Network error sending chat message: {}", e);
+      log_error!("Network error sending chat message: {}", e);
       format!("Network error: {}", e)
     })?;
 
@@ -163,11 +163,11 @@ pub async fn kickSendChatMessage(
     .json::<KickSendMessageResponse>()
     .await
     .map_err(|e| {
-      log::error!("JSON parse error for send message response: {}", e);
+      log_error!("JSON parse error for send message response: {}", e);
       format!("Failed to parse response: {}", e)
     })?;
 
-  log::info!(
+  log_info!(
     "Message sent successfully for broadcaster: {}, message_id: {}",
     broadcaster_user_id,
     data.data.message_id
@@ -183,13 +183,13 @@ pub async fn kickDeleteChatMessage(
   message_id: String,
   access_token: String,
 ) -> Result<KickDeleteMessageResponseData, String> {
-  log::info!("Deleting chat message: {}", message_id);
+  log_info!("Deleting chat message: {}", message_id);
   validate_message_id(&message_id).map_err(|e| {
-    log::error!("Invalid message ID '{}': {}", message_id, e);
+    log_error!("Invalid message ID '{}': {}", message_id, e);
     format!("Invalid message ID: {}", e)
   })?;
   validate_oauth_token(&access_token).map_err(|e| {
-    log::error!("Invalid access token for message deletion: {}", e);
+    log_error!("Invalid access token for message deletion: {}", e);
     format!("Invalid access token: {}", e)
   })?;
 
@@ -201,7 +201,7 @@ pub async fn kickDeleteChatMessage(
     .send()
     .await
     .map_err(|e| {
-      log::error!("Network error deleting message {}: {}", message_id, e);
+      log_error!("Network error deleting message {}: {}", message_id, e);
       format!("Network error: {e}")
     })?;
 
@@ -211,7 +211,7 @@ pub async fn kickDeleteChatMessage(
     return Err(handle_http_error(status, "Kick message delete").unwrap_err());
   }
 
-  log::info!("Message deleted successfully: {}", message_id);
+  log_info!("Message deleted successfully: {}", message_id);
   Ok(KickDeleteMessageResponseData {
     is_deleted: true,
     message_id,

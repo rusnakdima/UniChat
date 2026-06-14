@@ -1,7 +1,7 @@
 use crate::constants::MAX_WIDGET_IDS;
 use crate::models::overlay_message_model::OverlayMessageModel;
 use crate::services::overlay_server::overlay_helpers::filter_and_sort_messages;
-use log;
+use crate::{log_debug, log_error, log_info};
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 
@@ -40,17 +40,17 @@ pub async fn startOverlayServer(
   port: u16,
   state: tauri::State<'_, crate::AppState>,
 ) -> Result<OverlayServerStartResultModel, String> {
-  log::info!("Starting overlay server on port {}", port);
+  log_info!("Starting overlay server on port {}", port);
   state
     .overlay_server_service
     .clone()
     .start(port)
     .await
     .map_err(|e| {
-      log::error!("Failed to start overlay server: {}", e);
+      log_error!("Failed to start overlay server: {}", e);
       e.to_string()
     })?;
-  log::debug!("Overlay server started successfully");
+  log_debug!("Overlay server started successfully");
   Ok(OverlayServerStartResultModel {
     port,
     base_url: format!("http://127.0.0.1:{port}"),
@@ -60,7 +60,7 @@ pub async fn startOverlayServer(
 /// Stop the local overlay HTTP/WS server.
 #[tauri::command]
 pub async fn stopOverlayServer(state: tauri::State<'_, crate::AppState>) -> Result<(), String> {
-  log::info!("Stopping overlay server");
+  log_info!("Stopping overlay server");
   state.overlay_server_service.clone().stop().await
 }
 
@@ -74,10 +74,10 @@ pub async fn openOverlayWindow(
 ) -> Result<(), String> {
   use tauri::{WebviewUrl, WebviewWindowBuilder};
 
-  log::info!("Opening overlay window for widget: {}", widget_id);
+  log_info!("Opening overlay window for widget: {}", widget_id);
 
   if widget_id.trim().is_empty() {
-    log::error!("Widget ID is required");
+    log_error!("Widget ID is required");
     return Err("widgetId required".to_string());
   }
 
@@ -102,7 +102,7 @@ pub async fn openOverlayWindow(
   let window_label = format!("overlay-{}", widget_id.trim());
 
   if let Some(existing) = app.get_webview_window(&window_label) {
-    log::debug!(
+    log_debug!(
       "Overlay window already exists for widget: {}, focusing",
       widget_id
     );
@@ -117,7 +117,7 @@ pub async fn openOverlayWindow(
     &app,
     &window_label,
     WebviewUrl::External(overlay_url.parse().map_err(|e| {
-      log::error!("Invalid overlay URL: {}", e);
+      log_error!("Invalid overlay URL: {}", e);
       format!("Invalid overlay URL: {}", e)
     })?),
   );
@@ -134,11 +134,11 @@ pub async fn openOverlayWindow(
   }
 
   builder.build().map_err(|e: tauri::Error| {
-    log::error!("Failed to build overlay window: {}", e);
+    log_error!("Failed to build overlay window: {}", e);
     e.to_string()
   })?;
 
-  log::info!(
+  log_info!(
     "Overlay window created successfully for widget: {}",
     widget_id
   );
@@ -203,10 +203,10 @@ pub async fn emitOverlayConfigChanged(
       },
     )
     .map_err(|e| {
-      log::error!("Failed to emit overlay-config-changed event: {}", e);
+      log_error!("Failed to emit overlay-config-changed event: {}", e);
       e.to_string()
     })?;
-  log::debug!("Overlay config changed event emitted");
+  log_debug!("Overlay config changed event emitted");
   Ok(())
 }
 
@@ -260,7 +260,7 @@ pub async fn getOverlayConfig(
   state: tauri::State<'_, crate::AppState>,
   widget_id: String,
 ) -> Result<Option<OverlayFullConfigModel>, String> {
-  log::debug!("Getting overlay config for widget: {}", widget_id);
+  log_debug!("Getting overlay config for widget: {}", widget_id);
   let configs = state.overlay_server_service.overlay_configs.read().await;
   Ok(configs.get(&widget_id).cloned())
 }
@@ -282,10 +282,10 @@ pub async fn getOverlayMessages(
   limit: Option<u32>,
   channel_ids: Option<Vec<String>>,
 ) -> Result<Vec<OverlayMessageModel>, String> {
-  log::debug!("Getting overlay messages for widget: {}", widget_id);
+  log_debug!("Getting overlay messages for widget: {}", widget_id);
   let messages = state.overlay_server_service.overlay_messages.read().await;
   let Some(widget_messages) = messages.get(&widget_id) else {
-    log::debug!("No messages found for widget: {}", widget_id);
+    log_debug!("No messages found for widget: {}", widget_id);
     return Ok(Vec::new());
   };
 

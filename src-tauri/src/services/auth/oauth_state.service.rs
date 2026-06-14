@@ -1,4 +1,4 @@
-use log;
+use crate::{log_debug, log_warn};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -23,7 +23,7 @@ impl Default for OAuthStateService {
 
 impl OAuthStateService {
   pub fn new() -> Self {
-    log::debug!("Creating new OAuthStateService");
+    log_debug!("Creating new OAuthStateService");
     Self {
       sessions: Mutex::new(HashMap::new()),
     }
@@ -49,7 +49,7 @@ impl OAuthStateService {
       .lock()
       .map_err(|_| "oauth session lock poisoned".to_string())?;
     guard.insert(state.clone(), session.clone());
-    log::debug!("OAuth session created for {:?}, state: {}", platform, state);
+    log_debug!("OAuth session created for {:?}, state: {}", platform, state);
     Ok(session)
   }
 
@@ -60,13 +60,13 @@ impl OAuthStateService {
       .map_err(|_| "oauth session lock poisoned".to_string())?;
 
     let session = guard.remove(state).ok_or_else(|| {
-      log::warn!("OAuth session not found: {}", state);
+      log_warn!("OAuth session not found: {}", state);
       "oauth state is missing".to_string()
     })?;
 
     let now = Utc::now().timestamp();
     if session.created_at + OAUTH_STATE_EXPIRATION_SECS < now {
-      log::warn!(
+      log_warn!(
         "OAuth session expired: {} (created: {}, expires: {})",
         state,
         session.created_at,
@@ -75,7 +75,7 @@ impl OAuthStateService {
       return Err("oauth state expired".to_string());
     }
 
-    log::debug!("OAuth session consumed, state: {}", session.state);
+    log_debug!("OAuth session consumed, state: {}", session.state);
     Ok(session)
   }
 }

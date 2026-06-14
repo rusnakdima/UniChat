@@ -1,7 +1,7 @@
 //! Account Authentication Flow
 //! Handles OAuth authentication initiation and completion
 
-use log;
+use crate::log_debug;
 
 use crate::models::auth_account_model::AuthAccountModel;
 use crate::models::auth_oauth_model::OAuthTokenModel;
@@ -18,7 +18,7 @@ impl AccountService {
     &self,
     platform: PlatformTypeModel,
   ) -> Result<AuthAccountModel, String> {
-    log::debug!("Waiting for OAuth callback for {:?}", platform);
+    log_debug!("Waiting for OAuth callback for {:?}", platform);
     let callback_url = self.oauth_service.wait_for_callback(platform.clone())?;
     self.complete_auth(platform, callback_url).await
   }

@@ -1,7 +1,7 @@
 //! OAuth Loopback Service
 //! Handles TCP listener and HTTP callback handling for OAuth loopback redirect
 
-use log;
+use crate::{log_debug, log_error, log_info, log_warn};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver};
 use std::sync::Mutex;
@@ -41,7 +41,7 @@ impl OAuthLoopbackService {
     callback_path: &str,
   ) -> Result<(), String> {
     let address = format!("{host}:{port}");
-    log::info!(
+    log_info!(
       "Starting OAuth loopback listener for {} on {}:{}",
       platform_key,
       host,
@@ -60,7 +60,7 @@ impl OAuthLoopbackService {
     let expected_path = callback_path.to_string();
     let platform_key_owned = platform_key.to_string();
     let handle = self.runtime.spawn(async move {
-      log::debug!(
+      log_debug!(
         "OAuth callback task started for platform {}",
         platform_key_owned
       );
@@ -68,7 +68,7 @@ impl OAuthLoopbackService {
       let listener = match TcpListener::bind(&address).await {
         Ok(l) => l,
         Err(e) => {
-          log::error!("Failed to bind loopback listener on {}: {}", address, e);
+          log_error!("Failed to bind loopback listener on {}: {}", address, e);
           return;
         }
       };
@@ -92,7 +92,7 @@ impl OAuthLoopbackService {
               }
             }
             Err(e) => {
-              log::warn!("Failed to read from stream: {}", e);
+              log_warn!("Failed to read from stream: {}", e);
             }
           }
 
@@ -113,21 +113,18 @@ impl OAuthLoopbackService {
 
           let _ = stream.write_all(response.as_bytes()).await;
           if let Some(url) = callback_url {
-            log::debug!(
-              "OAuth callback received for platform {}",
-              platform_key_owned
-            );
+            log_debug!("OAuth callback received for platform {}", platform_key_owned);
             if let Err(e) = tx.send(url) {
-              log::warn!("OAuth callback receiver already dropped: {}", e);
+              log_warn!("OAuth callback receiver already dropped: {}", e);
             }
           }
         }
         Err(e) => {
-          log::warn!("Failed to accept connection: {}", e);
+          log_warn!("Failed to accept connection: {}", e);
         }
       }
 
-      log::debug!(
+      log_debug!(
         "OAuth callback task stopped for platform {}",
         platform_key_owned
       );
@@ -141,7 +138,7 @@ impl OAuthLoopbackService {
       guard.push(handle);
     }
 
-    log::info!(
+    log_info!(
       "OAuth loopback listener started successfully for {}",
       platform_key
     );
@@ -153,7 +150,7 @@ impl OAuthLoopbackService {
     platform_key: &str,
     timeout_seconds: u64,
   ) -> Result<String, String> {
-    log::debug!(
+    log_debug!(
       "Waiting for OAuth callback for platform {} (timeout: {}s)",
       platform_key,
       timeout_seconds
@@ -164,7 +161,7 @@ impl OAuthLoopbackService {
         .lock()
         .map_err(|_| "callback map lock poisoned".to_string())?;
       guard.remove(platform_key).ok_or_else(|| {
-        log::error!(
+        log_error!(
           "Callback listener not started for platform {}",
           platform_key
         );
@@ -174,7 +171,7 @@ impl OAuthLoopbackService {
 
     let timeout = StdDuration::from_secs(timeout_seconds);
     receiver.recv_timeout(timeout).map_err(|_| {
-      log::warn!(
+      log_warn!(
         "OAuth callback timeout for platform {} after {}s",
         platform_key,
         timeout_seconds

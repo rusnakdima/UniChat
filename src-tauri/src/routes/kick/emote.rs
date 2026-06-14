@@ -1,4 +1,4 @@
-use log;
+use crate::{log_debug, log_info};
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -30,7 +30,7 @@ pub struct KickEmoteInfo {
 
 #[tauri::command]
 pub async fn kickFetchChannelEmotes(channelSlug: String) -> Result<Vec<KickEmoteInfo>, String> {
-  log::info!("Fetching channel emotes for: {}", channelSlug);
+  log_info!("Fetching channel emotes for: {}", channelSlug);
   let client = shared_client();
 
   let base = "https://kick.com";
@@ -62,7 +62,7 @@ pub async fn kickFetchChannelEmotes(channelSlug: String) -> Result<Vec<KickEmote
             .collect();
 
           if !emotes.is_empty() {
-            log::debug!(
+            log_debug!(
               "Fetched {} emotes for channel: {}",
               emotes.len(),
               channelSlug
@@ -83,7 +83,7 @@ pub async fn kickFetchChannelEmotes(channelSlug: String) -> Result<Vec<KickEmote
             .collect();
 
           if !emotes.is_empty() {
-            log::debug!(
+            log_debug!(
               "Fetched {} emotes for channel: {}",
               emotes.len(),
               channelSlug
@@ -97,6 +97,6 @@ pub async fn kickFetchChannelEmotes(channelSlug: String) -> Result<Vec<KickEmote
     }
   }
 
-  log::debug!("No emotes found for channel: {}", channelSlug);
+  log_debug!("No emotes found for channel: {}", channelSlug);
   Ok(vec![])
 }

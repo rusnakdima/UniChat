@@ -1,7 +1,7 @@
 //! Account Disconnect
 //! Handles account disconnection and token revocation
 
-use log;
+use crate::{log_debug, log_info, log_warn};
 
 use crate::helpers::config_helper::SharedConfig;
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
@@ -15,7 +15,7 @@ impl AccountService {
     platform: PlatformTypeModel,
     account_id: String,
   ) -> Result<(), String> {
-    log::info!("Disconnecting account {} on {:?}", account_id, platform);
+    log_info!("Disconnecting account {} on {:?}", account_id, platform);
     self.revoke_token_if_possible(&platform, &account_id).await;
 
     self
@@ -24,7 +24,7 @@ impl AccountService {
     self
       .token_vault_service
       .remove_account(&platform, &account_id)?;
-    log::info!("Account {} disconnected successfully", account_id);
+    log_info!("Account {} disconnected successfully", account_id);
     Ok(())
   }
 
@@ -52,7 +52,7 @@ impl AccountService {
       return;
     };
 
-    log::debug!(
+    log_debug!(
       "Revoking token for account {} on {:?}",
       account_id,
       platform
@@ -68,7 +68,7 @@ impl AccountService {
 
     if let Ok(response) = self.http.post(revoke_url).form(&form).send().await {
       if !response.status().is_success() {
-        log::warn!("Token revoke request failed for account {}", account_id);
+        log_warn!("Token revoke request failed for account {}", account_id);
       }
     }
   }

@@ -1,3 +1,4 @@
+use crate::log_warn;
 use futures_util::StreamExt;
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
@@ -64,7 +65,7 @@ pub async fn download_update_with_progress(
         }
       }
       Err(e) => {
-        log::warn!("Download chunk error: {}", e);
+        log_warn!("Download chunk error: {}", e);
         break;
       }
     }

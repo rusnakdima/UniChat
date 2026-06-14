@@ -34,6 +34,15 @@ use crate::services::overlay_server::overlay_server_service::OverlayServerServic
 use tauri::Emitter;
 use tauri_plugin_deep_link::DeepLinkExt;
 
+#[macro_export]
+macro_rules! log_info { ($($arg:tt)*) => { log::info!($($arg)*) }; }
+#[macro_export]
+macro_rules! log_error { ($($arg:tt)*) => { log::error!($($arg)*) }; }
+#[macro_export]
+macro_rules! log_debug { ($($arg:tt)*) => { log::debug!($($arg)*) }; }
+#[macro_export]
+macro_rules! log_warn { ($($arg:tt)*) => { log::warn!($($arg)*) }; }
+
 pub struct AppState {
   pub config: SharedConfig,
   pub account_service: Arc<AccountService>,
@@ -51,7 +60,7 @@ pub fn run() {
       let config = Arc::new(AppConfig::new());
       config
         .validate()
-        .map_err(|e| log::error!("Config validation failed: {}", e))
+        .map_err(|e| eprintln!("Config validation failed: {}", e))
         .ok();
 
       let frontend_dist_dir = resolve_frontend_dist_dir(app);
@@ -148,7 +157,7 @@ pub fn run() {
     ]);
 
   if let Err(e) = builder.run(tauri::generate_context!()) {
-    log::error!("Failed to run tauri application: {}", e);
+    eprintln!("Failed to run tauri application: {}", e);
     std::process::exit(1);
   }
 }

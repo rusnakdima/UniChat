@@ -1,7 +1,7 @@
 //! Account Token Refresh
 //! Handles token refresh logic
 
-use log;
+use crate::{log_debug, log_info};
 
 use crate::helpers::oauth_config_helper::get_oauth_provider_config;
 use crate::models::auth_account_model::{AuthAccountModel, AuthStatusModel};
@@ -16,7 +16,7 @@ impl AccountService {
     platform: &PlatformTypeModel,
     account_id: &str,
   ) -> Result<AuthAccountModel, String> {
-    log::info!(
+    log_info!(
       "Refreshing token for account {} on {:?}",
       account_id,
       platform
@@ -32,7 +32,7 @@ impl AccountService {
 
     let config = get_oauth_provider_config(platform, &self.config)?;
 
-    log::debug!("Performing token refresh for account {}", account_id);
+    log_debug!("Performing token refresh for account {}", account_id);
     let new_token = refresh_access_token(&self.http, &refresh_token, &config).await?;
 
     let accounts = self.token_vault_service.read_accounts(platform)?;
@@ -52,7 +52,7 @@ impl AccountService {
     self.token_vault_service.upsert_account(&account)?;
     self.token_vault_service.save_token(&account, &new_token)?;
 
-    log::info!(
+    log_info!(
       "Token refreshed successfully for account {} on {:?}",
       account_id,
       platform

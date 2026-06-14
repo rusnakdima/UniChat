@@ -1,4 +1,4 @@
-use log;
+use crate::{log_debug, log_error, log_info, log_warn};
 use serde::{Deserialize, Serialize};
 
 use crate::helpers::auth_twitch_helper::{
@@ -46,11 +46,11 @@ impl TwitchService {
     message_id: String,
     access_token: String,
   ) -> Result<bool, String> {
-    log::info!("Deleting Twitch message: {}", message_id);
+    log_info!("Deleting Twitch message: {}", message_id);
     let client = shared_client();
     let config =
       get_oauth_provider_config(&PlatformTypeModel::Twitch, &state.config).map_err(|e| {
-        log::error!("OAuth config error for Twitch: {}", e);
+        log_error!("OAuth config error for Twitch: {}", e);
         format!("OAuth config error: {}", e)
       })?;
 
@@ -61,12 +61,12 @@ impl TwitchService {
       .send()
       .await
       .map_err(|e| {
-        log::error!("Network error validating token: {}", e);
+        log_error!("Network error validating token: {}", e);
         format!("Failed to get user info: {}", e)
       })?;
 
     if !user_info_response.status().is_success() {
-      log::error!(
+      log_error!(
         "Token validation failed with status: {}",
         user_info_response.status()
       );
@@ -77,7 +77,7 @@ impl TwitchService {
     }
 
     let user_info: serde_json::Value = user_info_response.json().await.map_err(|e| {
-      log::error!("JSON parse error for user info: {}", e);
+      log_error!("JSON parse error for user info: {}", e);
       format!("Failed to parse user info: {}", e)
     })?;
 
@@ -86,7 +86,7 @@ impl TwitchService {
       .and_then(|arr| arr.first())
       .and_then(|user| user["id"].as_str())
       .ok_or_else(|| {
-        log::error!("Failed to get user ID from token response");
+        log_error!("Failed to get user ID from token response");
         "Failed to get user ID from token".to_string()
       })?;
 
@@ -102,20 +102,20 @@ impl TwitchService {
       .send()
       .await
       .map_err(|e| {
-        log::error!("Network error deleting message: {}", e);
+        log_error!("Network error deleting message: {}", e);
         format!("Delete request failed: {}", e)
       })?;
 
     let status = response.status();
 
     if status.is_success() {
-      log::info!("Successfully deleted Twitch message: {}", message_id);
+      log_info!("Successfully deleted Twitch message: {}", message_id);
       Ok(true)
     } else if status == 404 {
-      log::debug!("Message {} not found, treating as success", message_id);
+      log_debug!("Message {} not found, treating as success", message_id);
       Ok(true)
     } else if status == 403 {
-      log::warn!(
+      log_warn!(
         "Missing permissions to delete message {} in channel {}",
         message_id,
         channel_id
@@ -176,7 +176,7 @@ impl TwitchService {
       })
       .collect();
 
-    log::info!(
+    log_info!(
       "Fetched {} Twitch channel emotes for room {}",
       emotes.len(),
       room_id
