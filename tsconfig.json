@@ -18,16 +18,15 @@
     "paths": {
       "@app/*": ["src/app/*"],
       "@components/*": ["src/app/components/*"],
-      "@config/*": ["src/app/config/*"],
       "@directives/*": ["src/app/directives/*"],
-      "@helpers/*": ["src/app/helpers/*"],
-      "@layouts/*": ["src/app/layouts/*"],
+      "@features/*": ["src/app/features/*"],
       "@models/*": ["src/app/models/*"],
       "@services/*": ["src/app/services/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@stores/*": ["src/app/stores/*"],
       "@views/*": ["src/app/views/*"],
-      "@resolvers/*": ["src/app/resolvers/*"],
       "@utils/*": ["src/app/utils/*"],
-      "@constants/*": ["src/app/constants/*"]
+      "@tauri-shared/*": ["../_shared/*"]
     }
   },
   "angularCompilerOptions": {

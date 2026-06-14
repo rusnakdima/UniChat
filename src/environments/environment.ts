@@ -1,4 +1,12 @@
-// Environment configuration
-// This file is replaced at build time based on build configuration
-
-export const ENVIRONMENT = {} as const;
+export const environment = {
+  production: false,
+  logging: {
+    enabled: true,
+    minLevel: 'debug',
+    consoleOutput: true,
+    memoryOutput: true,
+    fileOutput: false,
+    fileLogLevel: 'error',
+    levels: { debug: true, info: true, warn: true, error: true, success: true },
+  },
+};
