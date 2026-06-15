@@ -84,10 +84,9 @@ export class ChatStateService {
       return;
     }
 
-    this.logger.warn(
-      "Reply functionality is currently unavailable for this platform.",
-      { source: "ChatStateService" }
-    );
+    this.logger.warn("Reply functionality is currently unavailable for this platform.", {
+      source: "ChatStateService",
+    });
 
     this.updateMessageAction(messageId, "reply", {
       status: "disabled",

@@ -41,7 +41,9 @@ export class TauriApiService {
       }
     } catch (error: unknown) {
       if (!options.suppressError) {
-        this.logger.error(`Error invoking command "${command}":`, error, { source: "TauriApiService" });
+        this.logger.error(`Error invoking command "${command}":`, error, {
+          source: "TauriApiService",
+        });
       }
       throw error;
     }
@@ -112,11 +114,17 @@ export class TauriApiService {
     return this.invoke<string>("youtubeDeleteMessage", args);
   }
 
-  async youtubeFetchLiveVideoId(args: { channelName: string; accessToken: string }): Promise<string> {
+  async youtubeFetchLiveVideoId(args: {
+    channelName: string;
+    accessToken: string;
+  }): Promise<string> {
     return this.invoke<string>("youtubeFetchLiveVideoId", args);
   }
 
-  async youtubeFetchLiveVideoIdByApiKey(args: { channelName: string; apiKey: string }): Promise<string> {
+  async youtubeFetchLiveVideoIdByApiKey(args: {
+    channelName: string;
+    apiKey: string;
+  }): Promise<string> {
     return this.invoke<string>("youtubeFetchLiveVideoIdByApiKey", args);
   }
 

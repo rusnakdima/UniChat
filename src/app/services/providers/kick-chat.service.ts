@@ -124,17 +124,24 @@ export class KickChatService extends BaseChatProviderService {
   }
 
   sendMessage(channelId: string, text: string, accountId?: string): boolean {
-    this.logger.debug("sendMessage called", { source: "KickChatService", channelId, text, accountId });
+    this.logger.debug("sendMessage called", {
+      source: "KickChatService",
+      channelId,
+      text,
+      accountId,
+    });
 
     let account = this.authorizationService.getAccountByIdSync(accountId);
-    this.logger.debug(
-      "Account lookup",
-      { source: "KickChatService", account: account ? { id: account.id, username: account.username } : null }
-    );
+    this.logger.debug("Account lookup", {
+      source: "KickChatService",
+      account: account ? { id: account.id, username: account.username } : null,
+    });
 
     if (!account || account.authStatus !== "authorized" || !account.accessToken) {
       if (account && (account.authStatus === "tokenExpired" || account.authStatus === "revoked")) {
-        this.logger.info("Token expired, attempting refresh before send", { source: "KickChatService" });
+        this.logger.info("Token expired, attempting refresh before send", {
+          source: "KickChatService",
+        });
         void this.authorizationService.refreshAndReconnect(account.id, "kick").then((success) => {
           if (success) {
             const refreshed = this.authorizationService.getAccountByIdSync(account.id);
@@ -200,7 +207,10 @@ export class KickChatService extends BaseChatProviderService {
       const errorMessage = String(error ?? "");
       this.logger.error("Send message failed", error, { source: "KickChatService" });
 
-      if (errorMessage.includes(RATE_LIMIT_CODE.toString()) || errorMessage.includes("Rate limit")) {
+      if (
+        errorMessage.includes(RATE_LIMIT_CODE.toString()) ||
+        errorMessage.includes("Rate limit")
+      ) {
         this.logger.warn("Rate limit exceeded", { source: "KickChatService" });
       }
 
@@ -216,7 +226,10 @@ export class KickChatService extends BaseChatProviderService {
     const timestamp = generateTimestamp();
     const messageId = `kick-outgoing-${Date.now()}`;
 
-    this.logger.debug("Creating outgoing message", { source: "KickChatService", author: account.username });
+    this.logger.debug("Creating outgoing message", {
+      source: "KickChatService",
+      author: account.username,
+    });
 
     this.chatStorageService.addMessage(
       normalizedChannel,
@@ -257,10 +270,9 @@ export class KickChatService extends BaseChatProviderService {
       if (messageId.startsWith("msg-")) {
         kickMessageId = messageId.substring(4);
       } else if (messageId.startsWith("kick-outgoing-")) {
-        this.logger.warn(
-          "Cannot delete outgoing message without Kick message ID",
-          { source: "KickChatService" }
-        );
+        this.logger.warn("Cannot delete outgoing message without Kick message ID", {
+          source: "KickChatService",
+        });
         return false;
       }
 
@@ -290,13 +302,20 @@ export class KickChatService extends BaseChatProviderService {
       .find((acc) => acc.platform === "kick" && acc.authStatus === "authorized");
 
     try {
-      const channelInfo = await this.tauriApi.kickFetchChatroomId({
+      const channelInfo = (await this.tauriApi.kickFetchChatroomId({
         channelSlug,
         accessToken: account?.accessToken || null,
-      }) as KickChannelInfo;
-      this.logger.info("Fetched channel info", { source: "KickChatService", channel: channelSlug, channelInfo });
+      })) as KickChannelInfo;
+      this.logger.info("Fetched channel info", {
+        source: "KickChatService",
+        channel: channelSlug,
+        channelInfo,
+      });
       if (!channelInfo.chatroomId) {
-        this.logger.error("Missing chatroom ID", null, { source: "KickChatService", channel: channelSlug });
+        this.logger.error("Missing chatroom ID", null, {
+          source: "KickChatService",
+          channel: channelSlug,
+        });
         this.errorService.reportChannelNotFound(channelSlug, "kick");
         throw new Error("missing kick chatroom id");
       }
@@ -304,11 +323,10 @@ export class KickChatService extends BaseChatProviderService {
       return channelInfo;
     } catch (error) {
       const message = String(error ?? "");
-      this.logger.error(
-        "fetchChannelInfo failed",
-        error,
-        { source: "KickChatService", channel: channelSlug }
-      );
+      this.logger.error("fetchChannelInfo failed", error, {
+        source: "KickChatService",
+        channel: channelSlug,
+      });
       if (message.includes("404") || message.includes("not found")) {
         this.errorService.reportChannelNotFound(channelSlug, "kick");
       } else if (
@@ -324,7 +342,10 @@ export class KickChatService extends BaseChatProviderService {
         throw new Error(`Kick API unavailable: ${message}`);
       } else if (message.includes("500")) {
         if (cached) {
-          this.logger.warn("Using cached channel info", { source: "KickChatService", channel: channelSlug });
+          this.logger.warn("Using cached channel info", {
+            source: "KickChatService",
+            channel: channelSlug,
+          });
           return cached.info;
         }
         this.errorService.reportNetworkError(channelSlug, "Kick API temporarily unavailable");

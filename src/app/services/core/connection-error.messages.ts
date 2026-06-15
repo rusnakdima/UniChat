@@ -14,10 +14,7 @@ export interface UserFriendlyMessage {
   action: string;
 }
 
-export const USER_FRIENDLY_MESSAGES: Record<
-  ConnectionErrorCodeType,
-  UserFriendlyMessage
-> = {
+export const USER_FRIENDLY_MESSAGES: Record<ConnectionErrorCodeType, UserFriendlyMessage> = {
   [ConnectionErrorCode.AUTH_TOKEN_EXPIRED]: {
     title: "Authentication Expired",
     message: "Your connection has expired. Please reconnect your account.",

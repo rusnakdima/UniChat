@@ -158,7 +158,10 @@ export async function safeAsync<T>(
     return await fn();
   } catch (error) {
     if (!APP_CONFIG.production) {
-      logger.warn(`[safeAsync] ${context || "Operation"} failed`, { source: "ErrorHandling", error });
+      logger.warn(`[safeAsync] ${context || "Operation"} failed`, {
+        source: "ErrorHandling",
+        error,
+      });
     }
     return defaultValue;
   }

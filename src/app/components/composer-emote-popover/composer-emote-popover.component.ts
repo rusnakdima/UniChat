@@ -163,7 +163,10 @@ export class ComposerEmotePopoverComponent {
             this.kickEmotes.set(emotes);
           } catch (error) {
             this.kickEmotesError.set("Could not load Kick emotes.");
-            this.logger.warn("Failed to load Kick emotes", { source: "ComposerEmotePopoverComponent", error });
+            this.logger.warn("Failed to load Kick emotes", {
+              source: "ComposerEmotePopoverComponent",
+              error,
+            });
           }
         }
       }

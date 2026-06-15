@@ -66,7 +66,8 @@ export class EmoteQueryService {
 
   searchEmotes(query: string): CustomEmote[] {
     const lowerQuery = query.toLowerCase();
-    return this.manager.emotes()
+    return this.manager
+      .emotes()
       .filter((e) => e.code.toLowerCase().includes(lowerQuery))
       .slice(0, 50);
   }

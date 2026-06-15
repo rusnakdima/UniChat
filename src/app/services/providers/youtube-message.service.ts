@@ -20,10 +20,9 @@ export class YouTubeMessageService {
   sendMessage(channelId: string, text: string, accountId?: string): boolean {
     const account = this.authorizationService.getAccountByIdSync(accountId);
     if (account?.authStatus !== "authorized" || !account.accessToken) {
-      this.logger.warn(
-        "Cannot send message: account not authorized or no access token",
-        { source: "YouTubeMessageService" }
-      );
+      this.logger.warn("Cannot send message: account not authorized or no access token", {
+        source: "YouTubeMessageService",
+      });
       return false;
     }
     this.logger.info("Sending message to channel", { source: "YouTubeMessageService", channelId });
@@ -34,16 +33,12 @@ export class YouTubeMessageService {
   async deleteMessage(channelId: string, messageId: string, accountId?: string): Promise<boolean> {
     const account = this.authorizationService.getAccountByIdSync(accountId);
     if (account?.authStatus !== "authorized" || !account.accessToken) {
-      this.logger.warn(
-        "Cannot delete message: account not authorized or no access token",
-        { source: "YouTubeMessageService" }
-      );
+      this.logger.warn("Cannot delete message: account not authorized or no access token", {
+        source: "YouTubeMessageService",
+      });
       return false;
     }
-    this.logger.info(
-      "Deleting message",
-      { source: "YouTubeMessageService", messageId, channelId }
-    );
+    this.logger.info("Deleting message", { source: "YouTubeMessageService", messageId, channelId });
     return this.deleteMessageAsync(channelId, messageId, account.accessToken);
   }
 
@@ -65,7 +60,10 @@ export class YouTubeMessageService {
         return false;
       }
 
-      this.logger.info("Fetching live chat ID for video", { source: "YouTubeMessageService", videoId });
+      this.logger.info("Fetching live chat ID for video", {
+        source: "YouTubeMessageService",
+        videoId,
+      });
       const liveChatId = await this.tauriApi.youtubeFetchLiveChatId({
         videoId,
         accessToken,
@@ -102,7 +100,10 @@ export class YouTubeMessageService {
         return false;
       }
 
-      this.logger.info("Fetching live chat ID for video", { source: "YouTubeMessageService", videoId });
+      this.logger.info("Fetching live chat ID for video", {
+        source: "YouTubeMessageService",
+        videoId,
+      });
       const liveChatId = await this.tauriApi.youtubeFetchLiveChatId({
         videoId,
         accessToken,

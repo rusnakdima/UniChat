@@ -164,10 +164,10 @@ export class OverlayConfigManager implements OnDestroy {
           }
         } catch (httpError) {
           this.logger.debug("HTTP fallback unavailable for overlay config", {
-              tauriError,
-              httpError,
-              source: "OverlayConfigManager",
-            });
+            tauriError,
+            httpError,
+            source: "OverlayConfigManager",
+          });
         }
       }
 
@@ -241,10 +241,10 @@ export class OverlayConfigManager implements OnDestroy {
           }
         } catch (httpError) {
           this.logger.debug("HTTP fallback unavailable for pollBackendConfig", {
-              tauriError,
-              httpError,
-              source: "OverlayConfigManager",
-            });
+            tauriError,
+            httpError,
+            source: "OverlayConfigManager",
+          });
         }
       }
 
@@ -316,7 +316,10 @@ export class OverlayConfigManager implements OnDestroy {
         this.cdr.markForCheck();
       }
     } catch (pollError) {
-      this.logger.warn("Backend config poll failed", { source: "OverlayConfigManager", error: pollError });
+      this.logger.warn("Backend config poll failed", {
+        source: "OverlayConfigManager",
+        error: pollError,
+      });
     }
   }
 

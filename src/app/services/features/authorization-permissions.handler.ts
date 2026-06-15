@@ -80,7 +80,7 @@ export class AuthorizationPermissionsHandler {
 
     for (const platform of platforms) {
       try {
-        const result = await this.tauriApi.authValidate({ platform }) as AuthCommandResultPayload;
+        const result = (await this.tauriApi.authValidate({ platform })) as AuthCommandResultPayload;
         if (result.accounts?.length) {
           for (const account of result.accounts) {
             this.accountsHandler.upsertAccount(account);
@@ -94,7 +94,7 @@ export class AuthorizationPermissionsHandler {
 
   async validatePlatform(platform: PlatformType): Promise<boolean> {
     try {
-      const result = await this.tauriApi.authValidate({ platform }) as AuthCommandResultPayload;
+      const result = (await this.tauriApi.authValidate({ platform })) as AuthCommandResultPayload;
       if (result.accounts?.length) {
         const account = result.accounts[0];
         this.accountsHandler.upsertAccount(account);
@@ -108,21 +108,25 @@ export class AuthorizationPermissionsHandler {
 
   async refreshAccountToken(accountId: string, platform: PlatformType): Promise<boolean> {
     try {
-      const result = await this.tauriApi.authRefresh({
+      const result = (await this.tauriApi.authRefresh({
         platform,
         accountId,
-      }) as AuthCommandResultPayload;
+      })) as AuthCommandResultPayload;
       if (result.account) {
         this.accountsHandler.upsertAccount(result.account);
-        this.logger.info(
-          "Token refreshed for",
-          { source: "AuthorizationService", platform, username: result.account.username }
-        );
+        this.logger.info("Token refreshed for", {
+          source: "AuthorizationService",
+          platform,
+          username: result.account.username,
+        });
         return result.account.authStatus === "authorized";
       }
       return false;
     } catch (error) {
-      this.logger.error("Failed to refresh token for", error, { source: "AuthorizationService", platform });
+      this.logger.error("Failed to refresh token for", error, {
+        source: "AuthorizationService",
+        platform,
+      });
       return false;
     }
   }
@@ -130,10 +134,10 @@ export class AuthorizationPermissionsHandler {
   async refreshAndReconnect(accountId: string, platform: PlatformType): Promise<boolean> {
     const success = await this.refreshAccountToken(accountId, platform);
     if (success) {
-      this.logger.info(
-        "Token refreshed, emitting reconnect event for account",
-        { source: "AuthorizationService", accountId }
-      );
+      this.logger.info("Token refreshed, emitting reconnect event for account", {
+        source: "AuthorizationService",
+        accountId,
+      });
       this.tokenRefreshedSignal.set({ accountId, platform });
     }
     return success;

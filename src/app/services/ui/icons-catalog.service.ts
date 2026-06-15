@@ -81,7 +81,7 @@ export class IconsCatalogService {
 
     this.globalLoadPromise = (async () => {
       try {
-        const res = await this.tauriApi.twitchFetchGlobalIcons() as IconsPayload;
+        const res = (await this.tauriApi.twitchFetchGlobalIcons()) as IconsPayload;
         const payloadWithMeta: IconsPayloadWithMeta = {
           ...res,
           fetchedAtMs: Date.now(),
@@ -131,7 +131,7 @@ export class IconsCatalogService {
 
     const loadPromise = (async () => {
       try {
-        const res = await this.tauriApi.twitchFetchChannelIcons({ roomId: rid }) as IconsPayload;
+        const res = (await this.tauriApi.twitchFetchChannelIcons({ roomId: rid })) as IconsPayload;
         const payloadWithMeta: IconsPayloadWithMeta = {
           ...res,
           fetchedAtMs: Date.now(),

@@ -76,7 +76,10 @@ export class ErrorHandlerService {
     }
 
     if (error && typeof error === "object") {
-      const msg = "message" in error ? String((error as { message: unknown }).message) : "An unexpected error occurred";
+      const msg =
+        "message" in error
+          ? String((error as { message: unknown }).message)
+          : "An unexpected error occurred";
       return {
         name: "UnknownError",
         message: msg,

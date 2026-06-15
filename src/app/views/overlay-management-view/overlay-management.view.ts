@@ -145,7 +145,9 @@ export class OverlayManagementView {
     void this.tauriApi
       .invoke("startOverlayServer", { port: w.port }, { suppressError: true })
       .catch((error) => {
-        this.logger.warn("Failed to start overlay server:", error, { source: "[OverlayManagement]" });
+        this.logger.warn("Failed to start overlay server:", error, {
+          source: "[OverlayManagement]",
+        });
       });
   }
 

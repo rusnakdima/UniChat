@@ -70,10 +70,9 @@ export class DashboardPreferencesStorage {
 
             if (hasVisibleKick && hiddenPlatforms.includes("kick")) {
               hiddenPlatforms = hiddenPlatforms.filter((p) => p !== "kick");
-              this.logger.info(
-                "Migration: Unhid Kick platform (user has visible Kick channels)",
-                { source: "DashboardPreferencesService" }
-              );
+              this.logger.info("Migration: Unhid Kick platform (user has visible Kick channels)", {
+                source: "DashboardPreferencesService",
+              });
             }
             if (hasVisibleYoutube && hiddenPlatforms.includes("youtube")) {
               hiddenPlatforms = hiddenPlatforms.filter((p) => p !== "youtube");

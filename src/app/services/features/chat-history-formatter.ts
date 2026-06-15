@@ -144,11 +144,7 @@ export class ChatHistoryFormatter {
     }
   }
 
-  generateFilename(
-    channelName: string,
-    platform: PlatformType,
-    format: ExportFormat
-  ): string {
+  generateFilename(channelName: string, platform: PlatformType, format: ExportFormat): string {
     const timestamp = this.formatDate(new Date(), "iso").replace(/[:.]/g, "-");
     const safeChannelName = channelName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
     return `unichat-${platform}-${safeChannelName}-${timestamp}.${format}`;

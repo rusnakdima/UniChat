@@ -47,23 +47,28 @@ export class AuthorizationService {
         const newAccounts = [...accounts];
         newAccounts[accountIndex] = updatedAccount;
         this.accountsHandler.setAccounts(newAccounts);
-        this.logger.info(
-          "Kick OAuth updated username from channel",
-          { source: "AuthorizationService", username }
-        );
+        this.logger.info("Kick OAuth updated username from channel", {
+          source: "AuthorizationService",
+          username,
+        });
       }
     };
 
     void this.refreshStatuses();
 
     void listen<ChatAccount>("oauth-complete", (event) => {
-      this.logger.info("Received oauth-complete event", { source: "AuthorizationService", payload: event.payload });
+      this.logger.info("Received oauth-complete event", {
+        source: "AuthorizationService",
+        payload: event.payload,
+      });
       this.accountsHandler.upsertAccount(event.payload);
       this.accountsHandler.ensureChannelForAccount(event.payload);
     });
 
     void listen<string>("oauth-error", (event) => {
-      this.logger.error("Received oauth-error event", event.payload, { source: "AuthorizationService" });
+      this.logger.error("Received oauth-error event", event.payload, {
+        source: "AuthorizationService",
+      });
     });
   }
 
@@ -109,15 +114,15 @@ export class AuthorizationService {
   async authorize(platform: PlatformType): Promise<void> {
     const result = await this.authHandler.startAuthorization(platform);
     if (result.account) {
-      this.logger.info(
-        "Initial account from backend",
-        { source: "AuthorizationService", username: result.account.username }
-      );
+      this.logger.info("Initial account from backend", {
+        source: "AuthorizationService",
+        username: result.account.username,
+      });
       if (platform === "kick") {
-        this.logger.info(
-          "Kick account created",
-          { source: "AuthorizationService", username: result.account.username }
-        );
+        this.logger.info("Kick account created", {
+          source: "AuthorizationService",
+          username: result.account.username,
+        });
       }
       this.accountsHandler.upsertAccount(result.account);
       this.accountsHandler.ensureChannelForAccount(result.account);
@@ -161,22 +166,24 @@ export class AuthorizationService {
     if (cachedAccounts.length > 0) {
       this.accountsHandler.setAccounts(cachedAccounts);
       this.accountsHandler.accountsLoaded = true;
-      this.logger.info("Loaded cached accounts", { source: "AuthorizationService", count: cachedAccounts.length });
+      this.logger.info("Loaded cached accounts", {
+        source: "AuthorizationService",
+        count: cachedAccounts.length,
+      });
     }
 
     const loaded: ChatAccount[] = [];
 
     for (const platform of platforms) {
       try {
-        const result = await this.tauriApi.authStatus({ platform }) as AuthCommandResultPayload;
+        const result = (await this.tauriApi.authStatus({ platform })) as AuthCommandResultPayload;
         if (result.accounts?.length) {
           for (const account of result.accounts) {
             loaded.push(this.accountsHandler.toChatAccount(account));
             this.accountsHandler.ensureChannelForAccount(account);
           }
         }
-      } catch {
-      }
+      } catch {}
     }
 
     if (loaded.length > 0) {
@@ -188,10 +195,9 @@ export class AuthorizationService {
     this.logger.info("Accounts loaded", { source: "AuthorizationService", count: loaded.length });
 
     void this.permissionsHandler.validateAllPlatforms().then(() => {
-      this.logger.info(
-        "Validation complete, attempting auto-refresh of expired tokens",
-        { source: "AuthorizationService" }
-      );
+      this.logger.info("Validation complete, attempting auto-refresh of expired tokens", {
+        source: "AuthorizationService",
+      });
       void this.permissionsHandler.refreshAllExpiredTokens();
     });
 

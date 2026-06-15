@@ -5,10 +5,7 @@ import { ReconnectionManager } from "@utils/reconnection-manager.util";
 import { normalizeChannelId } from "@utils/channel-normalization.util";
 import { KickChatEventMapper } from "@services/providers/kick-chat-event.mapper";
 import { KickChannelInfo } from "@models/platform-api.model";
-import {
-  RECONNECTION_BASE_DELAY_MS,
-  RECONNECTION_MAX_DELAY_MS,
-} from "@shared/utils/constants";
+import { RECONNECTION_BASE_DELAY_MS, RECONNECTION_MAX_DELAY_MS } from "@shared/utils/constants";
 
 export class KickChatConnectionHandler {
   readonly platform = "kick" as const;
@@ -80,10 +77,10 @@ export class KickChatConnectionHandler {
       return;
     }
 
-    this.logger.info(
-      "Reconnecting channel with new token",
-      { source: "KickChatService", channel: normalizedChannel }
-    );
+    this.logger.info("Reconnecting channel with new token", {
+      source: "KickChatService",
+      channel: normalizedChannel,
+    });
     this.channelInfoByChannel.delete(normalizedChannel);
     this.reconnectManagers.delete(normalizedChannel);
     this.disconnect(normalizedChannel);
@@ -91,10 +88,11 @@ export class KickChatConnectionHandler {
   }
 
   private openSocket(channelSlug: string, chatroomId: number): void {
-    this.logger.debug(
-      "Opening WebSocket connection for channel",
-      { source: "KickChatService", channel: channelSlug, chatroomId }
-    );
+    this.logger.debug("Opening WebSocket connection for channel", {
+      source: "KickChatService",
+      channel: channelSlug,
+      chatroomId,
+    });
 
     const socket = new WebSocket(
       "wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0"
@@ -102,10 +100,10 @@ export class KickChatConnectionHandler {
     this.socketByChannel.set(channelSlug, socket);
 
     socket.addEventListener("open", () => {
-      this.logger.debug(
-        "Connection opened, subscribing to channel",
-        { source: "KickChatService", channel: `chatrooms.${chatroomId}.v2` }
-      );
+      this.logger.debug("Connection opened, subscribing to channel", {
+        source: "KickChatService",
+        channel: `chatrooms.${chatroomId}.v2`,
+      });
       socket.send(
         JSON.stringify({
           event: "pusher:subscribe",
@@ -125,19 +123,20 @@ export class KickChatConnectionHandler {
     });
 
     socket.addEventListener("error", (event) => {
-      this.logger.error(
-        "WebSocket error",
-        event,
-        { source: "KickChatService", channel: channelSlug }
-      );
+      this.logger.error("WebSocket error", event, {
+        source: "KickChatService",
+        channel: channelSlug,
+      });
       this.errorService.reportWebSocketError(channelSlug, "kick", true);
     });
 
     socket.addEventListener("close", (event) => {
-      this.logger.warn(
-        "WebSocket closed",
-        { source: "KickChatService", channel: channelSlug, code: event.code, reason: event.reason }
-      );
+      this.logger.warn("WebSocket closed", {
+        source: "KickChatService",
+        channel: channelSlug,
+        code: event.code,
+        reason: event.reason,
+      });
       this.socketByChannel.delete(channelSlug);
       if (this.connectedChannels.has(channelSlug)) {
         this.scheduleReconnect(channelSlug);
@@ -203,10 +202,12 @@ export class KickChatConnectionHandler {
 
     const delay = manager.onConnectionFailed();
 
-    this.logger.debug(
-      "Scheduling reconnect",
-      { source: "KickChatService", channel: channelSlug, attempt: manager.getState().attempts, delayMs: Math.round(delay) }
-    );
+    this.logger.debug("Scheduling reconnect", {
+      source: "KickChatService",
+      channel: channelSlug,
+      attempt: manager.getState().attempts,
+      delayMs: Math.round(delay),
+    });
 
     const timerId = window.setTimeout(() => {
       this.reconnectTimerByChannel.delete(channelSlug);
@@ -237,18 +238,25 @@ export class KickChatConnectionHandler {
     try {
       const channelInfo = await this.fetchChannelInfo(channelSlug);
       if (!channelInfo) {
-        this.logger.error("No channel info returned", null, { source: "KickChatService", channel: channelSlug });
+        this.logger.error("No channel info returned", null, {
+          source: "KickChatService",
+          channel: channelSlug,
+        });
         this.errorService.reportChannelNotFound(channelSlug, "kick");
         return;
       }
-      this.logger.info(
-        "Got channel info",
-        { source: "KickChatService", channel: channelSlug, chatroomId: channelInfo.chatroomId }
-      );
+      this.logger.info("Got channel info", {
+        source: "KickChatService",
+        channel: channelSlug,
+        chatroomId: channelInfo.chatroomId,
+      });
       this.channelInfoByChannel.set(channelSlug, { info: channelInfo, timestamp: Date.now() });
       await this.fetchKickRecentMessagesRest(channelSlug, channelInfo.chatroomId);
       if (!this.connectedChannels.has(channelSlug)) {
-        this.logger.warn("Channel disconnected during setup", { source: "KickChatService", channel: channelSlug });
+        this.logger.warn("Channel disconnected during setup", {
+          source: "KickChatService",
+          channel: channelSlug,
+        });
         return;
       }
       this.logger.info("Opening WebSocket", { source: "KickChatService", channel: channelSlug });
@@ -257,11 +265,11 @@ export class KickChatConnectionHandler {
       const mgr = this.reconnectManagers.get(channelSlug);
       const attempts = mgr?.getState().attempts ?? 0;
 
-      this.logger.error(
-        "Failed to connect",
-        error,
-        { source: "KickChatService", channel: channelSlug, attempt: attempts }
-      );
+      this.logger.error("Failed to connect", error, {
+        source: "KickChatService",
+        channel: channelSlug,
+        attempt: attempts,
+      });
       this.errorService.reportNetworkError(
         channelSlug,
         "Failed to connect to Kick chat. Retrying...",
@@ -299,9 +307,16 @@ export class KickChatConnectionHandler {
         channelSlug,
         accessToken,
       });
-      this.logger.info("Fetched channel info", { source: "KickChatService", channel: channelSlug, channelInfo });
+      this.logger.info("Fetched channel info", {
+        source: "KickChatService",
+        channel: channelSlug,
+        channelInfo,
+      });
       if (!channelInfo.chatroomId) {
-        this.logger.error("Missing chatroom ID", null, { source: "KickChatService", channel: channelSlug });
+        this.logger.error("Missing chatroom ID", null, {
+          source: "KickChatService",
+          channel: channelSlug,
+        });
         this.errorService.reportChannelNotFound(channelSlug, "kick");
         throw new Error("missing kick chatroom id");
       }
@@ -309,11 +324,10 @@ export class KickChatConnectionHandler {
       return channelInfo;
     } catch (error) {
       const message = String(error ?? "");
-      this.logger.error(
-        "fetchChannelInfo failed",
-        error,
-        { source: "KickChatService", channel: channelSlug }
-      );
+      this.logger.error("fetchChannelInfo failed", error, {
+        source: "KickChatService",
+        channel: channelSlug,
+      });
       if (message.includes("404") || message.includes("not found")) {
         this.errorService.reportChannelNotFound(channelSlug, "kick");
       } else if (
@@ -329,7 +343,10 @@ export class KickChatConnectionHandler {
         throw new Error(`Kick API unavailable: ${message}`);
       } else if (message.includes("500")) {
         if (cached) {
-          this.logger.warn("Using cached channel info", { source: "KickChatService", channel: channelSlug });
+          this.logger.warn("Using cached channel info", {
+            source: "KickChatService",
+            channel: channelSlug,
+          });
           return cached.info;
         }
         this.errorService.reportNetworkError(channelSlug, "Kick API temporarily unavailable");
@@ -355,8 +372,7 @@ export class KickChatConnectionHandler {
       for (const message of messages.reverse()) {
         this.onChatMessage?.(channelSlug, message);
       }
-    } catch {
-    }
+    } catch {}
   }
 
   private extractHistoryMessages(payload: unknown): Record<string, unknown>[] {

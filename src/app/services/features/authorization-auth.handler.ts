@@ -30,16 +30,21 @@ export class AuthorizationAuthHandler {
   private readonly tauriApi = inject(TauriApiService);
 
   async startAuthorization(platform: PlatformType): Promise<AuthCommandResultPayload> {
-    const result = await this.tauriApi.authStart({ platform }) as AuthCommandResultPayload;
+    const result = (await this.tauriApi.authStart({ platform })) as AuthCommandResultPayload;
     if (result.authUrl) {
       const isDeepLink = result.authUrl.includes("unichat://");
       await openUrl(result.authUrl);
 
       if (isDeepLink) {
-        this.logger.info("Started deep-link OAuth flow for", { source: "AuthorizationService", platform });
+        this.logger.info("Started deep-link OAuth flow for", {
+          source: "AuthorizationService",
+          platform,
+        });
         return result;
       } else {
-        const completed = await this.tauriApi.authAwaitCallback({ platform }) as AuthCommandResultPayload;
+        const completed = (await this.tauriApi.authAwaitCallback({
+          platform,
+        })) as AuthCommandResultPayload;
         return completed;
       }
     }
@@ -50,18 +55,18 @@ export class AuthorizationAuthHandler {
     platform: PlatformType,
     callbackUrl: string
   ): Promise<AuthCommandResultPayload> {
-    const result = await this.tauriApi.authComplete({
+    const result = (await this.tauriApi.authComplete({
       platform,
       callbackUrl,
-    }) as AuthCommandResultPayload;
+    })) as AuthCommandResultPayload;
     return result;
   }
 
   async disconnect(platform: PlatformType, accountId: string): Promise<AuthCommandResultPayload> {
-    const result = await this.tauriApi.authDisconnect({
+    const result = (await this.tauriApi.authDisconnect({
       platform,
       accountId,
-    }) as AuthCommandResultPayload;
+    })) as AuthCommandResultPayload;
     return result;
   }
 

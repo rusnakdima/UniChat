@@ -54,7 +54,11 @@ export class YouTubeChatService extends BaseChatProviderService {
       return;
     }
 
-    this.logger.info("Reconnecting channel", { source: "YouTubeChatService", key, "with new token": true });
+    this.logger.info("Reconnecting channel", {
+      source: "YouTubeChatService",
+      key,
+      "with new token": true,
+    });
     this.disconnect(key);
     this.connect(key);
   }
@@ -82,20 +86,32 @@ export class YouTubeChatService extends BaseChatProviderService {
 
     try {
       let videoId: string | null = this.videoResolver.normalizeVideoId(storageKey);
-      this.logger.debug("Normalized video ID", { source: "YouTubeChatService", videoId: videoId || "none" });
+      this.logger.debug("Normalized video ID", {
+        source: "YouTubeChatService",
+        videoId: videoId || "none",
+      });
 
       if (!videoId) {
-        this.logger.debug("Fetching video ID from channel name", { source: "YouTubeChatService", storageKey });
+        this.logger.debug("Fetching video ID from channel name", {
+          source: "YouTubeChatService",
+          storageKey,
+        });
         videoId = await this.videoResolver.fetchVideoIdFromChannelName(storageKey);
       }
 
       if (!videoId) {
-        this.logger.error("Could not find video ID", null, { source: "YouTubeChatService", storageKey });
+        this.logger.error("Could not find video ID", null, {
+          source: "YouTubeChatService",
+          storageKey,
+        });
         this.errorService.reportChannelNotFound(storageKey, "youtube");
         return;
       }
 
-      this.logger.debug("Starting chat polling for video", { source: "YouTubeChatService", videoId });
+      this.logger.debug("Starting chat polling for video", {
+        source: "YouTubeChatService",
+        videoId,
+      });
       await this.pollingService.drainLiveChat(
         videoId,
         storageKey,

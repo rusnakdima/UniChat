@@ -78,10 +78,11 @@ export class ChannelImageLoaderService {
         return imageUrl;
       }
     } catch (error) {
-      this.logger.warn(
-        "Failed to load Twitch channel image",
-        { source: "ChannelImageLoaderService", channelName, error }
-      );
+      this.logger.warn("Failed to load Twitch channel image", {
+        source: "ChannelImageLoaderService",
+        channelName,
+        error,
+      });
     }
     return null;
   }
@@ -95,19 +96,20 @@ export class ChannelImageLoaderService {
     cacheKey: string
   ): Promise<string | null> {
     try {
-      const result = await this.tauriApi.kickFetchChannelInfo({
+      const result = (await this.tauriApi.kickFetchChannelInfo({
         channelSlug: channelName,
-      }) as KickChannelInfoWithImage;
+      })) as KickChannelInfoWithImage;
 
       if (result.profile_pic_url) {
         this.avatarCache.setChannelAvatar(cacheKey, result.profile_pic_url);
         return result.profile_pic_url;
       }
     } catch (error) {
-      this.logger.warn(
-        "Failed to load Kick channel image",
-        { source: "ChannelImageLoaderService", channelName, error }
-      );
+      this.logger.warn("Failed to load Kick channel image", {
+        source: "ChannelImageLoaderService",
+        channelName,
+        error,
+      });
     }
     return null;
   }
@@ -124,20 +126,21 @@ export class ChannelImageLoaderService {
     const apiKey = this.localStorage.get<string>(YOUTUBE_DATA_API_KEY_STORAGE_KEY, "");
     if (apiKey && apiKey.trim()) {
       try {
-        const result = await this.tauriApi.youtubeFetchChannelInfoByApiKey({
+        const result = (await this.tauriApi.youtubeFetchChannelInfoByApiKey({
           channel_name: channelName,
           api_key: apiKey,
-        }) as YouTubeChannelInfo;
+        })) as YouTubeChannelInfo;
 
         if (result.thumbnailUrl) {
           this.avatarCache.setChannelAvatar(cacheKey, result.thumbnailUrl);
           return result.thumbnailUrl;
         }
       } catch (error) {
-        this.logger.warn(
-          "Failed to load YouTube channel image (API key)",
-          { source: "ChannelImageLoaderService", channelName, error }
-        );
+        this.logger.warn("Failed to load YouTube channel image (API key)", {
+          source: "ChannelImageLoaderService",
+          channelName,
+          error,
+        });
       }
     }
 

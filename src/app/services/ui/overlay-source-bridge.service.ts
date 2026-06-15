@@ -229,7 +229,9 @@ export class OverlaySourceBridgeService implements OnDestroy {
       // Attempt reconnection on send failure
       if (this.connectedPort) {
         this.attemptReconnect(this.connectedPort).catch((error) => {
-          this.logger.warn("Reconnection attempt failed:", error, { source: "OverlaySourceBridge" });
+          this.logger.warn("Reconnection attempt failed:", error, {
+            source: "OverlaySourceBridge",
+          });
         });
       }
     }

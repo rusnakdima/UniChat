@@ -71,17 +71,20 @@ export class YouTubePollingService {
       lastRetryAt: 0,
     });
 
-    this.logger.debug("Starting live chat polling for video", { source: "YouTubePollingService", videoId });
+    this.logger.debug("Starting live chat polling for video", {
+      source: "YouTubePollingService",
+      videoId,
+    });
 
     while (connectedChannels.has(storageKey) && !signal.aborted) {
       try {
         const stored = nextPageTokenByChannel.get(storageKey);
         const pageToken = stored && stored !== "" ? stored : undefined;
 
-        this.logger.debug(
-          "Fetching chat messages, pageToken",
-          { source: "YouTubePollingService", pageToken: pageToken || "initial" }
-        );
+        this.logger.debug("Fetching chat messages, pageToken", {
+          source: "YouTubePollingService",
+          pageToken: pageToken || "initial",
+        });
 
         const apiKey = this.getApiKey();
         const responseJson = await this.tauriApi.youtubeFetchChatMessages({
@@ -102,7 +105,10 @@ export class YouTubePollingService {
         }
 
         const messageCount = response.items?.length ?? 0;
-        this.logger.debug("Received %d messages", { source: "YouTubePollingService", messageCount });
+        this.logger.debug("Received %d messages", {
+          source: "YouTubePollingService",
+          messageCount,
+        });
 
         for (const item of response.items ?? []) {
           const sourceMessageId = item.id;
@@ -150,11 +156,16 @@ export class YouTubePollingService {
         }
 
         const waitMillis = Number(response.pollingIntervalMillis ?? POLLING_INTERVAL_MS);
-        this.logger.debug("Waiting %d ms before next poll", { source: "YouTubePollingService", waitMillis });
+        this.logger.debug("Waiting %d ms before next poll", {
+          source: "YouTubePollingService",
+          waitMillis,
+        });
         await this.delay(Math.max(500, waitMillis), signal);
       } catch (error: unknown) {
         consecutiveErrors++;
-        this.logger.error("Error fetching chat messages", error, { source: "YouTubePollingService" });
+        this.logger.error("Error fetching chat messages", error, {
+          source: "YouTubePollingService",
+        });
 
         const isRateLimited = this.isRateLimitError(error);
         if (isRateLimited) {
@@ -186,7 +197,10 @@ export class YouTubePollingService {
       }
     }
 
-    this.logger.info("Stopping live chat polling for", { source: "YouTubePollingService", storageKey });
+    this.logger.info("Stopping live chat polling for", {
+      source: "YouTubePollingService",
+      storageKey,
+    });
     this.rateLimitState.delete(storageKey);
   }
 

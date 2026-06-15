@@ -64,7 +64,7 @@ export class UpdateService {
     this.errorMessage.set(null);
 
     try {
-      const result = await this.tauriApi.checkForUpdate() as CheckUpdateResult;
+      const result = (await this.tauriApi.checkForUpdate()) as CheckUpdateResult;
 
       if (result.error) {
         this.status.set("error");

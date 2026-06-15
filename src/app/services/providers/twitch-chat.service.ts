@@ -59,10 +59,11 @@ export class TwitchChatService extends BaseChatProviderService {
     await this.authorizationService.waitForAccounts(WAIT_FOR_ACCOUNTS_TIMEOUT_MS);
 
     const account = this.resolveAccountForChannel(normalizedChannel);
-    this.logger.info(
-      "Connecting to channel",
-      { source: "TwitchChatService", channel: normalizedChannel, account: account ? { username: account.username, status: account.authStatus } : null }
-    );
+    this.logger.info("Connecting to channel", {
+      source: "TwitchChatService",
+      channel: normalizedChannel,
+      account: account ? { username: account.username, status: account.authStatus } : null,
+    });
 
     const messageListener = (
       _channel: string,
@@ -149,7 +150,9 @@ export class TwitchChatService extends BaseChatProviderService {
 
     if (!hasAuthIdentity) {
       if (account && (account.authStatus === "tokenExpired" || account.authStatus === "revoked")) {
-        this.logger.info("Token expired, attempting refresh before send", { source: "TwitchChatService" });
+        this.logger.info("Token expired, attempting refresh before send", {
+          source: "TwitchChatService",
+        });
         const refreshed = await this.authorizationService.refreshAndReconnect(account.id, "twitch");
         if (!refreshed) {
           this.logger.warn("Token refresh failed", { source: "TwitchChatService" });
@@ -161,9 +164,14 @@ export class TwitchChatService extends BaseChatProviderService {
           this.logger.warn("Refreshed account not authorized", { source: "TwitchChatService" });
           return false;
         }
-        this.logger.info("Token refreshed successfully, proceeding with send", { source: "TwitchChatService" });
+        this.logger.info("Token refreshed successfully, proceeding with send", {
+          source: "TwitchChatService",
+        });
       } else {
-        this.logger.warn("No valid auth identity", { source: "TwitchChatService", channel: normalizedChannel });
+        this.logger.warn("No valid auth identity", {
+          source: "TwitchChatService",
+          channel: normalizedChannel,
+        });
         this.errorService.reportAuthFailed(normalizedChannel);
         return false;
       }
@@ -185,26 +193,26 @@ export class TwitchChatService extends BaseChatProviderService {
       return true;
     } catch (error) {
       const message = String(error ?? "");
-      this.logger.error(
-        "Send message failed",
-        error,
-        { source: "TwitchChatService", channel: normalizedChannel }
-      );
+      this.logger.error("Send message failed", error, {
+        source: "TwitchChatService",
+        channel: normalizedChannel,
+      });
       if (
         message.toLowerCase().includes("anonymous") ||
         message.toLowerCase().includes("not connected")
       ) {
-        this.logger.warn(
-          "Detected anonymous/not-connected state, reconnecting...",
-          { source: "TwitchChatService" }
-        );
+        this.logger.warn("Detected anonymous/not-connected state, reconnecting...", {
+          source: "TwitchChatService",
+        });
         this.errorService.reportWebSocketError(normalizedChannel, "twitch", true);
         this.disconnect(normalizedChannel);
         this.connect(normalizedChannel);
         await this.delay(900);
         client = this.connectionService.getClient(normalizedChannel);
         if (!client) {
-          this.logger.error("Client still not available after reconnect", null, { source: "TwitchChatService" });
+          this.logger.error("Client still not available after reconnect", null, {
+            source: "TwitchChatService",
+          });
           return false;
         }
 
@@ -323,10 +331,10 @@ export class TwitchChatService extends BaseChatProviderService {
       return;
     }
 
-    this.logger.info(
-      "Reconnecting channel",
-      { source: "TwitchChatService", channel: normalizedChannel }
-    );
+    this.logger.info("Reconnecting channel", {
+      source: "TwitchChatService",
+      channel: normalizedChannel,
+    });
     this.connectionService.reconnectChannel(normalizedChannel);
   }
 

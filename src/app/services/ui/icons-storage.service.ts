@@ -178,7 +178,11 @@ export class IconsStorageService {
       const base64 = await imageToBase64(url);
       await this.imageDb.setEmote(emoteKey, url, "twitch", base64);
     } catch (e) {
-      this.logger.warn("Failed to cache emote image", { source: "IconsStorageService", emoteKey }, e);
+      this.logger.warn(
+        "Failed to cache emote image",
+        { source: "IconsStorageService", emoteKey },
+        e
+      );
     }
   }
 
@@ -190,7 +194,11 @@ export class IconsStorageService {
       const base64 = await imageToBase64(url);
       await this.imageDb.setBadge(badgeKey, url, base64);
     } catch (e) {
-      this.logger.warn("Failed to cache badge image", { source: "IconsStorageService", badgeKey }, e);
+      this.logger.warn(
+        "Failed to cache badge image",
+        { source: "IconsStorageService", badgeKey },
+        e
+      );
     }
   }
 }

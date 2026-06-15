@@ -38,9 +38,9 @@ export class TwitchEmotesCatalogService {
     }
 
     try {
-      const emotes = await this.tauriApi.twitchFetchChannelEmotes({
+      const emotes = (await this.tauriApi.twitchFetchChannelEmotes({
         roomId: trimmed,
-      }) as TwitchChannelEmote[];
+      })) as TwitchChannelEmote[];
 
       this.emotesCache.set(trimmed, {
         emotes,
@@ -55,7 +55,11 @@ export class TwitchEmotesCatalogService {
 
       return emotes;
     } catch (error) {
-      this.logger.warn("Failed to fetch Twitch channel emotes", { source: "TwitchEmotesCatalogService", roomId, error });
+      this.logger.warn("Failed to fetch Twitch channel emotes", {
+        source: "TwitchEmotesCatalogService",
+        roomId,
+        error,
+      });
       return [];
     }
   }

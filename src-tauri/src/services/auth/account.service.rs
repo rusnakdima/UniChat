@@ -825,8 +825,11 @@ impl TokenVaultService {
   }
 
   fn read_account_index(&self, platform: &PlatformTypeModel) -> Result<Vec<String>, String> {
-    let entry = Entry::new(&self.service_name, &format!("oauth-{}-index", platform.as_key()))
-      .map_err(|e| format!("keyring init failed: {e}"))?;
+    let entry = Entry::new(
+      &self.service_name,
+      &format!("oauth-{}-index", platform.as_key()),
+    )
+    .map_err(|e| format!("keyring init failed: {e}"))?;
 
     match entry.get_password() {
       Ok(raw) => serde_json::from_str::<Vec<String>>(&raw)
@@ -841,8 +844,11 @@ impl TokenVaultService {
     platform: &PlatformTypeModel,
     account_ids: &[String],
   ) -> Result<(), String> {
-    let entry = Entry::new(&self.service_name, &format!("oauth-{}-index", platform.as_key()))
-      .map_err(|e| format!("keyring init failed: {e}"))?;
+    let entry = Entry::new(
+      &self.service_name,
+      &format!("oauth-{}-index", platform.as_key()),
+    )
+    .map_err(|e| format!("keyring init failed: {e}"))?;
     let serialized = serde_json::to_string(account_ids)
       .map_err(|e| format!("token index serialize failed: {e}"))?;
     entry

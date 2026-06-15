@@ -41,9 +41,9 @@ export class KickEmoteLoaderService {
     }
 
     try {
-      const emotesInfo = await this.tauriApi.kickFetchChannelEmotes({
+      const emotesInfo = (await this.tauriApi.kickFetchChannelEmotes({
         channelSlug: normalizedSlug,
-      }) as KickEmoteInfo[];
+      })) as KickEmoteInfo[];
 
       const emotes: ChatMessageEmote[] = emotesInfo.map((info) => ({
         provider: "kick",
@@ -60,14 +60,19 @@ export class KickEmoteLoaderService {
         timestamp: Date.now(),
       });
 
-      this.logger.info(
-        "Loaded",
-        { source: "KickEmoteLoaderService", emotesCount: emotes.length, channelSlug }
-      );
+      this.logger.info("Loaded", {
+        source: "KickEmoteLoaderService",
+        emotesCount: emotes.length,
+        channelSlug,
+      });
 
       return emotes;
     } catch (error) {
-      this.logger.warn("Failed to fetch emotes", { source: "KickEmoteLoaderService", channelSlug, error });
+      this.logger.warn("Failed to fetch emotes", {
+        source: "KickEmoteLoaderService",
+        channelSlug,
+        error,
+      });
       return [];
     }
   }

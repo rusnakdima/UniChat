@@ -70,24 +70,27 @@ export class KickChatMessageHandler {
       return;
     }
 
-    this.logger.debug(
-      "Processing message",
-      { source: "KickChatService", mappedSourceMessageId: mapped.sourceMessageId, content: mapped.content }
-    );
+    this.logger.debug("Processing message", {
+      source: "KickChatService",
+      mappedSourceMessageId: mapped.sourceMessageId,
+      content: mapped.content,
+    });
 
     const messageKey = `${mapped.author}:${mapped.content}`;
     const sentInfo = this.recentlySentMessages.get(`${channelSlug}:${messageKey}`);
 
-    this.logger.debug("Sent info check", { source: "KickChatService", sentInfo: sentInfo ? "FOUND" : "NOT FOUND" });
+    this.logger.debug("Sent info check", {
+      source: "KickChatService",
+      sentInfo: sentInfo ? "FOUND" : "NOT FOUND",
+    });
 
     if (sentInfo) {
       const now = Date.now();
       const sentTime = sentInfo.timestamp;
       if (now - sentTime < ECHO_DETECTION_TIMEOUT_MS) {
-        this.logger.debug(
-          "Echo detected - updating existing message, skipping add",
-          { source: "KickChatService" }
-        );
+        this.logger.debug("Echo detected - updating existing message, skipping add", {
+          source: "KickChatService",
+        });
 
         this.onMessageUpdate?.(channelSlug, sentInfo.content, {
           content: sentInfo.content,
@@ -102,7 +105,10 @@ export class KickChatMessageHandler {
       this.recentlySentMessages.delete(`${channelSlug}:${messageKey}`);
     }
 
-    this.logger.debug("Adding new message to storage", { source: "KickChatService", mappedSourceMessageId: mapped.sourceMessageId });
+    this.logger.debug("Adding new message to storage", {
+      source: "KickChatService",
+      mappedSourceMessageId: mapped.sourceMessageId,
+    });
 
     this.onOutgoingMessage?.(channelSlug, {
       id: `msg-${mapped.sourceMessageId}`,
@@ -195,7 +201,10 @@ export class KickChatMessageHandler {
       const errorMessage = String(error ?? "");
       this.logger.error("Send message failed", error, { source: "KickChatService" });
 
-      if (errorMessage.includes(RATE_LIMIT_CODE.toString()) || errorMessage.includes("Rate limit")) {
+      if (
+        errorMessage.includes(RATE_LIMIT_CODE.toString()) ||
+        errorMessage.includes("Rate limit")
+      ) {
         this.logger.warn("Rate limit exceeded", { source: "KickChatService" });
       }
 
@@ -227,7 +236,7 @@ export class KickChatMessageHandler {
         }
       }
 
-      const userInfo = await this.tauriApi.kickFetchUserInfo({ username }) as KickUserInfo;
+      const userInfo = (await this.tauriApi.kickFetchUserInfo({ username })) as KickUserInfo;
       return userInfo;
     } catch {
       return null;

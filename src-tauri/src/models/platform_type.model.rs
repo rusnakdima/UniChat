@@ -22,5 +22,3 @@ impl PlatformKey for PlatformTypeModel {
     }
   }
 }
-
-
