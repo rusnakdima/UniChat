@@ -69,7 +69,6 @@ impl AppConfig {
   fn load_env_vars() -> HashMap<String, String> {
     let mut env_vars = HashMap::new();
 
-    // First: try actual environment variables (highest priority)
     for (key, value) in std::env::vars() {
       if key.contains("TWITCH")
         || key.contains("KICK")
@@ -80,49 +79,24 @@ impl AppConfig {
       }
     }
 
-    // Second: try embedded .env (compile-time, like TaskFlow)
-    let embedded = Self::load_embedded_env();
-    for (key, value) in embedded {
-      env_vars.entry(key).or_insert(value);
-    }
-
-    // Third: try runtime .env files (for production)
-    let runtime = Self::load_runtime_env_files();
-    for (key, value) in runtime {
-      env_vars.entry(key).or_insert(value);
-    }
-
-    env_vars
-  }
-
-  /// Load .env embedded at compile time (TaskFlow approach)
-  fn load_embedded_env() -> HashMap<String, String> {
-    let mut result = HashMap::new();
-
     let embedded_content = include_str!("../../.env");
     if !embedded_content.trim().is_empty() {
-      result = Self::parse_dotenv(embedded_content);
+      for (key, value) in Self::parse_dotenv(embedded_content) {
+        env_vars.entry(key).or_insert(value);
+      }
     }
 
-    result
-  }
-
-  /// Load .env from runtime file paths (for production builds)
-  fn load_runtime_env_files() -> HashMap<String, String> {
-    let mut result = HashMap::new();
     let paths = Self::collect_env_paths();
-
     for path in paths {
       if let Ok(content) = std::fs::read_to_string(&path) {
-        let parsed = Self::parse_dotenv(&content);
-        for (key, value) in parsed {
-          result.entry(key).or_insert(value);
+        for (key, value) in Self::parse_dotenv(&content) {
+          env_vars.entry(key).or_insert(value);
         }
         break;
       }
     }
 
-    result
+    env_vars
   }
 
   /// Collect possible .env file locations

@@ -23,9 +23,4 @@ impl PlatformKey for PlatformTypeModel {
   }
 }
 
-impl PlatformTypeModel {
-  /// Convert platform to string slice (alias for as_key)
-  pub fn as_str(&self) -> &'static str {
-    self.as_key()
-  }
-}
+

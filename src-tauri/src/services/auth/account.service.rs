@@ -469,13 +469,12 @@ use std::sync::Mutex;
 use std::time::Duration as StdDuration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
-use tokio::runtime::Runtime;
+use tokio::runtime::Handle;
 use tokio::task::JoinHandle;
 
 pub struct OAuthLoopbackService {
   pending_callbacks: Mutex<HashMap<String, Receiver<String>>>,
   join_handles: Mutex<Vec<JoinHandle<()>>>,
-  runtime: Runtime,
 }
 
 impl Default for OAuthLoopbackService {
@@ -486,11 +485,9 @@ impl Default for OAuthLoopbackService {
 
 impl OAuthLoopbackService {
   pub fn new() -> Self {
-    let runtime = Runtime::new().expect("Failed to create tokio runtime for OAuth service");
     Self {
       pending_callbacks: Mutex::new(HashMap::new()),
       join_handles: Mutex::new(Vec::new()),
-      runtime,
     }
   }
 
@@ -520,7 +517,7 @@ impl OAuthLoopbackService {
 
     let expected_path = callback_path.to_string();
     let platform_key_owned = platform_key.to_string();
-    let handle = self.runtime.spawn(async move {
+    let handle = Handle::current().spawn(async move {
       log_debug!(
         "OAuth callback task started for platform {}",
         platform_key_owned
@@ -700,7 +697,7 @@ impl TokenVaultService {
     account: &AuthAccountModel,
     token: &OAuthTokenModel,
   ) -> Result<(), String> {
-    let key = self.account_key(account);
+    let key = format!("oauth-{}-{}", account.platform.as_key(), account.id);
     let entry =
       Entry::new(&self.service_name, &key).map_err(|e| format!("keyring init failed: {e}"))?;
 
@@ -827,16 +824,8 @@ impl TokenVaultService {
     self.write_account_index(platform, &account_ids)
   }
 
-  fn account_key(&self, account: &AuthAccountModel) -> String {
-    format!("oauth-{}-{}", account.platform.as_key(), account.id)
-  }
-
-  fn index_key(&self, platform: &PlatformTypeModel) -> String {
-    format!("oauth-{}-index", platform.as_key())
-  }
-
   fn read_account_index(&self, platform: &PlatformTypeModel) -> Result<Vec<String>, String> {
-    let entry = Entry::new(&self.service_name, &self.index_key(platform))
+    let entry = Entry::new(&self.service_name, &format!("oauth-{}-index", platform.as_key()))
       .map_err(|e| format!("keyring init failed: {e}"))?;
 
     match entry.get_password() {
@@ -852,7 +841,7 @@ impl TokenVaultService {
     platform: &PlatformTypeModel,
     account_ids: &[String],
   ) -> Result<(), String> {
-    let entry = Entry::new(&self.service_name, &self.index_key(platform))
+    let entry = Entry::new(&self.service_name, &format!("oauth-{}-index", platform.as_key()))
       .map_err(|e| format!("keyring init failed: {e}"))?;
     let serialized = serde_json::to_string(account_ids)
       .map_err(|e| format!("token index serialize failed: {e}"))?;
