@@ -1,4 +1,5 @@
 pub mod constants;
+pub mod errors;
 pub mod helpers;
 pub mod models;
 pub mod routes;
@@ -50,8 +51,6 @@ pub struct AppState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  env_logger::init();
-
   let builder = tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_deep_link::init())
