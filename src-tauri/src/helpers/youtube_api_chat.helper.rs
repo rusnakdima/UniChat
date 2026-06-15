@@ -53,17 +53,6 @@ pub struct YouTubeAuthorDetails {
   pub is_chat_moderator: Option<bool>,
 }
 
-#[derive(Debug, serde::Deserialize)]
-pub struct YouTubeSendMessageResponse {
-  pub data: YouTubeMessageData,
-}
-
-#[derive(Debug, serde::Deserialize)]
-pub struct YouTubeMessageData {
-  pub id: String,
-  pub snippet: Option<YouTubeChatSnippet>,
-}
-
 pub async fn youtube_fetch_live_chat_messages_by_api_key(
   live_chat_id: &str,
   api_key: &str,

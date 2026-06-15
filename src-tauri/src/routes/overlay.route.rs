@@ -36,7 +36,7 @@ pub struct OverlayFullConfigModel {
 
 /// Start the local overlay HTTP/WS server on `127.0.0.1:<port>`.
 #[tauri::command]
-pub async fn startOverlayServer(
+pub async fn start_overlay_server(
   port: u16,
   state: tauri::State<'_, crate::AppState>,
 ) -> Result<OverlayServerStartResultModel, String> {
@@ -59,14 +59,14 @@ pub async fn startOverlayServer(
 
 /// Stop the local overlay HTTP/WS server.
 #[tauri::command]
-pub async fn stopOverlayServer(state: tauri::State<'_, crate::AppState>) -> Result<(), String> {
+pub async fn stop_overlay_server(state: tauri::State<'_, crate::AppState>) -> Result<(), String> {
   log_info!("Stopping overlay server");
   state.overlay_server_service.clone().stop().await
 }
 
 /// Open the overlay in a new native window with transparency support.
 #[tauri::command]
-pub async fn openOverlayWindow(
+pub async fn open_overlay_window(
   app: tauri::AppHandle,
   port: u16,
   widget_id: String,
@@ -160,7 +160,7 @@ async fn enforce_max_overlay_ids(
 /// Emit overlay configuration changed event to all windows and store in backend.
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
-pub async fn emitOverlayConfigChanged(
+pub async fn emit_overlay_config_changed(
   app: tauri::AppHandle,
   state: tauri::State<'_, crate::AppState>,
   widget_id: String,
@@ -213,7 +213,7 @@ pub async fn emitOverlayConfigChanged(
 /// Initialize overlay config from client-side storage (called on app startup)
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
-pub async fn initOverlayConfigFromStorage(
+pub async fn init_overlay_config_from_storage(
   state: tauri::State<'_, crate::AppState>,
   widget_id: String,
   filter: String,
@@ -256,7 +256,7 @@ pub async fn initOverlayConfigFromStorage(
 
 /// Get overlay configuration for a widget
 #[tauri::command]
-pub async fn getOverlayConfig(
+pub async fn get_overlay_config(
   state: tauri::State<'_, crate::AppState>,
   widget_id: String,
 ) -> Result<Option<OverlayFullConfigModel>, String> {
@@ -265,7 +265,7 @@ pub async fn getOverlayConfig(
   Ok(configs.get(&widget_id).cloned())
 }
 
-/// Parameters for getOverlayMessages command
+/// Parameters for get_overlay_messages command
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetOverlayMessagesParams {
@@ -276,7 +276,7 @@ pub struct GetOverlayMessagesParams {
 
 /// Get overlay messages for a widget (filtered by channel selection)
 #[tauri::command]
-pub async fn getOverlayMessages(
+pub async fn get_overlay_messages(
   state: tauri::State<'_, crate::AppState>,
   widget_id: String,
   limit: Option<u32>,

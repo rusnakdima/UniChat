@@ -153,7 +153,7 @@ fn build_badge_map(payload: HelixBadgeListResponse) -> HashMap<String, TwitchBad
 
 // ---------- Commands ----------
 #[tauri::command]
-pub async fn twitchFetchGlobalIcons(
+pub async fn twitch_fetch_global_icons(
   state: tauri::State<'_, AppState>,
 ) -> Result<IconsFetchResponseModel, String> {
   let (client_id, client_secret) = twitch_client_credentials(&state.config)?;
@@ -189,12 +189,12 @@ pub async fn twitchFetchGlobalIcons(
 }
 
 #[tauri::command]
-pub async fn twitchFetchChannelIcons(
+pub async fn twitch_fetch_channel_icons(
   state: tauri::State<'_, AppState>,
-  roomId: String,
+  room_id: String,
 ) -> Result<IconsFetchResponseModel, String> {
-  if roomId.trim().is_empty() {
-    return Err("roomId required".to_string());
+  if room_id.trim().is_empty() {
+    return Err("room_id required".to_string());
   }
 
   let (client_id, client_secret) = twitch_client_credentials(&state.config)?;
@@ -204,13 +204,13 @@ pub async fn twitchFetchChannelIcons(
 
   let badges_fut = client
     .get("https://api.twitch.tv/helix/chat/badges")
-    .query(&[("broadcaster_id", roomId.as_str())])
+    .query(&[("broadcaster_id", room_id.as_str())])
     .header("Client-Id", client_id)
     .header("Authorization", format!("Bearer {token}"))
     .send();
 
   let emotes_fut = client
-    .get(format!("https://7tv.io/v3/users/twitch/{roomId}"))
+    .get(format!("https://7tv.io/v3/users/twitch/{room_id}"))
     .send();
 
   let (badges_res, emotes_res) = tokio::join!(badges_fut, emotes_fut);

@@ -11,25 +11,24 @@ use tauri::Manager;
 use crate::constants::OVERLAY_SERVER_PORT;
 use crate::helpers::config_helper::{AppConfig, SharedConfig};
 use crate::routes::auth_provider_route::{
-  authAwaitCallback, authComplete, authDisconnect, authRefresh, authStart, authStatus, authValidate,
+  auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
+  auth_validate,
 };
-use crate::routes::icons_route::{twitchFetchChannelIcons, twitchFetchGlobalIcons};
-use crate::routes::kick_route::{
-  kickDeleteChatMessage, kickFetchChannelEmotes, kickFetchChannelInfo, kickFetchChatroomId,
-  kickFetchRecentMessages, kickFetchUserInfo, kickSendChatMessage,
+use crate::routes::chat_route::{
+  kick_delete_chat_message, kick_fetch_channel_emotes, kick_fetch_channel_info,
+  kick_fetch_chatroom_id, kick_fetch_recent_messages, kick_fetch_user_info, kick_send_chat_message,
+  twitch_delete_message, twitch_fetch_channel_emotes, youtube_fetch_channel_info_by_api_key,
+  youtube_fetch_chat_messages, youtube_fetch_live_video_id_by_api_key,
 };
+use crate::routes::icons_route::{twitch_fetch_channel_icons, twitch_fetch_global_icons};
 use crate::routes::overlay_route::{
-  emitOverlayConfigChanged, getOverlayConfig, getOverlayMessages, initOverlayConfigFromStorage,
-  openOverlayWindow, startOverlayServer, stopOverlayServer,
+  emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
+  init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
 };
-use crate::routes::twitch_route::{twitchDeleteMessage, twitchFetchChannelEmotes};
 use crate::routes::update_route::{
-  checkForUpdate, downloadUpdate, getCurrentVersion, installUpdate,
+  check_for_update, download_update, get_current_version, install_update,
 };
-use crate::routes::youtube_route::{
-  youtubeFetchChannelInfoByApiKey, youtubeFetchChatMessages, youtubeFetchLiveVideoIdByApiKey,
-};
-use crate::services::auth::account::AccountService;
+use crate::services::auth::AccountService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
 use tauri::Emitter;
 use tauri_plugin_deep_link::DeepLinkExt;
@@ -51,6 +50,8 @@ pub struct AppState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  env_logger::init();
+
   let builder = tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_deep_link::init())
@@ -60,7 +61,7 @@ pub fn run() {
       let config = Arc::new(AppConfig::new());
       config
         .validate()
-        .map_err(|e| eprintln!("Config validation failed: {}", e))
+        .map_err(|e| log_error!("Config validation failed: {}", e))
         .ok();
 
       let frontend_dist_dir = resolve_frontend_dist_dir(app);
@@ -122,42 +123,42 @@ pub fn run() {
       _ => {}
     })
     .invoke_handler(tauri::generate_handler![
-      authStart,
-      authAwaitCallback,
-      authComplete,
-      authStatus,
-      authValidate,
-      authRefresh,
-      authDisconnect,
-      twitchFetchGlobalIcons,
-      twitchFetchChannelIcons,
-      twitchDeleteMessage,
-      twitchFetchChannelEmotes,
-      startOverlayServer,
-      stopOverlayServer,
-      openOverlayWindow,
-      emitOverlayConfigChanged,
-      initOverlayConfigFromStorage,
-      getOverlayConfig,
-      getOverlayMessages,
-      youtubeFetchChatMessages,
-      youtubeFetchLiveVideoIdByApiKey,
-      kickFetchChatroomId,
-      kickFetchRecentMessages,
-      kickFetchUserInfo,
-      kickFetchChannelEmotes,
-      kickFetchChannelInfo,
-      kickSendChatMessage,
-      kickDeleteChatMessage,
-      youtubeFetchChannelInfoByApiKey,
-      checkForUpdate,
-      downloadUpdate,
-      installUpdate,
-      getCurrentVersion,
+      auth_start,
+      auth_await_callback,
+      auth_complete,
+      auth_status,
+      auth_validate,
+      auth_refresh,
+      auth_disconnect,
+      twitch_fetch_global_icons,
+      twitch_fetch_channel_icons,
+      twitch_delete_message,
+      twitch_fetch_channel_emotes,
+      start_overlay_server,
+      stop_overlay_server,
+      open_overlay_window,
+      emit_overlay_config_changed,
+      init_overlay_config_from_storage,
+      get_overlay_config,
+      get_overlay_messages,
+      youtube_fetch_chat_messages,
+      youtube_fetch_live_video_id_by_api_key,
+      kick_fetch_chatroom_id,
+      kick_fetch_recent_messages,
+      kick_fetch_user_info,
+      kick_fetch_channel_emotes,
+      kick_fetch_channel_info,
+      kick_send_chat_message,
+      kick_delete_chat_message,
+      youtube_fetch_channel_info_by_api_key,
+      check_for_update,
+      download_update,
+      install_update,
+      get_current_version,
     ]);
 
   if let Err(e) = builder.run(tauri::generate_context!()) {
-    eprintln!("Failed to run tauri application: {}", e);
+    log_error!("Failed to run tauri application: {}", e);
     std::process::exit(1);
   }
 }

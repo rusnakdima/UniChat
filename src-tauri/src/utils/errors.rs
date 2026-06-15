@@ -83,29 +83,4 @@ impl AppError {
   }
 }
 
-/// OAuth-specific errors
-#[derive(Debug, Error)]
-pub enum OAuthError {
-  #[error("Token expired")]
-  TokenExpired,
-
-  #[error("Token revoked")]
-  TokenRevoked,
-
-  #[error("Invalid token: {0}")]
-  InvalidToken(String),
-
-  #[error("Authorization denied: {0}")]
-  AuthorizationDenied(String),
-
-  #[error("Callback error: {0}")]
-  CallbackError(String),
-
-  #[error("Storage error: {0}")]
-  StorageError(String),
-
-  #[error("App error: {0}")]
-  App(#[from] AppError),
-}
-
-pub type OAuthResult<T> = Result<T, OAuthError>;
+pub type OAuthResult<T> = Result<T, AppError>;

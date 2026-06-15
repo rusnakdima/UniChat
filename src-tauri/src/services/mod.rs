@@ -3,8 +3,6 @@
 
 pub mod auth;
 
-pub mod kick_service;
-
 pub mod overlay_server;
 
 pub mod twitch_service;

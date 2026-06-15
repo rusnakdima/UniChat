@@ -5,7 +5,7 @@ use crate::models::platform_type_model::PlatformTypeModel;
 use crate::AppState;
 
 #[tauri::command]
-pub async fn authStart(
+pub async fn auth_start(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
@@ -23,14 +23,14 @@ pub async fn authStart(
 }
 
 #[tauri::command]
-pub async fn authComplete(
+pub async fn auth_complete(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
-  callbackUrl: String,
+  callback_url: String,
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
     .account_service
-    .complete_auth(platform, callbackUrl)
+    .complete_auth(platform, callback_url)
     .await
     .map_err(|e| e.to_string())?;
   Ok(AuthCommandResultModel {
@@ -43,7 +43,7 @@ pub async fn authComplete(
 }
 
 #[tauri::command]
-pub async fn authAwaitCallback(
+pub async fn auth_await_callback(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
@@ -62,7 +62,7 @@ pub async fn authAwaitCallback(
 }
 
 #[tauri::command]
-pub async fn authStatus(
+pub async fn auth_status(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
@@ -80,7 +80,7 @@ pub async fn authStatus(
 }
 
 #[tauri::command]
-pub async fn authValidate(
+pub async fn auth_validate(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
 ) -> Result<AuthCommandResultModel, String> {
@@ -99,14 +99,14 @@ pub async fn authValidate(
 }
 
 #[tauri::command]
-pub async fn authRefresh(
+pub async fn auth_refresh(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
-  accountId: String,
+  account_id: String,
 ) -> Result<AuthCommandResultModel, String> {
   let account = state
     .account_service
-    .refresh_token(&platform, &accountId)
+    .refresh_token(&platform, &account_id)
     .await
     .map_err(|e| e.to_string())?;
   Ok(AuthCommandResultModel {
@@ -119,14 +119,14 @@ pub async fn authRefresh(
 }
 
 #[tauri::command]
-pub async fn authDisconnect(
+pub async fn auth_disconnect(
   state: State<'_, AppState>,
   platform: PlatformTypeModel,
-  accountId: String,
+  account_id: String,
 ) -> Result<AuthCommandResultModel, String> {
   state
     .account_service
-    .disconnect(platform, accountId)
+    .disconnect(platform, account_id)
     .await
     .map_err(|e| e.to_string())?;
   Ok(AuthCommandResultModel {

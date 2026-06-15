@@ -28,12 +28,8 @@ pub fn get_key_param(auth: &AuthMethod) -> Option<String> {
   auth.key_param()
 }
 
-fn youtube_api_error(context: &str, status: reqwest::StatusCode, error_text: &str) -> String {
-  format!("YouTube {} API error ({}): {}", context, status, error_text)
-}
-
 pub fn api_error(context: &str, status: reqwest::StatusCode, error_text: &str) -> String {
-  youtube_api_error(context, status, error_text)
+  format!("YouTube {} API error ({}): {}", context, status, error_text)
 }
 
 #[derive(Debug, Deserialize)]

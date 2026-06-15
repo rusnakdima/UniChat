@@ -125,7 +125,7 @@ impl TwitchService {
           .to_string(),
       )
     } else {
-      return Err(handle_http_error(status, "Twitch message delete").unwrap_err());
+      return Err(handle_http_error(status, "Twitch message delete"));
     }
   }
 
@@ -155,7 +155,7 @@ impl TwitchService {
       .map_err(|e| e.to_string())?;
 
     if !response.status().is_success() {
-      return Err(handle_http_error(response.status(), "Twitch API").unwrap_err());
+      return Err(handle_http_error(response.status(), "Twitch API"));
     }
 
     let emotes_response: HelixChannelEmotesResponse =

@@ -9,6 +9,3 @@ pub mod auth_oauth_model;
 
 #[path = "overlay_message.model.rs"]
 pub mod overlay_message_model;
-
-#[path = "chat_message.model.rs"]
-pub mod chat_message_model;

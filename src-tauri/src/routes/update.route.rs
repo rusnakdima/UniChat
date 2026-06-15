@@ -1,8 +1,6 @@
-#![allow(non_snake_case)]
-
 use crate::services::update::{
-  check_for_update, download_update_with_progress, get_temp_download_path, install_update,
-  UpdateInfo,
+  check_for_update as check_for_update_internal, download_update_with_progress,
+  get_temp_download_path, install_update as install_update_internal, UpdateInfo,
 };
 use crate::AppState;
 use tauri::{AppHandle, State};
@@ -15,10 +13,10 @@ pub struct CheckUpdateResult {
 }
 
 #[tauri::command]
-pub async fn checkForUpdate(state: State<'_, AppState>) -> Result<CheckUpdateResult, String> {
+pub async fn check_for_update(state: State<'_, AppState>) -> Result<CheckUpdateResult, String> {
   let current_version = state.config.version.clone();
 
-  match check_for_update(&current_version).await {
+  match check_for_update_internal(&current_version).await {
     Ok(update_info) => Ok(CheckUpdateResult {
       has_update: true,
       update_info: Some(update_info),
@@ -43,7 +41,7 @@ pub async fn checkForUpdate(state: State<'_, AppState>) -> Result<CheckUpdateRes
 }
 
 #[tauri::command]
-pub async fn downloadUpdate(url: String, app_handle: AppHandle) -> Result<String, String> {
+pub async fn download_update(url: String, app_handle: AppHandle) -> Result<String, String> {
   let url_clone = url.clone();
   let asset_name = url_clone
     .split('/')
@@ -59,11 +57,11 @@ pub async fn downloadUpdate(url: String, app_handle: AppHandle) -> Result<String
 }
 
 #[tauri::command]
-pub async fn installUpdate(installer_path: String, app_handle: AppHandle) -> Result<bool, String> {
-  install_update(&installer_path, &app_handle)
+pub async fn install_update(installer_path: String, app_handle: AppHandle) -> Result<bool, String> {
+  install_update_internal(&installer_path, &app_handle)
 }
 
 #[tauri::command]
-pub fn getCurrentVersion(state: State<'_, AppState>) -> String {
+pub fn get_current_version(state: State<'_, AppState>) -> String {
   state.config.version.clone()
 }
