@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from "@angular/core";
 
 import { ChatMessage } from "@models/chat.model";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { ChatPruningService } from "@services/data/chat-pruning.service";
 import { HighlightNotificationService } from "@services/ui/highlight-notification.service";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
@@ -12,7 +12,7 @@ import { APP_CONFIG } from "@shared/utils/constants";
   providedIn: "root",
 })
 export class ChatBatchingService {
-  private readonly storage = inject(ChatStorageService);
+  private readonly storage = inject(UnifiedStorageService);
   private readonly pruning = inject(ChatPruningService);
   private readonly highlightNotifications = inject(HighlightNotificationService);
   private readonly overlayBridge = inject(OverlaySourceBridgeService);

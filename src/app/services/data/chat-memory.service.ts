@@ -2,7 +2,7 @@ import { Injectable, inject } from "@angular/core";
 
 import { ChatMessage } from "@models/chat.model";
 import { ChatPruningService } from "@services/data/chat-pruning.service";
-import { UnifiedStorageService } from "@services/storage/unified-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 
 @Injectable({
   providedIn: "root",

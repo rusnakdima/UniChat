@@ -3,7 +3,7 @@ import { Injectable, inject } from "@angular/core";
 import { ChatMessage, PlatformType } from "@models/chat.model";
 
 import { LOGGER_SERVICE } from "@services/core/logger.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 
 import { createMessageActionState, generateTimestamp } from "@shared/utils/chat.helper";
 import { buildChannelRef } from "@utils/channel-ref.util";
@@ -22,7 +22,7 @@ function generateUuidV4(): string {
 })
 export class OptimisticMessageService {
   private readonly logger = inject(LOGGER_SERVICE);
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
 
   createOptimisticMessage(platform: PlatformType, channelId: string, text: string): void {
     const id = `out-${platform}-${channelId}-${generateUuidV4()}`;

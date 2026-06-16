@@ -5,7 +5,7 @@ import { ChatMessage, ChannelAccountCapabilities } from "@models/chat.model";
 import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 
 import { createMessageActionState } from "@shared/utils/chat.helper";
@@ -19,7 +19,7 @@ export class MessageCapabilitiesService {
   private readonly platformResolver = inject(PlatformResolverService);
   private readonly chatListService = inject(ChatListService);
   private readonly authorizationService = inject(AuthorizationService);
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
 
   refreshMessageCapabilities(messages: () => ChatMessage[]): void {
     const channels = this.chatListService.getVisibleChannels();

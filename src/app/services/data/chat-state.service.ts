@@ -14,7 +14,7 @@ import {
 import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { MessageCapabilitiesService } from "@services/data/message-capabilities.service";
 import { OptimisticMessageService } from "@services/data/optimistic-message.service";
 import { AuthorizationService } from "@services/features/authorization.service";
@@ -49,7 +49,7 @@ export class ChatStateService {
   private readonly platformResolver = inject(PlatformResolverService);
   private readonly chatListService = inject(ChatListService);
   private readonly authorizationService = inject(AuthorizationService);
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
   private readonly providerCoordinator = inject(ChatProviderCoordinatorService);
   private readonly optimisticMessageService = inject(OptimisticMessageService);
   private readonly messageCapabilitiesService = inject(MessageCapabilitiesService);

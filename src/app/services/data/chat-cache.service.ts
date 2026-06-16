@@ -1,8 +1,8 @@
 import { computed, Injectable, signal } from "@angular/core";
 
 import { ChatMessage } from "@models/chat.model";
-import { UnifiedStorageService } from "@services/storage/unified-storage.service";
-import { StorageCacheService } from "@services/storage/storage-cache.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
+import { StorageCacheService } from "@core/services/storage-cache.service";
 import { inject } from "@angular/core";
 
 @Injectable({
