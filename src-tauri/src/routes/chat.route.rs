@@ -7,7 +7,7 @@ use crate::helpers::youtube_api_channel::{
   youtube_fetch_live_chat_id_by_api_key,
 };
 use crate::helpers::youtube_api_chat::youtube_fetch_live_chat_messages_by_api_key;
-use crate::services::twitch_service::{TwitchChannelEmoteModel, TwitchService};
+use crate::services::twitch::{TwitchChannelEmoteModel, TwitchService};
 use crate::utils::validation::{validate_channel_slug, validate_message_id, validate_oauth_token};
 use crate::AppState;
 use crate::{log_debug, log_error, log_info};

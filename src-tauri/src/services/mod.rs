@@ -5,6 +5,8 @@ pub mod auth;
 
 pub mod overlay_server;
 
-pub mod twitch_service;
+#[path = "twitch.service.rs"]
+pub mod twitch;
 
+#[path = "update.service.rs"]
 pub mod update;

@@ -1,10 +1,10 @@
 //! Authentication services module
 //! Provides OAuth authentication flow management
 
-#[path = "auth_state.rs"]
+#[path = "auth-state.service.rs"]
 pub mod auth_state;
 
-#[path = "auth_internal.rs"]
+#[path = "auth-internal.service.rs"]
 pub(crate) mod auth_internal;
 
 #[path = "account.service.rs"]

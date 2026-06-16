@@ -1,12 +1,12 @@
-#[path = "update_api.rs"]
+#[path = "update-api.service.rs"]
 pub mod update_api;
-#[path = "update_downloader.rs"]
+#[path = "update-downloader.service.rs"]
 pub mod update_downloader;
-#[path = "update_installer.rs"]
+#[path = "update-installer.service.rs"]
 pub mod update_installer;
-#[path = "update_models.rs"]
+#[path = "update-models.service.rs"]
 pub mod update_models;
-#[path = "update_platform.rs"]
+#[path = "update-platform.service.rs"]
 pub mod update_platform;
 
 pub use update_api::{check_for_update, find_platform_asset, has_matching_extension};
