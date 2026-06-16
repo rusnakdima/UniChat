@@ -13,7 +13,7 @@ pub enum AppError {
   Database(String),
   Network(String),
   Io,
-  PermissionDenied,
+  PermissionDenied(String),
   InvalidPath(String),
 }
 
@@ -29,7 +29,7 @@ impl fmt::Display for AppError {
       Self::Database(msg) => write!(f, "Database error: {}", msg),
       Self::Network(msg) => write!(f, "Network error: {}", msg),
       Self::Io => write!(f, "IO error"),
-      Self::PermissionDenied => write!(f, "Permission denied"),
+      Self::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
       Self::InvalidPath(msg) => write!(f, "Invalid path: {}", msg),
     }
   }
@@ -41,7 +41,7 @@ impl From<std::io::Error> for AppError {
   fn from(err: std::io::Error) -> Self {
     match err.kind() {
       std::io::ErrorKind::NotFound => Self::NotFound("Resource not found".into()),
-      std::io::ErrorKind::PermissionDenied => Self::PermissionDenied,
+      std::io::ErrorKind::PermissionDenied => Self::PermissionDenied(err.to_string()),
       _ => Self::Io,
     }
   }
