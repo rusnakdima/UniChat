@@ -17,8 +17,8 @@ pub async fn get_chat_channel_by_platform_and_id(
   state: tauri::State<'_, crate::AppState>,
   platform: String,
   channel_id: String,
-) -> Result<crate::entities::response_entity::ResponseModel, String> {
-  use crate::entities::response_entity::ResponseModel;
+) -> Result<crate::entities::response_entity::Response, String> {
+  use crate::entities::response_entity::Response;
   use nosql_orm::query::Filter;
 
   let filter = serde_json::json!({
@@ -45,7 +45,7 @@ pub async fn get_chat_channel_by_platform_and_id(
   Ok(
     docs
       .first()
-      .map(|doc| ResponseModel::success_with_data("Found", doc.clone()))
-      .unwrap_or_else(|| ResponseModel::error("Channel not found")),
+      .map(|doc| Response::success_with_data("Found", doc.clone()))
+      .unwrap_or_else(|| Response::error("Channel not found")),
   )
 }

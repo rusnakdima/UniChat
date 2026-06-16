@@ -5,15 +5,15 @@ macro_rules! crud_get_by_id {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       id: String,
-    ) -> Result<crate::entities::response_entity::ResponseModel, String> {
+    ) -> Result<crate::entities::response_entity::Response, String> {
       let result = state
         .data
         .json_provider
         .find_by_id($table, &id)
         .await
         .map_err(|e| e.to_string())?
-        .map(|doc| crate::entities::response_entity::ResponseModel::success_with_data("Found", doc))
-        .unwrap_or_else(|| crate::entities::response_entity::ResponseModel::error("Not found"));
+        .map(|doc| crate::entities::response_entity::Response::success_with_data("Found", doc))
+        .unwrap_or_else(|| crate::entities::response_entity::Response::error("Not found"));
 
       Ok(result)
     }
@@ -31,7 +31,7 @@ macro_rules! crud_get_many {
       limit: Option<u64>,
       sort_by: Option<String>,
       sort_asc: Option<bool>,
-    ) -> Result<crate::entities::response_entity::ResponseModel, String> {
+    ) -> Result<crate::entities::response_entity::Response, String> {
       use nosql_orm::query::Filter;
 
       let filter_obj = filter
@@ -54,7 +54,7 @@ macro_rules! crud_get_many {
         .map_err(|e| e.to_string())?;
 
       Ok(
-        crate::entities::response_entity::ResponseModel::success_with_data(
+        crate::entities::response_entity::Response::success_with_data(
           &format!("Found {} items", docs.len()),
           serde_json::json!(docs),
         ),
@@ -70,7 +70,7 @@ macro_rules! crud_create {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       data: serde_json::Value,
-    ) -> Result<crate::entities::response_entity::ResponseModel, String> {
+    ) -> Result<crate::entities::response_entity::Response, String> {
       let doc = state
         .data
         .json_provider
@@ -78,7 +78,7 @@ macro_rules! crud_create {
         .await
         .map_err(|e| e.to_string())?;
 
-      Ok(crate::entities::response_entity::ResponseModel::success_with_data("Created", doc))
+      Ok(crate::entities::response_entity::Response::success_with_data("Created", doc))
     }
   };
 }
@@ -91,7 +91,7 @@ macro_rules! crud_update {
       state: tauri::State<'_, crate::AppState>,
       id: String,
       data: serde_json::Value,
-    ) -> Result<crate::entities::response_entity::ResponseModel, String> {
+    ) -> Result<crate::entities::response_entity::Response, String> {
       let doc = state
         .data
         .json_provider
@@ -99,7 +99,7 @@ macro_rules! crud_update {
         .await
         .map_err(|e| e.to_string())?;
 
-      Ok(crate::entities::response_entity::ResponseModel::success_with_data("Updated", doc))
+      Ok(crate::entities::response_entity::Response::success_with_data("Updated", doc))
     }
   };
 }
@@ -112,7 +112,7 @@ macro_rules! crud_patch {
       state: tauri::State<'_, crate::AppState>,
       id: String,
       data: serde_json::Value,
-    ) -> Result<crate::entities::response_entity::ResponseModel, String> {
+    ) -> Result<crate::entities::response_entity::Response, String> {
       let doc = state
         .data
         .json_provider
@@ -120,7 +120,7 @@ macro_rules! crud_patch {
         .await
         .map_err(|e| e.to_string())?;
 
-      Ok(crate::entities::response_entity::ResponseModel::success_with_data("Patched", doc))
+      Ok(crate::entities::response_entity::Response::success_with_data("Patched", doc))
     }
   };
 }
@@ -132,7 +132,7 @@ macro_rules! crud_delete {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       id: String,
-    ) -> Result<crate::entities::response_entity::ResponseModel, String> {
+    ) -> Result<crate::entities::response_entity::Response, String> {
       state
         .data
         .json_provider
@@ -140,7 +140,7 @@ macro_rules! crud_delete {
         .await
         .map_err(|e| e.to_string())?;
 
-      Ok(crate::entities::response_entity::ResponseModel::success_with_data(
+      Ok(crate::entities::response_entity::Response::success_with_data(
         "Deleted",
         serde_json::json!({ "id": id }),
       ))

@@ -19,8 +19,8 @@ pub async fn get_chat_messages_by_channel(
   source_channel_id: String,
   skip: Option<u64>,
   limit: Option<u64>,
-) -> Result<crate::entities::response_entity::ResponseModel, String> {
-  use crate::entities::response_entity::ResponseModel;
+) -> Result<crate::entities::response_entity::Response, String> {
+  use crate::entities::response_entity::Response;
   use nosql_orm::query::Filter;
 
   let filter = serde_json::json!({
@@ -44,7 +44,7 @@ pub async fn get_chat_messages_by_channel(
     .await
     .map_err(|e| e.to_string())?;
 
-  Ok(ResponseModel::success_with_data(
+  Ok(Response::success_with_data(
     &format!("Found {} messages", docs.len()),
     serde_json::json!(docs),
   ))
@@ -55,8 +55,8 @@ pub async fn delete_chat_messages_by_channel(
   state: tauri::State<'_, crate::AppState>,
   platform: String,
   source_channel_id: String,
-) -> Result<crate::entities::response_entity::ResponseModel, String> {
-  use crate::entities::response_entity::ResponseModel;
+) -> Result<crate::entities::response_entity::Response, String> {
+  use crate::entities::response_entity::Response;
   use nosql_orm::query::Filter;
 
   let filter = serde_json::json!({
@@ -88,7 +88,7 @@ pub async fn delete_chat_messages_by_channel(
     }
   }
 
-  Ok(ResponseModel::success_with_data(
+  Ok(Response::success_with_data(
     &format!("Deleted {} messages", deleted_count),
     serde_json::json!({ "deleted_count": deleted_count }),
   ))

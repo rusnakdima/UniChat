@@ -17,8 +17,8 @@ pub async fn get_chat_account_by_platform_and_user(
   state: tauri::State<'_, crate::AppState>,
   platform: String,
   user_id: String,
-) -> Result<crate::entities::response_entity::ResponseModel, String> {
-  use crate::entities::response_entity::ResponseModel;
+) -> Result<crate::entities::response_entity::Response, String> {
+  use crate::entities::response_entity::Response;
   use nosql_orm::query::Filter;
 
   let filter = serde_json::json!({
@@ -45,8 +45,8 @@ pub async fn get_chat_account_by_platform_and_user(
   Ok(
     docs
       .first()
-      .map(|doc| ResponseModel::success_with_data("Found", doc.clone()))
-      .unwrap_or_else(|| ResponseModel::error("Account not found")),
+      .map(|doc| Response::success_with_data("Found", doc.clone()))
+      .unwrap_or_else(|| Response::error("Account not found")),
   )
 }
 
@@ -54,8 +54,8 @@ pub async fn get_chat_account_by_platform_and_user(
 pub async fn get_chat_accounts_by_platform(
   state: tauri::State<'_, crate::AppState>,
   platform: String,
-) -> Result<crate::entities::response_entity::ResponseModel, String> {
-  use crate::entities::response_entity::ResponseModel;
+) -> Result<crate::entities::response_entity::Response, String> {
+  use crate::entities::response_entity::Response;
   use nosql_orm::query::Filter;
 
   let filter = serde_json::json!({
@@ -78,7 +78,7 @@ pub async fn get_chat_accounts_by_platform(
     .await
     .map_err(|e| e.to_string())?;
 
-  Ok(ResponseModel::success_with_data(
+  Ok(Response::success_with_data(
     &format!("Found {} accounts", docs.len()),
     serde_json::json!(docs),
   ))

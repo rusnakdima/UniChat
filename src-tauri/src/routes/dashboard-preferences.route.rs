@@ -4,7 +4,7 @@ use crate::crud_get_by_id;
 use crate::crud_get_many;
 use crate::crud_patch;
 use crate::crud_update;
-use crate::entities::response_entity::ResponseModel;
+use crate::entities::response_entity::Response;
 
 crud_get_by_id!(get_dashboard_preferences, "dashboard_preferences");
 crud_get_many!(get_dashboard_preferences_list, "dashboard_preferences");
@@ -17,7 +17,7 @@ crud_delete!(delete_dashboard_preferences, "dashboard_preferences");
 pub async fn get_or_create_dashboard_preferences(
   state: tauri::State<'_, crate::AppState>,
   user_id: String,
-) -> Result<ResponseModel, String> {
+) -> Result<Response, String> {
   use nosql_orm::query::Filter;
 
   let filter = serde_json::json!({
@@ -41,7 +41,7 @@ pub async fn get_or_create_dashboard_preferences(
     .map_err(|e| e.to_string())?;
 
   if let Some(doc) = docs.first() {
-    return Ok(ResponseModel::success_with_data("Found", doc.clone()));
+    return Ok(Response::success_with_data("Found", doc.clone()));
   }
 
   let default_prefs = serde_json::json!({
@@ -68,5 +68,5 @@ pub async fn get_or_create_dashboard_preferences(
     .await
     .map_err(|e| e.to_string())?;
 
-  Ok(ResponseModel::success_with_data("Created", doc))
+  Ok(Response::success_with_data("Created", doc))
 }
