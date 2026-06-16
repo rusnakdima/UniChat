@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, InjectionToken } from "@angular/core";
 
 export enum LogLevel {
   Debug = 0,
@@ -13,6 +13,12 @@ export interface LogEntry {
   message: string;
   context?: string;
   data?: any;
+}
+
+export interface LogMeta {
+  source?: string;
+  error?: unknown;
+  [key: string]: any;
 }
 
 @Injectable({ providedIn: "root" })
@@ -31,28 +37,74 @@ export class LoggerService {
     };
   }
 
-  debug(message: string, context?: string, data?: any): void {
+  debug(message: string, ...args: any[]): void {
+    this.logDebug(message, args);
+  }
+
+  info(message: string, ...args: any[]): void {
+    this.logInfo(message, args);
+  }
+
+  warn(message: string, ...args: any[]): void {
+    this.logWarn(message, args);
+  }
+
+  error(message: string, ...args: any[]): void {
+    this.logError(message, args);
+  }
+
+  private logDebug(message: string, args: any[]): void {
     if (this.level <= LogLevel.Debug) {
-      this.log(this.format(LogLevel.Debug, message, context, data));
+      const [error, meta] = this.parseLogArgs(args);
+      this.log(this.format(LogLevel.Debug, message, meta?.source, { error, ...meta }));
     }
   }
 
-  info(message: string, context?: string, data?: any): void {
+  private logInfo(message: string, args: any[]): void {
     if (this.level <= LogLevel.Info) {
-      this.log(this.format(LogLevel.Info, message, context, data));
+      const [error, meta] = this.parseLogArgs(args);
+      this.log(this.format(LogLevel.Info, message, meta?.source, { error, ...meta }));
     }
   }
 
-  warn(message: string, context?: string, data?: any): void {
+  private logWarn(message: string, args: any[]): void {
     if (this.level <= LogLevel.Warn) {
-      this.log(this.format(LogLevel.Warn, message, context, data));
+      const [error, meta] = this.parseLogArgs(args);
+      this.log(this.format(LogLevel.Warn, message, meta?.source, { error, ...meta }));
     }
   }
 
-  error(message: string, context?: string, data?: any): void {
+  private logError(message: string, args: any[]): void {
     if (this.level <= LogLevel.Error) {
-      this.log(this.format(LogLevel.Error, message, context, data));
+      const [error, meta] = this.parseLogArgs(args);
+      this.log(this.format(LogLevel.Error, message, meta?.source, { error, ...meta }));
     }
+  }
+
+  private parseLogArgs(args: any[]): [unknown?, LogMeta?] {
+    if (args.length === 0) {
+      return [undefined, undefined];
+    }
+    if (args.length === 1) {
+      const arg = args[0];
+      if (typeof arg === "string") {
+        return [undefined, { source: arg }];
+      }
+      if (arg && typeof arg === "object") {
+        return [undefined, arg as LogMeta];
+      }
+      return [arg, undefined];
+    }
+    if (args.length === 2) {
+      const [first, second] = args;
+      if (typeof first === "string" && second && typeof second === "object") {
+        return [undefined, { source: first, ...(second as LogMeta) }];
+      }
+      if (typeof first === "object" && second !== undefined && typeof second !== "object") {
+        return [second, first as LogMeta];
+      }
+    }
+    return [undefined, undefined];
   }
 
   private log(entry: LogEntry): void {
@@ -75,6 +127,11 @@ export class LoggerService {
     this.level = level;
   }
 }
+
+export const LOGGER_SERVICE = new InjectionToken<LoggerService>("LOGGER_SERVICE", {
+  providedIn: "root",
+  factory: () => new LoggerService(),
+});
 
 export function getLoggingService(): LoggerService {
   return new LoggerService();
