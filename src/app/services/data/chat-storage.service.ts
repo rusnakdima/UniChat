@@ -2,371 +2,100 @@ import { computed, inject, Injectable, signal } from "@angular/core";
 
 import { ChatMessage, PlatformType, ChatHistoryLoadState } from "@models/chat.model";
 
-import { BlockedWordsService } from "@services/ui/blocked-words.service";
-import { ChatPruningService } from "@services/data/chat-pruning.service";
-import { HighlightNotificationService } from "@services/ui/highlight-notification.service";
-import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
-import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
-
-import { ChatBatchingService } from "@services/data/chat-batching.service";
-import { ChatCacheService } from "@services/data/chat-cache.service";
-import { ChatMemoryService } from "@services/data/chat-memory.service";
-
-import { groupByPlatform } from "@shared/utils/chat.helper";
-
-import { APP_CONFIG } from "@shared/utils/constants";
-import { buildChannelRef, parseChannelRef } from "@utils/channel-ref.util";
+import { UnifiedStorageService } from "@services/storage/unified-storage.service";
 
 @Injectable({
   providedIn: "root",
 })
 export class ChatStorageService {
-  private readonly channelMessagesSignal = signal<Record<string, ChatMessage[]>>({});
-  private readonly loadedChannels = signal<Set<string>>(new Set());
-  private readonly historyLoadState = signal<Record<string, ChatHistoryLoadState>>({});
-  private readonly overlayBridge = inject(OverlaySourceBridgeService);
-  private readonly messageTypeDetector = inject(MessageTypeDetectorService);
-  private readonly blockedWordsService = inject(BlockedWordsService);
-  private readonly highlightNotifications = inject(HighlightNotificationService);
-  private readonly pruning = inject(ChatPruningService);
-  private readonly batching = inject(ChatBatchingService);
-  private readonly cache = inject(ChatCacheService);
-  private readonly memory = inject(ChatMemoryService);
+  private readonly unified = inject(UnifiedStorageService);
 
-  readonly channelMessages = this.channelMessagesSignal.asReadonly();
-  readonly loadedChannelsSet = this.loadedChannels.asReadonly();
-  readonly historyLoadStates = this.historyLoadState.asReadonly();
-
-  constructor() {
-    this.channelMessagesSignal.set({});
-    this.cache.setChannelMessagesSignal(() => this.channelMessagesSignal());
-    this.memory.setSignals(
-      () => this.channelMessagesSignal(),
-      (store) => this.channelMessagesSignal.set(store),
-      () => this.batching.flushPendingBatchesNow()
-    );
-  }
+  readonly channelMessages = this.unified.channelMessages;
+  readonly loadedChannelsSet = this.unified.loadedChannelsSet;
+  readonly historyLoadStates = this.unified.historyLoadStates;
+  readonly allMessages = this.unified.allMessages;
+  readonly messagesByPlatform = this.unified.messagesByPlatform;
 
   incrementMessageVersion(): void {
-    this.cache.incrementMessageVersion();
+    this.unified.incrementMessageVersion();
   }
 
-  readonly allMessages = computed(() => {
-    const currentVersion = this.cache.allMessagesVersion();
-    const currentChannelMessages = this.channelMessagesSignal();
-
-    if (this.cache["_allMessagesCache"].version === currentVersion) {
-      return this.cache["_allMessagesCache"].messages;
-    }
-
-    const allMessages: ChatMessage[] = [];
-
-    for (const [channelId, messages] of Object.entries(currentChannelMessages)) {
-      allMessages.push(...messages);
-      this.cache["_lastChannelMessages"][channelId] = messages;
-    }
-
-    for (const channelId of Object.keys(this.cache["_lastChannelMessages"])) {
-      if (!currentChannelMessages[channelId]) {
-        delete this.cache["_lastChannelMessages"][channelId];
-      }
-    }
-
-    const sorted = [...allMessages].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    this.cache["_allMessagesCache"] = { version: currentVersion, messages: sorted };
-    return sorted;
-  });
-
-  readonly messagesByPlatform = computed(() => {
-    const allMessages = this.allMessages();
-    return groupByPlatform(allMessages);
-  });
-
   getChannelRefForMessage(message: Pick<ChatMessage, "platform" | "sourceChannelId">): string {
-    return buildChannelRef(message.platform, message.sourceChannelId);
+    return this.unified.getChannelRefForMessage(message);
   }
 
   isChannelLoaded(channelId: string): boolean {
-    const loaded = this.loadedChannels();
-    const normalizedInput = channelId.toLowerCase();
-
-    for (const stored of loaded) {
-      if (stored.toLowerCase() === normalizedInput) {
-        return true;
-      }
-    }
-
-    const parsed = parseChannelRef(channelId);
-    if (parsed) {
-      const providerIdLower = parsed.providerChannelId.toLowerCase();
-      for (const stored of loaded) {
-        if (stored.toLowerCase() === providerIdLower) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return this.unified.isChannelLoaded(channelId);
   }
 
   markChannelAsLoaded(channelId: string): void {
-    this.loadedChannels.update((set) => {
-      const newSet = new Set(set);
-      if (set.has(channelId)) {
-        return set;
-      }
-      const parts = channelId.split(":");
-      if (
-        parts.length === 2 &&
-        (parts[0] === "twitch" || parts[0] === "kick" || parts[0] === "youtube")
-      ) {
-        newSet.add(channelId);
-      } else {
-        newSet.add(channelId);
-      }
-      return newSet;
-    });
+    this.unified.markChannelAsLoaded(channelId);
   }
 
   getHistoryLoadState(channelId: string): ChatHistoryLoadState {
-    return this.historyLoadState()[channelId] ?? { loaded: false, hasMore: true };
+    return this.unified.getHistoryLoadState(channelId);
   }
 
   setHistoryLoadState(channelId: string, state: ChatHistoryLoadState): void {
-    this.historyLoadState.update((store) => ({
-      ...store,
-      [channelId]: state,
-    }));
+    this.unified.setHistoryLoadState(channelId, state);
   }
 
   getMessagesByChannel(channelId: string): ChatMessage[] {
-    return this.channelMessagesSignal()[channelId] ?? [];
+    return this.unified.getMessagesByChannel(channelId);
   }
 
   getMessagesByPlatform(platform: PlatformType): ChatMessage[] {
-    return this.messagesByPlatform()[platform];
+    return this.unified.getMessagesByPlatform(platform);
   }
 
   addMessage(channelId: string, message: ChatMessage): void {
-    const storageKey = buildChannelRef(message.platform, channelId);
-
-    this.processMessageFilters(message, storageKey);
-
-    this.batching.addToBatch(storageKey, message);
-    this.messageTypeDetector.updateLastMessageTime(message);
-    this.batching.scheduleBatchFlush();
-  }
-
-  private processMessageFilters(message: ChatMessage, storageKey: string): void {
-    const { filtered, wasFiltered } = this.blockedWordsService.filterMessage(
-      message.text,
-      storageKey
-    );
-    if (wasFiltered) {
-      message.text = filtered;
-    }
-
-    const { type, reason } = this.messageTypeDetector.detectMessageType(message);
-    message.messageType = type;
-    message.messageTypeReason = reason;
-  }
-
-  private processMessagesBatch(messages: ChatMessage[], storageKey: string): void {
-    for (const message of messages) {
-      this.processMessageFilters(message, storageKey);
-    }
+    this.unified.addMessage(channelId, message);
   }
 
   prependMessages(channelId: string, messages: ChatMessage[]): void {
-    this.batching.flushPendingBatchesNow();
-
-    const sortedMessages = [...messages].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    const platform = messages.length > 0 ? messages[0].platform : "twitch";
-    const storageKey = buildChannelRef(platform, channelId);
-
-    this.processMessagesBatch(sortedMessages, storageKey);
-
-    this.channelMessagesSignal.update((store) => {
-      const channelMessages = store[storageKey] ?? [];
-      const messageMap = new Map(channelMessages.map((msg) => [msg.id, msg]));
-
-      for (const message of messages) {
-        messageMap.set(message.id, message);
-      }
-
-      const sortedMsgs = [...messageMap.values()].sort(
-        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-      return {
-        ...store,
-        [storageKey]: sortedMsgs,
-      };
-    });
-
-    this.memory.enforceGlobalCap();
-
-    for (const message of sortedMessages) {
-      this.messageTypeDetector.updateLastMessageTime(message);
-    }
-
-    for (const message of messages) {
-      this.highlightNotifications.maybeNotify(message);
-      this.overlayBridge.forwardMessage(message);
-    }
+    this.unified.prependMessages(channelId, messages);
   }
 
   removeMessage(channelId: string, messageId: string): void {
-    this.batching.flushPendingBatchesNow();
-    this.channelMessagesSignal.update((store) => {
-      const channelMessages = store[channelId];
-
-      if (!channelMessages) {
-        return store;
-      }
-
-      return {
-        ...store,
-        [channelId]: channelMessages.filter((msg) => msg.id !== messageId),
-      };
-    });
+    this.unified.removeMessage(channelId, messageId);
   }
 
   updateMessage(channelId: string, messageId: string, updates: Partial<ChatMessage>): void {
-    this.batching.flushPendingBatchesNow();
-    const channelMessages = this.channelMessagesSignal()[channelId];
-    if (!channelMessages) {
-      return;
-    }
-
-    const existing = channelMessages.find((m) => m.id === messageId);
-    if (!existing) {
-      return;
-    }
-
-    const shouldForward =
-      updates.text !== undefined ||
-      updates.timestamp !== undefined ||
-      updates.author !== undefined ||
-      updates.platform !== undefined ||
-      updates.isSupporter !== undefined ||
-      updates.isDeleted !== undefined ||
-      updates.canRenderInOverlay !== undefined;
-
-    const updated: ChatMessage = { ...existing, ...updates };
-
-    this.channelMessagesSignal.update((store) => {
-      const messages = store[channelId];
-      if (!messages) {
-        return store;
-      }
-
-      return {
-        ...store,
-        [channelId]: messages.map((msg) => (msg.id === messageId ? updated : msg)),
-      };
-    });
-
-    if (shouldForward) {
-      this.overlayBridge.forwardMessage(updated);
-    }
+    this.unified.updateMessage(channelId, messageId, updates);
   }
 
   batchUpdateMessagesForChannel(
     channelId: string,
     updates: Array<{ messageId: string; changes: Partial<ChatMessage> }>
   ): void {
-    if (updates.length === 0) return;
-
-    this.channelMessagesSignal.update((store) => {
-      const messages = store[channelId];
-      if (!messages) {
-        return store;
-      }
-
-      const messageMap = new Map(messages.map((msg) => [msg.id, msg]));
-
-      for (const { messageId, changes } of updates) {
-        const existing = messageMap.get(messageId);
-        if (existing) {
-          messageMap.set(messageId, { ...existing, ...changes });
-        }
-      }
-
-      return {
-        ...store,
-        [channelId]: [...messageMap.values()],
-      };
-    });
+    this.unified.batchUpdateMessagesForChannel(channelId, updates);
   }
 
   updateChannelMessagesWithBatches(snapshot: Map<string, ChatMessage[]>): void {
-    this.channelMessagesSignal.update((store) => {
-      let next: Record<string, ChatMessage[]> = { ...store };
-      for (const [channelId, incoming] of snapshot) {
-        if (incoming.length === 0) {
-          continue;
-        }
-        const channelMessages = next[channelId] ?? [];
-        const messageMap = new Map(channelMessages.map((msg) => [msg.id, msg]));
-        for (const message of incoming) {
-          messageMap.set(message.id, message);
-        }
-        const maxPerChannel = APP_CONFIG.MAX_MESSAGES_PER_CHANNEL;
-        const sorted = [...messageMap.values()].sort(
-          (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-        const trimmed = sorted.length > maxPerChannel ? sorted.slice(-maxPerChannel) : sorted;
-        next = {
-          ...next,
-          [channelId]: trimmed,
-        };
-      }
-      return next;
-    });
+    this.unified.updateChannelMessagesWithBatches(snapshot);
   }
 
   enforceGlobalCap(): void {
-    this.memory.enforceGlobalCap();
+    this.unified.enforceGlobalCap();
   }
 
   exportMessages(): string {
-    const store = this.channelMessagesSignal();
-    return JSON.stringify(store, null, 2);
+    return this.unified.exportMessages();
   }
 
   pruneOldMessages(): void {
-    this.memory.pruneOldMessages();
+    this.unified.pruneOldMessages();
   }
 
   clearChannel(channelId: string): void {
-    this.batching.flushPendingBatchesNow();
-    this.channelMessagesSignal.update((store) => {
-      const newStore = { ...store };
-      delete newStore[channelId];
-      return newStore;
-    });
-    this.loadedChannels.update((set) => {
-      const newSet = new Set(set);
-      newSet.delete(channelId);
-      return newSet;
-    });
+    this.unified.clearChannel(channelId);
   }
 
   clearAllMessages(): void {
-    this.batching.flushPendingBatchesNow();
-    this.channelMessagesSignal.set({});
-    this.loadedChannels.set(new Set());
-    this.historyLoadState.set({});
-    this.cache.invalidateCache();
+    this.unified.clearAllMessages();
   }
 
   getMemoryStats(): { totalMessages: number; channels: number; byChannel: Record<string, number> } {
-    return this.memory.getMemoryStats();
+    return this.unified.getMemoryStats();
   }
 }

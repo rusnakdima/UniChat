@@ -1,10 +1,10 @@
-#[path = "platform_type.model.rs"]
+#[path = "platform-type.model.rs"]
 pub mod platform_type_model;
 
-#[path = "auth_account.model.rs"]
+#[path = "auth-account.model.rs"]
 pub mod auth_account_model;
 
-#[path = "auth_oauth.model.rs"]
+#[path = "auth-oauth.model.rs"]
 pub mod auth_oauth_model;
 
 #[path = "overlay_message.model.rs"]

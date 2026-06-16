@@ -1,65 +1,32 @@
 import { computed, Injectable, signal } from "@angular/core";
 
 import { ChatMessage } from "@models/chat.model";
+import { UnifiedStorageService } from "@services/storage/unified-storage.service";
+import { StorageCacheService } from "@services/storage/storage-cache.service";
+import { inject } from "@angular/core";
 
 @Injectable({
   providedIn: "root",
 })
 export class ChatCacheService {
-  readonly allMessagesVersion = signal(0);
+  private readonly unified = inject(UnifiedStorageService);
+  private readonly cache = inject(StorageCacheService);
 
-  private _allMessagesCache: { version: number; messages: ChatMessage[] } = {
-    version: 0,
-    messages: [],
-  };
-
-  private _lastChannelMessages: Record<string, ChatMessage[]> = {};
+  readonly allMessagesVersion = this.cache.allMessagesVersion;
 
   readonly allMessages = computed(() => {
-    const currentVersion = this.allMessagesVersion();
-    const currentChannelMessages = this.channelMessagesSignal();
-
-    if (this._allMessagesCache.version === currentVersion) {
-      return this._allMessagesCache.messages;
-    }
-
-    const allMessages: ChatMessage[] = [];
-
-    for (const [channelId, messages] of Object.entries(currentChannelMessages)) {
-      allMessages.push(...messages);
-      this._lastChannelMessages[channelId] = messages;
-    }
-
-    for (const channelId of Object.keys(this._lastChannelMessages)) {
-      if (!currentChannelMessages[channelId]) {
-        delete this._lastChannelMessages[channelId];
-      }
-    }
-
-    const sorted = [...allMessages].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    this._allMessagesCache = { version: currentVersion, messages: sorted };
-    return sorted;
+    return this.unified.allMessages();
   });
 
-  private channelMessagesSignal: () => Record<string, ChatMessage[]>;
-
-  constructor() {
-    this.channelMessagesSignal = () => ({});
-  }
-
   setChannelMessagesSignal(fn: () => Record<string, ChatMessage[]>): void {
-    this.channelMessagesSignal = fn;
+    this.cache.setChannelMessagesSignal(fn);
   }
 
   incrementMessageVersion(): void {
-    this.allMessagesVersion.update((v) => v + 1);
+    this.cache.incrementMessageVersion();
   }
 
   invalidateCache(): void {
-    this._allMessagesCache = { version: -1, messages: [] };
-    this._lastChannelMessages = {};
+    this.cache.invalidateCache();
   }
 }

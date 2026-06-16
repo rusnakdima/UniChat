@@ -53,6 +53,20 @@ impl From<serde_json::Error> for AppError {
   }
 }
 
+impl From<nosql_orm::prelude::OrmError> for AppError {
+  fn from(err: nosql_orm::prelude::OrmError) -> Self {
+    use nosql_orm::prelude::OrmError;
+    match err {
+      OrmError::NotFound(_) => Self::NotFound("Entity not found".into()),
+      OrmError::Duplicate(_) => Self::Duplicate("Entity already exists".into()),
+      OrmError::Validation(_) => Self::ValidationError("Validation error".into()),
+      OrmError::Query(_) => Self::Database(format!("Query error: {}", err)),
+      OrmError::Io(_) => Self::Io,
+      _ => Self::Database(format!("Database error: {}", err)),
+    }
+  }
+}
+
 impl AppError {
   pub fn into_response(self) -> crate::models::response::Response {
     use crate::models::response::Response;
