@@ -1,24 +1,14 @@
 /* sys lib */
-import { Injectable, signal, computed, inject, effect } from "@angular/core";
+import { Injectable } from "@angular/core";
 
-/* helpers */
-import { generateTimestamp } from "@shared/utils/chat.helper";
-import { RegexCompilationService, RegexRule } from "@services/ui/regex-compilation.service";
-import { LocalStorageService } from "@services/core/local-storage.service";
-import { ChatListService } from "@services/data/chat-list.service";
-import { migrateLegacyChannelRefs } from "@utils/channel-ref.util";
-export interface HighlightRule {
-  id: string;
-  pattern: string;
-  isRegex: boolean;
-  isGlobal: boolean;
-  channelIds?: string[]; // If not global, apply only to these channels
-  color: string; // CSS color for highlight
-  isActive: boolean;
-  createdAt: string;
-}
+/* services */
+import { RuleBasedService, Rule } from "@services/ui/rule-based.service";
 
 const HIGHLIGHT_RULES_STORAGE_KEY = "unichat.highlightRules.v1";
+
+export interface HighlightRule extends Rule {
+  color: string;
+}
 
 /**
  * Highlight Rules Service - Message Highlighting
@@ -30,115 +20,13 @@ const HIGHLIGHT_RULES_STORAGE_KEY = "unichat.highlightRules.v1";
 @Injectable({
   providedIn: "root",
 })
-export class HighlightRulesService {
-  private readonly localStorageService = inject(LocalStorageService);
-  private readonly chatListService = inject(ChatListService);
-  private readonly regexCompiler = inject(RegexCompilationService);
-
-  private readonly rulesSignal = signal<HighlightRule[]>([]);
-  private readonly compiledRegexByRuleId = new Map<string, RegExp | null>();
-
-  readonly rules = this.rulesSignal.asReadonly();
-
-  readonly activeRules = computed(() => this.rulesSignal().filter((rule) => rule.isActive));
-
-  readonly globalRules = computed(() => this.activeRules().filter((rule) => rule.isGlobal));
-
-  constructor() {
-    this.loadRules();
-
-    // Precompile regex once per rules change to avoid per-message allocations.
-    effect(() => {
-      const rules = this.rulesSignal();
-      void rules;
-      this.rebuildCompiledRegexes();
-    });
+export class HighlightRulesService extends RuleBasedService<HighlightRule> {
+  protected getStorageKey(): string {
+    return HIGHLIGHT_RULES_STORAGE_KEY;
   }
 
-  private loadRules(): void {
-    const stored = this.localStorageService.get<HighlightRule[]>(HIGHLIGHT_RULES_STORAGE_KEY, []);
-    // Don't read channels signal during init to avoid change detection loops
-    // Channel ref migration is handled lazily when rules are used
-    const migrated = stored.map((rule) => ({
-      ...rule,
-      // Keep channelIds as-is, migrate lazily when needed
-      channelIds: rule.channelIds,
-    }));
-    this.rulesSignal.set(migrated);
-  }
-
-  private migrateChannelRefs(rule: HighlightRule): HighlightRule {
-    if (!rule.channelIds || rule.isGlobal) {
-      return rule;
-    }
-    const channels = this.chatListService.getChannels();
-    const migrated = migrateLegacyChannelRefs(rule.channelIds, channels);
-    // Only update if refs actually changed
-    if (JSON.stringify(migrated) !== JSON.stringify(rule.channelIds)) {
-      const updatedRule = { ...rule, channelIds: migrated };
-      this.updateRule(rule.id, { channelIds: migrated });
-      return updatedRule;
-    }
-    return rule;
-  }
-
-  private persistRules(): void {
-    this.localStorageService.set(HIGHLIGHT_RULES_STORAGE_KEY, this.rulesSignal());
-  }
-
-  private rebuildCompiledRegexes(): void {
-    const rules: RegexRule[] = this.rulesSignal().map((rule) => ({
-      id: rule.id,
-      pattern: rule.pattern,
-      isRegex: rule.isRegex,
-    }));
-    this.compiledRegexByRuleId.clear();
-    const compiled = this.regexCompiler.compileRules(rules);
-    for (const [id, regex] of compiled.entries()) {
-      this.compiledRegexByRuleId.set(id, regex);
-    }
-  }
-
-  /**
-   * Add a new highlight rule
-   */
-  addRule(rule: Omit<HighlightRule, "id" | "createdAt">): HighlightRule {
-    const newRule: HighlightRule = {
-      ...rule,
-      id: this.generateId(),
-      createdAt: generateTimestamp(),
-    };
-    this.rulesSignal.update((rules) => [...rules, newRule]);
-    this.persistRules();
-    return newRule;
-  }
-
-  /**
-   * Update an existing rule
-   */
-  updateRule(ruleId: string, updates: Partial<HighlightRule>): void {
-    this.rulesSignal.update((rules) =>
-      rules.map((rule) => (rule.id === ruleId ? { ...rule, ...updates } : rule))
-    );
-    this.persistRules();
-  }
-
-  /**
-   * Delete a rule
-   */
-  deleteRule(ruleId: string): void {
-    this.rulesSignal.update((rules) => rules.filter((rule) => rule.id !== ruleId));
-    this.persistRules();
-  }
-
-  /**
-   * Toggle rule active state
-   */
-  toggleRule(ruleId: string): void {
-    this.rulesSignal.update((rules) =>
-      rules.map((rule) => (rule.id === ruleId ? { ...rule, isActive: !rule.isActive } : rule))
-    );
-    this.persistRules();
+  protected getRuleName(): string {
+    return "hl";
   }
 
   /**
@@ -184,18 +72,5 @@ export class HighlightRulesService {
    */
   wouldBeHighlighted(text: string, author: string, channelId: string): boolean {
     return this.getHighlightColor(text, author, channelId) !== null;
-  }
-
-  /**
-   * Get rules that apply to a specific channel
-   */
-  getRulesForChannel(channelId: string): HighlightRule[] {
-    return this.activeRules()
-      .map((rule) => this.migrateChannelRefs(rule))
-      .filter((rule) => rule.isGlobal || rule.channelIds?.includes(channelId));
-  }
-
-  private generateId(): string {
-    return `hl-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 }

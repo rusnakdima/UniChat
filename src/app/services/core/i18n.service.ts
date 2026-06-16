@@ -20,7 +20,15 @@ export interface TranslationTree {
   providedIn: "root",
 })
 export class I18nService {
+  private static _instance: I18nService | null = null;
   private readonly STORAGE_KEY = "unichat-language";
+
+  static get instance(): I18nService {
+    if (!I18nService._instance) {
+      I18nService._instance = new I18nService();
+    }
+    return I18nService._instance;
+  }
 
   // Available languages
   readonly supportedLanguages: Record<SupportedLanguage, string> = {
@@ -127,7 +135,7 @@ export class I18nService {
     if (params) {
       return Object.entries(params).reduce(
         (result, [paramKey, paramValue]) =>
-          result.replace(new RegExp(`\\{\\{${paramKey}\\}\\}`, "g"), String(paramValue)),
+          result.replace(new RegExp(`\\{\\{${paramKey}\}\\}`, "g"), String(paramValue)),
         value
       );
     }
@@ -158,8 +166,5 @@ export class I18nService {
  * Usage: i18n.translate('APP.TITLE')
  */
 export function t(key: string, params?: Record<string, string | number>): string {
-  // This is a helper for non-template usage
-  // For templates, use the I18nPipe
-  const i18n = new I18nService();
-  return i18n.translate(key, params);
+  return I18nService.instance.translate(key, params);
 }
