@@ -4,7 +4,7 @@ import { inject, Injectable } from "@angular/core";
 /* services */
 import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { ConnectionErrorService } from "@services/core/connection-error.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { BaseChatProviderService } from "@services/providers/base-chat-provider.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
@@ -42,7 +42,7 @@ interface YouTubeChatApiResponse {
 export class YouTubePollingService {
   private readonly logger = inject(LOGGER_SERVICE);
   private readonly errorService = inject(ConnectionErrorService);
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
   private readonly authorizationService = inject(AuthorizationService);
   private readonly tauriApi = inject(TauriApiService);
 

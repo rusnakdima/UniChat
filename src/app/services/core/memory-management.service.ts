@@ -2,7 +2,7 @@
 import { DestroyRef, Injectable, inject } from "@angular/core";
 
 /* services */
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 
 /* config */
 import { APP_CONFIG } from "@shared/utils/constants";
@@ -21,7 +21,7 @@ import { APP_CONFIG } from "@shared/utils/constants";
   providedIn: "root",
 })
 export class MemoryManagementService {
-  private readonly chatStorage = inject(ChatStorageService);
+  private readonly chatStorage = inject(UnifiedStorageService);
   private readonly destroyRef = inject(DestroyRef);
   private pruneIntervalId: ReturnType<typeof setInterval> | null = null;
 

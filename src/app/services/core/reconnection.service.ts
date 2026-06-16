@@ -5,7 +5,7 @@ import { Injectable, inject } from "@angular/core";
 import { ChatMessage, PlatformType } from "@models/chat.model";
 
 /* services */
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import {
   ConnectionErrorService,
   ConnectionErrorCode,
@@ -39,7 +39,7 @@ interface ChannelSequenceTracker {
   providedIn: "root",
 })
 export class ReconnectionService {
-  private readonly chatStorage = inject(ChatStorageService);
+  private readonly chatStorage = inject(UnifiedStorageService);
   private readonly errorService = inject(ConnectionErrorService);
 
   /** Sequence trackers per channel */

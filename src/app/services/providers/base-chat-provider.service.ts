@@ -7,7 +7,7 @@ import { ChannelAccountCapabilities, ChatMessage, PlatformType } from "@models/c
 /* services */
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { ChatListService } from "@services/data/chat-list.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 
@@ -24,7 +24,7 @@ export interface PlatformChatConfig {
 })
 export abstract class BaseChatProviderService {
   protected readonly platformResolver = inject(PlatformResolverService);
-  protected readonly chatStorageService = inject(ChatStorageService);
+  protected readonly chatStorageService = inject(UnifiedStorageService);
   protected readonly chatListService = inject(ChatListService);
   protected readonly authorizationService = inject(AuthorizationService);
   protected readonly messageTypeDetector = inject(MessageTypeDetectorService);

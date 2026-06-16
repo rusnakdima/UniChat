@@ -11,7 +11,7 @@ import { ConnectionErrorService } from "@services/core/connection-error.service"
 import { ReconnectionService } from "@services/core/reconnection.service";
 import { IconsCatalogService } from "@services/ui/icons-catalog.service";
 import { TwitchEmotesService } from "@services/providers/twitch-emotes.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { TwitchViewerCardService } from "@services/providers/twitch-viewer-card.service";
@@ -35,7 +35,7 @@ export class TwitchMessageParserService {
   private readonly reconnectionService = inject(ReconnectionService);
   private readonly iconsCatalog = inject(IconsCatalogService);
   private readonly twitchEmotes = inject(TwitchEmotesService);
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
   private readonly chatListService = inject(ChatListService);
   private readonly authorizationService = inject(AuthorizationService);
   private readonly viewerCard = inject(TwitchViewerCardService);
