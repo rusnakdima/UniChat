@@ -5,7 +5,7 @@ import { Injectable, inject } from "@angular/core";
 import { ChatMessage } from "@models/chat.model";
 
 /* services */
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
 import { generateTimestamp } from "@shared/utils/chat.helper";
 export interface ExportOptions {
@@ -27,7 +27,7 @@ export interface ExportOptions {
   providedIn: "root",
 })
 export class SessionExportService {
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
 
   /**
    * Export chat messages to file

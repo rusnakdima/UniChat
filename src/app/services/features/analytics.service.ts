@@ -5,7 +5,7 @@ import { Injectable, inject } from "@angular/core";
 import { ChatMessage, ChannelConnection, PlatformType } from "@models/chat.model";
 
 /* services */
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 
 export interface AnalyticsStats {
@@ -41,7 +41,7 @@ const PLATFORM_NAMES: Record<PlatformType, string> = {
   providedIn: "root",
 })
 export class AnalyticsService {
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
   private readonly connectionStateService = inject(ConnectionStateService);
 
   readonly allMessages = this.chatStorageService.allMessages;

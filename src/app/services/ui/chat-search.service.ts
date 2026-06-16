@@ -5,7 +5,7 @@ import { Injectable, inject, computed, signal } from "@angular/core";
 import { ChatMessage, PlatformType } from "@models/chat.model";
 
 /* services */
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 export interface SearchOptions {
   query: string;
   platform?: PlatformType;
@@ -37,7 +37,7 @@ export interface HighlightSegment {
   providedIn: "root",
 })
 export class ChatSearchService {
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
 
   private readonly searchQuerySignal = signal("");
   private readonly searchResultsSignal = signal<SearchResult[]>([]);

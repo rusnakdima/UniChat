@@ -6,7 +6,7 @@ import { ChatChannel, ChatMessage, PlatformType } from "@models/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
 
 /* helpers */
@@ -18,7 +18,7 @@ import { buildChannelRef } from "@utils/channel-ref.util";
 export class DashboardFeedDataService {
   private readonly chatListService = inject(ChatListService);
   private readonly dashboardPreferencesService = inject(DashboardPreferencesService);
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
 
   readonly platformFilter = signal<"all" | PlatformType>("all");
 

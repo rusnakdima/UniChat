@@ -5,7 +5,7 @@ import { Injectable, inject } from "@angular/core";
 import { PlatformType } from "@models/chat.model";
 
 /* services */
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
 import { ChatHistoryFormatter } from "./chat-history-formatter";
@@ -25,7 +25,7 @@ export interface ExportOptions {
   providedIn: "root",
 })
 export class ChatHistoryExportService {
-  private readonly chatStorage = inject(ChatStorageService);
+  private readonly chatStorage = inject(UnifiedStorageService);
   private readonly chatList = inject(ChatListService);
   private readonly formatter = new ChatHistoryFormatter();
 
