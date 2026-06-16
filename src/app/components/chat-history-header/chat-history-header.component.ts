@@ -7,7 +7,7 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ChatHistoryLoadState } from "@models/chat.model";
 
 /* services */
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 
 /* components */
 import { RoomStateIndicatorsComponent } from "@components/room-state-indicators/room-state-indicators.component";
@@ -23,7 +23,7 @@ import { RoomStateIndicatorsComponent } from "@components/room-state-indicators/
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChatHistoryHeaderComponent {
-  private readonly chatStorage = inject(ChatStorageService);
+  private readonly chatStorage = inject(UnifiedStorageService);
 
   /** Channel ID to load history for. If not provided, loads for all channels (mixed feed). */
   readonly channelId = input<string | undefined>(undefined);

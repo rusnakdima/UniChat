@@ -11,7 +11,7 @@ import {
   AnalyticsStats,
   PlatformDistribution,
 } from "@services/features/analytics.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 
 @Component({
@@ -26,7 +26,7 @@ export class AnalyticsPageView {
   readonly themeMode = this.themeService.themeMode;
 
   private readonly analyticsService = inject(AnalyticsService);
-  private readonly chatStorageService = inject(ChatStorageService);
+  private readonly chatStorageService = inject(UnifiedStorageService);
   private readonly connectionStateService = inject(ConnectionStateService);
 
   readonly timeRangeOptions = ["Last 24 Hours", "Last 7 Days"];

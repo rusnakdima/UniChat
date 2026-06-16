@@ -20,7 +20,7 @@ import { ChatChannel, PlatformType } from "@models/chat.model";
 import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStateService } from "@services/data/chat-state.service";
-import { ChatStorageService } from "@services/data/chat-storage.service";
+import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { TwitchChatService } from "@services/providers/twitch-chat.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
@@ -67,7 +67,7 @@ export class DashboardComponent {
   readonly channelAvatars = inject(ChannelAvatarService);
   readonly dashboardPreferences = inject(DashboardPreferencesService);
   private readonly twitchChat = inject(TwitchChatService);
-  private readonly chatStorage = inject(ChatStorageService);
+  private readonly chatStorage = inject(UnifiedStorageService);
   private readonly localStorageService = inject(LocalStorageService);
   private readonly chatStateService = inject(ChatStateService);
   private readonly authorizationService = inject(AuthorizationService);
