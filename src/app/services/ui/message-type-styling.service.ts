@@ -19,6 +19,8 @@ export class MessageTypeStylingService {
         return "message-type-returning";
       case "highlighted":
         return "message-type-highlighted";
+      case "first_message":
+        return "message-type-first-message";
       case "regular":
       default:
         return "";
@@ -34,6 +36,8 @@ export class MessageTypeStylingService {
         return "👋 Welcome Back";
       case "highlighted":
         return reason ?? "⭐ Highlighted";
+      case "first_message":
+        return "✨ First Message!";
       case "regular":
       default:
         return null;
@@ -49,6 +53,8 @@ export class MessageTypeStylingService {
         return "waving_hand";
       case "highlighted":
         return "star";
+      case "first_message":
+        return "stars";
       case "regular":
       default:
         return null;
@@ -86,7 +92,9 @@ export class MessageTypeStylingService {
       case "returning":
         return "This user is returning after some time";
       case "highlighted":
-        return reason ?? "This is a highlighted message from a VIP user";
+        return reason ?? "This is a highlighted message from a moderator, VIP, or announcement";
+      case "first_message":
+        return "This is their first message in this channel";
       case "regular":
       default:
         return null;

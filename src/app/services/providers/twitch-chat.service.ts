@@ -104,6 +104,26 @@ export class TwitchChatService extends BaseChatProviderService {
 
       const roomstateListener = this.roomStateService.createRoomStateListener(normalizedChannel);
       client.on("roomstate", roomstateListener);
+
+      const usernoticeListener = (
+        msgid: string,
+        channel: string,
+        tags: tmi.ChatUserstate,
+        message: string
+      ) => {
+        const noticeMessageModel = this.messageParser.buildMessageFromTmiUsernotice(
+          normalizedChannel,
+          msgid,
+          tags,
+          message
+        );
+        if (noticeMessageModel) {
+          noticeMessageModel.receivedAt = Date.now();
+          this.chatStorageService.addMessage(normalizedChannel, noticeMessageModel);
+        }
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (client as any).on("usernotice", usernoticeListener);
     }
 
     this.connectedChannels.add(normalizedChannel);

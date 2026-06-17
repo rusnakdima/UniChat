@@ -18,7 +18,7 @@ export type OverlayAnimationType = "none" | "fade" | "slide" | "pop";
 
 export type OverlayDirection = "top" | "bottom" | "left" | "right";
 
-export type MessageType = "returning" | "highlighted" | "regular";
+export type MessageType = "returning" | "highlighted" | "regular" | "first_message";
 
 export type MessageActionKind = "reply" | "delete";
 
@@ -68,6 +68,7 @@ export interface RawPayloadMetadata {
   preview: string;
   emotes?: ChatMessageEmote[];
   badgeIcons?: ChatBadgeIcon[];
+  msgId?: string;
 }
 
 export interface ChatMessageEmote {

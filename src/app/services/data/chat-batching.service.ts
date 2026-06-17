@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { Injectable, inject, Injector } from "@angular/core";
 
 import { ChatMessage } from "@models/chat.model";
 import { UnifiedStorageService } from "@core/services/unified-storage.service";
@@ -12,10 +12,14 @@ import { APP_CONFIG } from "@shared/utils/constants";
   providedIn: "root",
 })
 export class ChatBatchingService {
-  private readonly storage = inject(UnifiedStorageService);
+  private readonly injector = inject(Injector);
   private readonly pruning = inject(ChatPruningService);
   private readonly highlightNotifications = inject(HighlightNotificationService);
   private readonly overlayBridge = inject(OverlaySourceBridgeService);
+
+  private get storage(): UnifiedStorageService {
+    return this.injector.get(UnifiedStorageService);
+  }
 
   private readonly pendingBatches = new Map<string, ChatMessage[]>();
   private batchRafId: number | null = null;

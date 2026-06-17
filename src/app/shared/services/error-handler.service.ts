@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable, inject, signal, computed, DestroyRef } from "@angular/core";
-import { getLoggingService } from "@tauri-apps/logger";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 
 export enum ErrorCode {
   UNKNOWN = "UNKNOWN",
@@ -61,7 +61,7 @@ function generateLogId(): string {
   providedIn: "root",
 })
 export class ErrorHandlerService {
-  private logger = getLoggingService();
+  protected readonly logger = inject(LOGGER_SERVICE);
   private destroyRef = inject(DestroyRef);
 
   private errorsSignal = signal<AppError[]>([]);
@@ -84,11 +84,12 @@ export class ErrorHandlerService {
   }
 
   handleError(error: unknown, context?: string): AppError {
-    this.logger.debug("[ERROR_HANDLER] handleError started", context);
     const appError = this.convertToAppError(error);
     this.logError(appError, context);
 
-    this.logger.debug("[ERROR_HANDLER] handleError completed", context, {
+    const logContext = context ? { source: context } : undefined;
+    this.logger.debug("[ERROR_HANDLER] handleError completed", {
+      ...logContext,
       code: appError.code,
       retryable: appError.retryable,
     });
@@ -96,13 +97,12 @@ export class ErrorHandlerService {
   }
 
   handleHttpError(error: HttpErrorResponse, context?: string): AppError {
-    this.logger.debug("[ERROR_HANDLER] handleHttpError started", context, {
-      status: error.status,
-    });
     const appError = this.convertHttpError(error);
     this.logError(appError, context);
 
-    this.logger.debug("[ERROR_HANDLER] handleHttpError completed", context, {
+    const logContext = context ? { source: context } : undefined;
+    this.logger.debug("[ERROR_HANDLER] handleHttpError completed", {
+      ...logContext,
       code: appError.code,
     });
     return appError;
@@ -243,7 +243,9 @@ export class ErrorHandlerService {
     config: Partial<RetryConfig> = {},
     context?: string
   ): Promise<T> {
-    this.logger.debug("[ERROR_HANDLER] retry started", context, {
+    const logContext = context ? { source: context } : undefined;
+    this.logger.debug("[ERROR_HANDLER] retry started", {
+      ...logContext,
       maxAttempts: config.maxAttempts,
     });
     const { maxAttempts, delayMs, backoffMultiplier } = { ...DEFAULT_RETRY_CONFIG, ...config };
@@ -253,12 +255,18 @@ export class ErrorHandlerService {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const result = await operation();
-        this.logger.debug("[ERROR_HANDLER] retry completed", context, { attempt });
+        this.logger.debug("[ERROR_HANDLER] retry completed", {
+          ...logContext,
+          attempt,
+        });
         return result;
       } catch (error) {
         lastError = this.handleError(error, context);
         if (!lastError.retryable || attempt === maxAttempts) {
-          this.logger.error("[ERROR_HANDLER] retry failed", context, { attempt, error: lastError });
+          this.logger.error("[ERROR_HANDLER] retry failed", lastError, {
+            ...logContext,
+            attempt,
+          });
           throw lastError;
         }
 

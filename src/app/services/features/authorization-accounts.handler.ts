@@ -15,6 +15,9 @@ interface CachedAccount {
   avatarUrl?: string;
   authStatus: AuthStatus;
   authorizedAt: string;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenExpiresAt?: string;
 }
 
 export interface RawAccount {
@@ -63,6 +66,9 @@ export class AuthorizationAccountsHandler {
       avatarUrl: acc.avatarUrl,
       authStatus: acc.authStatus,
       authorizedAt: acc.authorizedAt,
+      accessToken: acc.accessToken,
+      refreshToken: acc.refreshToken,
+      tokenExpiresAt: acc.tokenExpiresAt,
     }));
     this.localStorageService.set(ACCOUNTS_CACHE_KEY, cacheData);
   }
@@ -80,6 +86,9 @@ export class AuthorizationAccountsHandler {
       avatarUrl: acc.avatarUrl,
       authStatus: acc.authStatus,
       authorizedAt: acc.authorizedAt,
+      accessToken: acc.accessToken,
+      refreshToken: acc.refreshToken,
+      tokenExpiresAt: acc.tokenExpiresAt,
     }));
   }
 

@@ -101,7 +101,7 @@ export class ChatListService {
     }
 
     const newChannel: ChatChannel = {
-      id: providerChannelId,
+      id: buildChannelRef(platform, providerChannelId),
       platform,
       channelId: providerChannelId,
       channelName: normalizedChannelName,

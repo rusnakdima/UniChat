@@ -11,7 +11,7 @@ interface CacheEntry<T> {
 })
 export class StorageCacheService {
   private readonly allMessagesVersionSignal = signal(0);
-  private readonly allMessagesCache = signal<CacheEntry<ChatMessage[]>>({ version: 0, data: [] });
+  readonly allMessagesCache = signal<CacheEntry<ChatMessage[]>>({ version: 0, data: [] });
   private readonly lastChannelMessages = signal<Record<string, ChatMessage[]>>({});
 
   readonly allMessagesVersion = this.allMessagesVersionSignal.asReadonly();

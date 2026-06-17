@@ -1,8 +1,8 @@
 /* sys lib */
-import { ErrorHandler, Injectable } from "@angular/core";
+import { ErrorHandler, Injectable, inject } from "@angular/core";
 
 /* services */
-import { getLoggingService } from "@tauri-apps/logger";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 
 /**
  * Global error handler for uncaught exceptions
@@ -10,7 +10,7 @@ import { getLoggingService } from "@tauri-apps/logger";
  */
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-  private readonly logger = getLoggingService();
+  private readonly logger = inject(LOGGER_SERVICE);
 
   handleError(error: unknown): void {
     const errorDetails = this.extractErrorDetails(error);

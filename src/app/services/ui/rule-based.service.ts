@@ -59,10 +59,10 @@ export abstract class RuleBasedService<T extends Rule> {
       return rule;
     }
     const channels = this.chatListService.getChannels();
-    const migrated = migrateLegacyChannelRefs(rule.channelIds, channels);
+    const migrated = migrateLegacyChannelRefs(rule.channelIds, channels) as string[] | undefined;
     if (JSON.stringify(migrated) !== JSON.stringify(rule.channelIds)) {
       const updatedRule = { ...rule, channelIds: migrated };
-      this.updateRule(rule.id, { channelIds: migrated });
+      this.updateRule(rule.id, { channelIds: migrated } as Partial<T>);
       return updatedRule;
     }
     return rule;

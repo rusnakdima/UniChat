@@ -213,7 +213,12 @@ mat-icon {
   @apply border-amber-300/50 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5;
 }
 
-/* Highlighted Message - Premium gold styling */
+/* First Message - Cyan sparkle highlight */
+.message-type-first-message {
+  @apply border-cyan-400/50 bg-cyan-50/30 dark:border-cyan-500/30 dark:bg-cyan-500/5;
+}
+
+/* Highlighted Message - Premium purple styling (mod/VIP/announcement) */
 .message-type-highlighted {
   @apply border-purple-400/60 bg-purple-50/40 dark:border-purple-500/40 dark:bg-purple-500/10;
   border-width: 2px;

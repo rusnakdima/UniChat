@@ -6,8 +6,9 @@ import { ChatMessage, MessageType } from "@models/chat.model";
 import { buildChannelRef } from "@utils/channel-ref.util";
 /**
  * Detects message types based on user activity patterns
+ * - "first_message": User's first message ever to this channel
  * - "returning": User hasn't sent a message in a while (5+ minutes)
- * - "highlighted": Special messages (moderator, VIP, broadcaster, special subscriber)
+ * - "highlighted": Special messages (moderator, VIP, broadcaster, announcement)
  * - "regular": Standard message from active user
  */
 @Injectable({
@@ -16,6 +17,9 @@ import { buildChannelRef } from "@utils/channel-ref.util";
 export class MessageTypeDetectorService {
   /** Track last message timestamp per user per channel */
   private userLastMessage = new Map<string, string>();
+
+  /** Track users who have messaged in channels (for first message detection) */
+  private userHasMessaged = new Set<string>();
 
   /** Time threshold for "returning" user detection (5 minutes) */
   private readonly RETURNING_THRESHOLD_MS = 5 * 60 * 1000;
@@ -56,6 +60,11 @@ export class MessageTypeDetectorService {
       return { type: "highlighted", reason: "Special event or badge" };
     }
 
+    // Check if this is user's first message ever to this channel
+    if (!this.userHasMessaged.has(cacheKey)) {
+      return { type: "first_message", reason: "First message in channel" };
+    }
+
     const lastMessageTime = this.userLastMessage.get(cacheKey);
 
     // Check if user is returning after being away
@@ -82,6 +91,7 @@ export class MessageTypeDetectorService {
       buildChannelRef(message.platform, message.sourceChannelId)
     );
     this.userLastMessage.set(cacheKey, message.timestamp);
+    this.userHasMessaged.add(cacheKey);
     this.evictIfNeeded();
   }
 
@@ -89,8 +99,8 @@ export class MessageTypeDetectorService {
    * Check if a message should be highlighted based on badges or events
    */
   private isHighlightedMessage(message: ChatMessage): boolean {
-    // Check for special badges that indicate highlighted messages
-    const highlightBadges = ["broadcaster", "moderator", "vip", "founder"];
+    // Only moderator/VIP badges trigger highlight (not broadcaster/founder)
+    const highlightBadges = ["moderator", "vip"];
     const hasHighlightBadge = message.badges.some((badge) =>
       highlightBadges.includes(badge.toLowerCase())
     );
@@ -99,16 +109,11 @@ export class MessageTypeDetectorService {
       return true;
     }
 
-    // Check for supporter status with special events
-    if (message.isSupporter) {
-      const supporterBadges = ["subscriber", "supporter", "member"];
-      const hasSupporterBadge = message.badges.some((badge) =>
-        supporterBadges.includes(badge.toLowerCase())
-      );
-      // Subscribers with additional badges are highlighted
-      if (hasSupporterBadge && message.badges.length > 1) {
-        return true;
-      }
+    // Check for announcement/raid USERNOTICE messages
+    const announcementMsgIds = ["subscriber", "ritual", "announcement", "raid"];
+    const msgId = message.rawPayload.msgId;
+    if (msgId && announcementMsgIds.includes(msgId)) {
+      return true;
     }
 
     return false;
@@ -126,6 +131,7 @@ export class MessageTypeDetectorService {
    */
   clearAll(): void {
     this.userLastMessage.clear();
+    this.userHasMessaged.clear();
   }
 
   /**

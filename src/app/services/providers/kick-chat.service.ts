@@ -76,7 +76,10 @@ export class KickChatService extends BaseChatProviderService {
   }
 
   override connect(channelId: string): void {
-    this.connectionHandler.connect(channelId);
+    const account = this.authorizationService
+      .accounts()
+      .find((acc) => acc.platform === "kick" && acc.authStatus === "authorized");
+    this.connectionHandler.connect(channelId, account?.accessToken);
   }
 
   override disconnect(channelId: string): void {

@@ -1,11 +1,6 @@
 import { Injectable, inject } from "@angular/core";
-import {
-  ChatMessage,
-  ChatChannel,
-  ChatAccount,
-  DashboardPreferences,
-  CustomEmote,
-} from "@models/chat.model";
+import { ChatMessage, ChatChannel, ChatAccount, DashboardPreferences } from "@models/chat.model";
+import { CustomEmote } from "@services/features/custom-emote-manager.service";
 
 export interface StorageEntityService {
   getChatMessages(filter?: any): Promise<ChatMessage[]>;

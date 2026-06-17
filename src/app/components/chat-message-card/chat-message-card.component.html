@@ -43,7 +43,7 @@
           </div>
         }
 
-        @for (badge of visibleBadgeIcons().slice(0, 3); track badge.id) {
+        @for (badge of visibleBadgeIcons(); track badge.id) {
           <img
             [src]="badge.url"
             [alt]="badge.label"

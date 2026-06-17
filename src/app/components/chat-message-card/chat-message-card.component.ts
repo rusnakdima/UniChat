@@ -52,6 +52,8 @@ export class ChatMessageCardComponent {
   /** Number of enabled channels in the dashboard filter - used to determine visibility of platform icon and channel image */
   readonly enabledChannelsCount = input<number>(0);
 
+  private static readonly ALLOWED_BADGE_LABELS = ["moderator", "vip", "announcement", "announcer"];
+
   readonly presentation = inject(ChatMessagePresentationService);
   readonly richText = inject(ChatRichTextService);
   readonly linkPreview = inject(LinkPreviewService);
@@ -347,7 +349,11 @@ export class ChatMessageCardComponent {
       if (!isSafeRemoteImageUrl(icon.url)) {
         return false;
       }
-      return !ChatMessageCardComponent.blockedBadgeUrls.has(icon.url);
+      if (ChatMessageCardComponent.blockedBadgeUrls.has(icon.url)) {
+        return false;
+      }
+      const label = icon.label?.toLowerCase() ?? "";
+      return ChatMessageCardComponent.ALLOWED_BADGE_LABELS.some((b) => label.includes(b));
     });
   }
 

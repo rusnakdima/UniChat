@@ -319,12 +319,17 @@ export class DashboardComponent {
       return;
     }
 
-    // Send to all ENABLED channels in mixed feed (not just first visible)
-    // This ensures the sent message appears in the mixed feed view
-    // Use optimistic: false to wait for service echo instead of showing local message
+    // Send to ENABLED channels filtered by the current platform filter
+    // If filter is "all", send to all enabled channels
+    // If filter is a specific platform, only send to channels of that platform
     const enabledChannels = this.enabledVisibleChannels();
+    const platformFilter = this.activePlatformFilter();
 
     for (const channel of enabledChannels) {
+      // Skip if platform filter is set and doesn't match this channel's platform
+      if (platformFilter !== "all" && channel.platform !== platformFilter) {
+        continue;
+      }
       // Only send if platform is authorized for this channel
       if (this.authorizationService.isAuthorized(channel.platform)) {
         void this.chatStateService.sendOutgoingChatMessage(

@@ -1,6 +1,6 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
-import { getLoggingService } from "@tauri-apps/logger";
+import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { DEFAULT_TIMEOUT_MS } from "@shared/utils/constants";
 
 export interface InvokeOptions {
@@ -16,7 +16,7 @@ interface TauriResponse<T> {
 
 @Injectable({ providedIn: "root" })
 export class TauriApiService {
-  private readonly logger = getLoggingService();
+  private readonly logger = inject(LOGGER_SERVICE);
 
   async invoke<T>(
     command: string,
@@ -26,7 +26,7 @@ export class TauriApiService {
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       const response = await Promise.race([
-        invoke<TauriResponse<T>>(command, args),
+        invoke<{ Err?: string } | T>(command, args),
         new Promise<never>((_, reject) =>
           setTimeout(
             () => reject(new Error(`Command "${command}" timed out after ${timeoutMs}ms`)),
@@ -34,11 +34,12 @@ export class TauriApiService {
           )
         ),
       ]);
-      if (response.status === "success") {
-        return response.data as T;
-      } else {
-        throw new Error(response.message || `Operation failed: ${command}`);
+
+      if (typeof response === "object" && response !== null && "Err" in response) {
+        throw new Error((response as { Err: string }).Err);
       }
+
+      return response as T;
     } catch (error: unknown) {
       if (!options.suppressError) {
         this.logger.error(`Error invoking command "${command}":`, error, {
@@ -55,27 +56,27 @@ export class TauriApiService {
     broadcasterUserId: number;
     replyToMessageId: null;
   }): Promise<boolean> {
-    return this.invoke<boolean>("kickSendChatMessage", args);
+    return this.invoke<boolean>("kick_send_chat_message", args);
   }
 
   async kickFetchUserInfo(args: { username: string }) {
-    return this.invoke("kickFetchUserInfo", args);
+    return this.invoke("kick_fetch_user_info", args);
   }
 
   async kickFetchChannelEmotes(args: { channelSlug: string }) {
-    return this.invoke("kickFetchChannelEmotes", args);
+    return this.invoke("kick_fetch_channel_emotes", args);
   }
 
   async kickDeleteChatMessage(args: { messageId: string; accessToken: string }): Promise<boolean> {
-    return this.invoke<boolean>("kickDeleteChatMessage", args);
+    return this.invoke<boolean>("kick_delete_chat_message", args);
   }
 
   async kickFetchChatroomId(args: { channelSlug: string; accessToken: string | null }) {
-    return this.invoke("kickFetchChatroomId", args);
+    return this.invoke("kick_fetch_chatroom_id", args);
   }
 
   async kickFetchChannelInfo(args: { channelSlug: string }) {
-    return this.invoke("kickFetchChannelInfo", args);
+    return this.invoke("kick_fetch_channel_info", args);
   }
 
   async twitchDeleteMessage(args: {
@@ -83,19 +84,19 @@ export class TauriApiService {
     messageId: string;
     accessToken: string;
   }): Promise<boolean> {
-    return this.invoke<boolean>("twitchDeleteMessage", args);
+    return this.invoke<boolean>("twitch_delete_message", args);
   }
 
   async twitchFetchChannelEmotes(args: { roomId: string }) {
-    return this.invoke("twitchFetchChannelEmotes", args);
+    return this.invoke("twitch_fetch_channel_emotes", args);
   }
 
   async twitchFetchGlobalIcons() {
-    return this.invoke("twitchFetchGlobalIcons");
+    return this.invoke("twitch_fetch_global_icons");
   }
 
   async twitchFetchChannelIcons(args: { roomId: string }) {
-    return this.invoke("twitchFetchChannelIcons", args);
+    return this.invoke("twitch_fetch_channel_icons", args);
   }
 
   async youtubeFetchLiveChatId(args: { videoId: string; accessToken: string }): Promise<string> {
@@ -125,7 +126,7 @@ export class TauriApiService {
     channelName: string;
     apiKey: string;
   }): Promise<string> {
-    return this.invoke<string>("youtubeFetchLiveVideoIdByApiKey", args);
+    return this.invoke<string>("youtube_fetch_live_video_id_by_api_key", args);
   }
 
   async youtubeFetchChatMessages(args: {
@@ -133,54 +134,54 @@ export class TauriApiService {
     pageToken?: string;
     apiKey?: string;
   }): Promise<string> {
-    return this.invoke<string>("youtubeFetchChatMessages", args);
+    return this.invoke<string>("youtube_fetch_chat_messages", args);
   }
 
   async youtubeFetchChannelInfoByApiKey(args: { channel_name: string; api_key: string }) {
-    return this.invoke("youtubeFetchChannelInfoByApiKey", args);
+    return this.invoke("youtube_fetch_channel_info_by_api_key", args);
   }
 
   async authValidate(args: { platform: string }) {
-    return this.invoke("authValidate", args);
+    return this.invoke("auth_validate", args);
   }
 
   async authRefresh(args: { platform: string; accountId: string }) {
-    return this.invoke("authRefresh", args);
+    return this.invoke("auth_refresh", args);
   }
 
   async authStart(args: { platform: string }) {
-    return this.invoke("authStart", args);
+    return this.invoke("auth_start", args);
   }
 
   async authAwaitCallback(args: { platform: string }) {
-    return this.invoke("authAwaitCallback", args);
+    return this.invoke("auth_await_callback", args);
   }
 
   async authComplete(args: { platform: string; callbackUrl: string }) {
-    return this.invoke("authComplete", args);
+    return this.invoke("auth_complete", args);
   }
 
   async authDisconnect(args: { platform: string; accountId: string }) {
-    return this.invoke("authDisconnect", args);
+    return this.invoke("auth_disconnect", args);
   }
 
   async authStatus(args: { platform: string }) {
-    return this.invoke("authStatus", args);
+    return this.invoke("auth_status", args);
   }
 
   async getCurrentVersion(): Promise<string> {
-    return this.invoke<string>("getCurrentVersion");
+    return this.invoke<string>("get_current_version");
   }
 
   async checkForUpdate() {
-    return this.invoke("checkForUpdate");
+    return this.invoke("check_for_update");
   }
 
   async downloadUpdate(args: { url: string }): Promise<string> {
-    return this.invoke<string>("downloadUpdate", args);
+    return this.invoke<string>("download_update", args);
   }
 
   async installUpdate(args: { installerPath: string }): Promise<boolean> {
-    return this.invoke<boolean>("installUpdate", args);
+    return this.invoke<boolean>("install_update", args);
   }
 }

@@ -382,4 +382,77 @@ export class TwitchMessageParserService {
       });
     }
   }
+
+  buildMessageFromTmiUsernotice(
+    channelName: string,
+    msgId: string,
+    tags: tmi.ChatUserstate,
+    message: string
+  ): ChatMessage | null {
+    const channel = this.chatListService
+      .getChannels("twitch")
+      .find((entry) => entry.channelName.toLowerCase() === channelName.toLowerCase());
+    const account = this.authorizationService.getAccountById(channel?.accountId);
+
+    const normalizedText = message.trim();
+    if (!normalizedText && msgId !== "announcement") {
+      return null;
+    }
+
+    const author = tags["display-name"] || tags["username"] || "Anonymous";
+    const sourceUserId = tags["user-id"] || tags["username"] || "unknown";
+    const sourceMessageId =
+      tags["id"] || `tw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    const badges = this.extractBadges(tags);
+    const roomId = tags["room-id"]?.toString();
+    if (roomId) {
+      void this.iconsCatalog.ensureChannelLoaded(roomId);
+    }
+
+    const emotes = this.extractEmotes(normalizedText, tags.emotes, roomId);
+    const badgeIcons = this.extractBadgeIcons(tags.badges, roomId);
+    const timestamp = this.extractTimestamp(tags);
+    const canDelete = channel?.accountCapabilities?.canDelete === true;
+    const providerChannelId = channel?.channelId ?? channelName;
+
+    return {
+      id: `msg-${sourceMessageId}`,
+      platform: "twitch",
+      sourceMessageId,
+      sourceChannelId: providerChannelId,
+      sourceUserId,
+      author,
+      text: normalizedText || `[${msgId}]`,
+      timestamp,
+      badges,
+      isSupporter: this.isSupporter(badges),
+      isOutgoing: false,
+      isDeleted: false,
+      canRenderInOverlay: true,
+      replyToMessageId: undefined,
+      actions: {
+        reply: createMessageActionState(
+          "reply",
+          "disabled",
+          "Reply requires Twitch API integration (coming soon)."
+        ),
+        delete: createMessageActionState(
+          "delete",
+          canDelete ? "available" : "disabled",
+          canDelete ? undefined : "Need broadcaster/moderator role for this channel."
+        ),
+      },
+      rawPayload: {
+        providerEvent: "usernotice",
+        providerChannelId: channelName,
+        providerUserId: sourceUserId,
+        preview: (normalizedText || `[${msgId}]`).slice(0, 120),
+        emotes,
+        badgeIcons,
+        msgId,
+      },
+      authorAvatarUrl: undefined,
+    };
+  }
 }

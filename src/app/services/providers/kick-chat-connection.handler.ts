@@ -20,6 +20,7 @@ export class KickChatConnectionHandler {
   >();
   private readonly reconnectTimerByChannel = new Map<string, number>();
   private readonly reconnectManagers = new Map<string, ReconnectionManager>();
+  private accessToken: string | null = null;
 
   private readonly errorService = inject(ConnectionErrorService);
   private readonly logger = inject(LOGGER_SERVICE);
@@ -44,12 +45,15 @@ export class KickChatConnectionHandler {
     }
   }
 
-  connect(channelId: string): void {
+  connect(channelId: string, accessToken?: string): void {
     const normalizedChannel = normalizeChannelId("kick", channelId);
     if (!normalizedChannel || this.connectedChannels.has(normalizedChannel)) {
       return;
     }
 
+    if (accessToken) {
+      this.accessToken = accessToken;
+    }
     this.connectedChannels.add(normalizedChannel);
     void this.startLiveSocket(normalizedChannel);
   }
@@ -287,7 +291,11 @@ export class KickChatConnectionHandler {
 
     this.channelInfoCacheCleanup();
 
-    return null;
+    try {
+      return await this.fetchChannelInfoRest(channelSlug, this.accessToken);
+    } catch {
+      return null;
+    }
   }
 
   async fetchChannelInfoRest(

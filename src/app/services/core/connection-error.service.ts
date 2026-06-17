@@ -9,37 +9,15 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { generateTimestamp } from "@shared/utils/chat.helper";
 import {
+  ConnectionErrorCode,
+  ConnectionErrorCodeType,
   USER_FRIENDLY_MESSAGES,
   PLATFORM_NAMES,
   UserFriendlyMessage,
 } from "./connection-error.messages";
-/**
- * Error codes for connection errors
- */
-export const ConnectionErrorCode = {
-  AUTH_TOKEN_EXPIRED: "auth_token_expired",
-  AUTH_TOKEN_INVALID: "auth_token_invalid",
-  AUTH_SCOPE_MISSING: "auth_scope_missing",
-  AUTH_FAILED: "auth_failed",
-  AUTH_CREDENTIALS_MISSING: "auth_credentials_missing",
 
-  NETWORK_OFFLINE: "network_offline",
-  NETWORK_TIMEOUT: "network_timeout",
-  NETWORK_UNREACHABLE: "network_unreachable",
-  WEBSOCKET_CLOSED: "websocket_closed",
-  WEBSOCKET_ERROR: "websocket_error",
-
-  PLATFORM_RATE_LIMITED: "platform_rate_limited",
-  PLATFORM_UNAVAILABLE: "platform_unavailable",
-  CHANNEL_NOT_FOUND: "channel_not_found",
-  CHANNEL_BANNED: "channel_banned",
-
-  UNKNOWN: "unknown",
-  INTERNAL_ERROR: "internal_error",
-} as const;
-
-export type ConnectionErrorCodeType =
-  (typeof ConnectionErrorCode)[keyof typeof ConnectionErrorCode];
+export { ConnectionErrorCode } from "./connection-error.messages";
+export type { ConnectionErrorCodeType } from "./connection-error.messages";
 
 /**
  * Connection Error Service - Centralized Error Handling
