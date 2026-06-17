@@ -1,13 +1,13 @@
 use crate::{log_debug, log_error, log_info, log_warn};
 use serde::{Deserialize, Serialize};
 
-use crate::helpers::auth_twitch_helper::{
+use crate::models::platform_type_model::PlatformTypeModel;
+use crate::utils::auth_twitch_helper::{
   normalize_twitch_cdn_url, twitch_app_access_token, twitch_client_credentials,
 };
-use crate::helpers::http_client::shared_client;
-use crate::helpers::http_error_helper::handle_http_error;
-use crate::helpers::oauth_config_helper::get_oauth_provider_config;
-use crate::models::platform_type_model::PlatformTypeModel;
+use crate::utils::http_client::shared_client;
+use crate::utils::http_error_helper::handle_http_error;
+use crate::utils::oauth_config_helper::get_oauth_provider_config;
 use crate::AppState;
 
 #[derive(Debug, Deserialize)]

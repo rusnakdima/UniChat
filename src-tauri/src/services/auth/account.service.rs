@@ -11,10 +11,10 @@ use reqwest::Client;
 use url::Url;
 
 use crate::constants::OAUTH_CALLBACK_TIMEOUT_SECS;
-use crate::helpers::config_helper::SharedConfig;
-use crate::helpers::http_client::shared_client;
-use crate::helpers::oauth_config_helper::{get_oauth_provider_config, OAuthProviderConfig};
 use crate::models::auth_account_model::AuthStatusModel;
+use crate::utils::config_helper::SharedConfig;
+use crate::utils::http_client::shared_client;
+use crate::utils::oauth_config_helper::{get_oauth_provider_config, OAuthProviderConfig};
 
 pub struct AccountService {
   pub http: Client,

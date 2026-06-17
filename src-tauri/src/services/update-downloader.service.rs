@@ -3,7 +3,7 @@ use futures_util::StreamExt;
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
 
-use crate::helpers::http_client::shared_client;
+use crate::utils::http_client::shared_client;
 
 use super::update_models::DownloadProgress;
 

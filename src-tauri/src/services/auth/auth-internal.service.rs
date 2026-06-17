@@ -8,9 +8,9 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use url::Url;
 
-use crate::helpers::oauth_config_helper::OAuthProviderConfig;
 use crate::models::auth_oauth_model::OAuthTokenModel;
 use crate::models::platform_type_model::PlatformTypeModel;
+use crate::utils::oauth_config_helper::OAuthProviderConfig;
 
 pub(crate) fn extract_callback_params(callback: &Url) -> HashMap<String, String> {
   let mut params: HashMap<String, String> = callback.query_pairs().into_owned().collect();

@@ -1,66 +1,66 @@
-pub mod constants;
+pub mod commands;
+mod constants;
 pub mod entities;
 pub mod errors;
-pub mod helpers;
 pub mod models;
-pub mod providers;
-pub mod routes;
+pub mod repositories;
 pub mod services;
 pub mod utils;
 
 use std::sync::Arc;
 use tauri::Manager;
 
+use crate::commands::auth_provider_command::{
+  auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
+  auth_validate,
+};
+use crate::commands::chat_account_command::{
+  create_chat_account, delete_chat_account, get_chat_account,
+  get_chat_account_by_platform_and_user, get_chat_accounts, get_chat_accounts_by_platform,
+  patch_chat_account, update_chat_account,
+};
+use crate::commands::chat_channel_command::{
+  create_chat_channel, delete_chat_channel, get_chat_channel, get_chat_channel_by_platform_and_id,
+  get_chat_channels, patch_chat_channel, update_chat_channel,
+};
+use crate::commands::chat_command::{
+  kick_delete_chat_message, kick_fetch_channel_emotes, kick_fetch_channel_info,
+  kick_fetch_chatroom_id, kick_fetch_recent_messages, kick_fetch_user_info, kick_send_chat_message,
+  twitch_delete_message, twitch_fetch_channel_emotes, youtube_fetch_channel_info_by_api_key,
+  youtube_fetch_chat_messages, youtube_fetch_live_video_id_by_api_key,
+};
+use crate::commands::chat_message_command::{
+  create_chat_message, delete_chat_message, delete_chat_messages_by_channel, get_chat_message,
+  get_chat_messages, get_chat_messages_by_channel, patch_chat_message, update_chat_message,
+};
+use crate::commands::custom_emote_command::{
+  create_custom_emote, delete_custom_emote, get_custom_emote, get_custom_emotes,
+  get_custom_emotes_by_platform, patch_custom_emote, update_custom_emote,
+};
+use crate::commands::dashboard_preferences_command::{
+  create_dashboard_preferences, delete_dashboard_preferences, get_dashboard_preferences,
+  get_dashboard_preferences_list, get_or_create_dashboard_preferences, patch_dashboard_preferences,
+  update_dashboard_preferences,
+};
+use crate::commands::icons_command::{twitch_fetch_channel_icons, twitch_fetch_global_icons};
+use crate::commands::logger_command::log_message;
+use crate::commands::overlay_command::{
+  emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
+  init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
+};
+use crate::commands::update_command::{
+  check_for_update, download_update, get_current_version, install_update,
+};
 use crate::constants::OVERLAY_SERVER_PORT;
 use crate::entities::chat_account_entity::ChatAccountEntity;
 use crate::entities::chat_channel_entity::ChatChannelEntity;
 use crate::entities::chat_message_entity::ChatMessageEntity;
 use crate::entities::custom_emote_entity::CustomEmoteEntity;
 use crate::entities::dashboard_preferences_entity::DashboardPreferencesEntity;
-use crate::helpers::config_helper::{AppConfig, SharedConfig};
-use crate::providers::data_provider::DataProvider;
-use crate::routes::auth_provider_route::{
-  auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
-  auth_validate,
-};
-use crate::routes::chat_account_command::{
-  create_chat_account, delete_chat_account, get_chat_account,
-  get_chat_account_by_platform_and_user, get_chat_accounts, get_chat_accounts_by_platform,
-  patch_chat_account, update_chat_account,
-};
-use crate::routes::chat_channel_command::{
-  create_chat_channel, delete_chat_channel, get_chat_channel, get_chat_channel_by_platform_and_id,
-  get_chat_channels, patch_chat_channel, update_chat_channel,
-};
-use crate::routes::chat_message_command::{
-  create_chat_message, delete_chat_message, delete_chat_messages_by_channel, get_chat_message,
-  get_chat_messages, get_chat_messages_by_channel, patch_chat_message, update_chat_message,
-};
-use crate::routes::chat_route::{
-  kick_delete_chat_message, kick_fetch_channel_emotes, kick_fetch_channel_info,
-  kick_fetch_chatroom_id, kick_fetch_recent_messages, kick_fetch_user_info, kick_send_chat_message,
-  twitch_delete_message, twitch_fetch_channel_emotes, youtube_fetch_channel_info_by_api_key,
-  youtube_fetch_chat_messages, youtube_fetch_live_video_id_by_api_key,
-};
-use crate::routes::custom_emote_command::{
-  create_custom_emote, delete_custom_emote, get_custom_emote, get_custom_emotes,
-  get_custom_emotes_by_platform, patch_custom_emote, update_custom_emote,
-};
-use crate::routes::dashboard_preferences_command::{
-  create_dashboard_preferences, delete_dashboard_preferences, get_dashboard_preferences,
-  get_dashboard_preferences_list, get_or_create_dashboard_preferences, patch_dashboard_preferences,
-  update_dashboard_preferences,
-};
-use crate::routes::icons_route::{twitch_fetch_channel_icons, twitch_fetch_global_icons};
-use crate::routes::overlay_route::{
-  emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
-  init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
-};
-use crate::routes::update_route::{
-  check_for_update, download_update, get_current_version, install_update,
-};
+use crate::repositories::data_repository::DataProvider;
 use crate::services::auth::AccountService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
+use crate::utils::config_helper::{AppConfig, SharedConfig};
 use nosql_orm::providers::JsonProvider;
 use nosql_orm::relations::register_relations_for_entity;
 use tauri::Emitter;
@@ -88,6 +88,8 @@ pub struct DataState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  utils::logger::init_logger("unichat", log::LevelFilter::Info).ok();
+
   register_relations_for_entity::<ChatMessageEntity>();
   register_relations_for_entity::<ChatChannelEntity>();
   register_relations_for_entity::<ChatAccountEntity>();
@@ -248,6 +250,7 @@ pub fn run() {
       patch_custom_emote,
       delete_custom_emote,
       get_custom_emotes_by_platform,
+      log_message,
     ]);
 
   if let Err(e) = builder.run(tauri::generate_context!()) {

@@ -14,7 +14,7 @@ pub struct OverlayServerService {
   state: OverlayServerState,
   server_instance: Mutex<Option<OverlayServerInstance>>,
   pub overlay_configs:
-    Arc<RwLock<HashMap<String, crate::routes::overlay_route::OverlayFullConfigModel>>>,
+    Arc<RwLock<HashMap<String, crate::commands::overlay_command::OverlayFullConfigModel>>>,
   pub overlay_messages: Arc<RwLock<HashMap<String, Vec<OverlayMessageModel>>>>,
 }
 

@@ -8,7 +8,6 @@ use futures_util::{SinkExt, StreamExt};
 use tokio::sync::{mpsc, RwLock};
 
 use crate::constants::{MAX_WIDGET_IDS, MESSAGE_MAX_PER_WIDGET, WS_RECEIVE_TIMEOUT_SECS};
-use crate::helpers::sanitizer_helper::sanitize_for_overlay;
 use crate::models::overlay_message_model::{
   OverlayMessageModel, OverlayWidgetFilterModel, OverlayWsIncomingModel, OverlayWsSubscribeModel,
 };
@@ -16,6 +15,7 @@ use crate::services::overlay_server::overlay_router::OverlayRouterState;
 use crate::services::overlay_server::overlay_subscriber_manager::{
   OverlayServerState, OverlaySubscriber,
 };
+use crate::utils::sanitizer_helper::sanitize_for_overlay;
 
 /// Query parameters for overlay WebSocket connections
 #[derive(Clone, Debug, serde::Deserialize)]

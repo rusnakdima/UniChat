@@ -1,4 +1,4 @@
-use crate::helpers::http_client::shared_client;
+use crate::utils::http_client::shared_client;
 
 use super::update_models::{GitHubAsset, GitHubRelease, UpdateInfo};
 use super::update_platform::Platform;
