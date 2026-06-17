@@ -1,5 +1,5 @@
 import { inject } from "@angular/core";
-import { PlatformType } from "@models/chat.model";
+import { PlatformType, PLATFORMS } from "@models/chat.model";
 import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { DashboardPreferences } from "@models/chat.model";
 
@@ -11,7 +11,7 @@ const defaultPreferences: DashboardPreferences = {
   autoScroll: true,
   mixedEnabledChannelIds: [],
   splitLayout: {
-    orderedPlatforms: ["twitch", "kick", "youtube"],
+    orderedPlatforms: PLATFORMS,
     hiddenPlatforms: [],
     columnWidths: {
       twitch: 320,
@@ -51,7 +51,7 @@ export class DashboardPreferencesStorage {
             ? [...parsed.mixedEnabledChannelIds]
             : [];
 
-        const validPlatforms = new Set<PlatformType>(["twitch", "kick", "youtube"]);
+        const validPlatforms = new Set<PlatformType>(PLATFORMS);
         let hiddenPlatforms = (parsed.splitLayout.hiddenPlatforms ?? []).filter((p: PlatformType) =>
           validPlatforms.has(p)
         );

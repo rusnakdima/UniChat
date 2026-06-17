@@ -8,7 +8,7 @@ import { AuthorizationService } from "@services/features/authorization.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
-import { ChatAccount, PlatformType } from "@models/chat.model";
+import { ChatAccount, PlatformType, PLATFORMS } from "@models/chat.model";
 
 /* helpers */
 import { getPlatformLabel } from "@shared/utils/chat.helper";
@@ -35,7 +35,7 @@ export class ConnectionsPageView {
   readonly presentation = inject(ChatMessagePresentationService);
   readonly channelAvatars = inject(ChannelAvatarService);
 
-  readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
+  readonly platforms = PLATFORMS;
 
   newChannelName = "";
   selectedPlatform: PlatformType = "twitch";

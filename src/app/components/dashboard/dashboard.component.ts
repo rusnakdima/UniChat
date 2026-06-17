@@ -14,7 +14,7 @@ import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
 /* models */
-import { ChatChannel, PlatformType } from "@models/chat.model";
+import { ChatChannel, PlatformType, PLATFORMS } from "@models/chat.model";
 
 /* services */
 import { LocalStorageService } from "@services/core/local-storage.service";
@@ -96,7 +96,7 @@ export class DashboardComponent {
   readonly activeFilterChannelIds = computed(() => this.enabledChannels());
 
   readonly activePlatformFilter = this.feedData.platformFilter;
-  readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
+  readonly platforms = PLATFORMS;
 
   readonly autoScroll = computed(() => this.dashboardPreferences.preferences().autoScroll);
 

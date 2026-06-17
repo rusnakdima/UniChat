@@ -1,5 +1,5 @@
 import { inject, signal } from "@angular/core";
-import { PlatformType, ChatAccount, AuthStatus } from "@models/chat.model";
+import { PlatformType, ChatAccount, AuthStatus, PLATFORMS } from "@models/chat.model";
 import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { LocalStorageService } from "@services/core/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
@@ -181,9 +181,7 @@ export class AuthorizationAccountsHandler {
   }
 
   linkAllChannelsToAccounts(): void {
-    const platforms: PlatformType[] = ["twitch", "kick", "youtube"];
-
-    for (const platform of platforms) {
+    for (const platform of PLATFORMS) {
       const account = this.accountsSignal().find((acc) => acc.platform === platform);
       if (!account || account.authStatus !== "authorized") {
         continue;

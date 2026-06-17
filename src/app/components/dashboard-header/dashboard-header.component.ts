@@ -15,7 +15,7 @@ import { ChatMessagePresentationService } from "@services/ui/chat-message-presen
 import { ThemeService } from "@services/core/theme.service";
 
 /* models */
-import { PlatformType } from "@models/chat.model";
+import { PlatformType, PLATFORMS } from "@models/chat.model";
 
 type PlatformFilter = "all" | "twitch" | "kick" | "youtube";
 
@@ -44,7 +44,7 @@ export class DashboardHeaderComponent {
   readonly platformFilterChange = output<PlatformFilter>();
 
   readonly activeFilter = signal<PlatformFilter>("all");
-  readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
+  readonly platforms = PLATFORMS;
 
   setActiveFilter(filter: PlatformFilter): void {
     this.activeFilter.set(filter);

@@ -175,13 +175,12 @@ export class ModerationService {
     options?: { duration?: number; reason?: string }
   ): Promise<ModerationResult> {
     return {
-      success: true,
+      success: false,
       action,
       platform: "twitch",
       channel: channelId,
       targetUser,
-      reason: options?.reason,
-      duration: options?.duration,
+      error: `Action '${action}' not yet implemented for Twitch`,
     };
   }
 

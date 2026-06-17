@@ -12,7 +12,7 @@ import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
 /* models */
-import { ChatAccount, PlatformType } from "@models/chat.model";
+import { ChatAccount, PlatformType, PLATFORMS } from "@models/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
@@ -44,7 +44,7 @@ export class SettingsModal {
   readonly closed = output<void>();
   readonly mode = input<"modal" | "page">("modal");
 
-  readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
+  readonly platforms = PLATFORMS;
   readonly getPlatformBadgeClasses = getPlatformBadgeClasses;
 
   newChannelName = "";

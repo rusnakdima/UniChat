@@ -2,6 +2,8 @@ export type ThemeMode = "light" | "dark";
 
 export type PlatformType = "twitch" | "kick" | "youtube";
 
+export const PLATFORMS: PlatformType[] = ["twitch", "kick", "youtube"];
+
 export type ConnectionMode = "account" | "channelWatch";
 
 export type PlatformStatus = "disconnected" | "connecting" | "connected" | "reconnecting";

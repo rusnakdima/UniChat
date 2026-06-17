@@ -8,7 +8,7 @@ import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 
 /* models */
-import { ChatMessage } from "@models/chat.model";
+import { ChatMessage, PLATFORMS } from "@models/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
@@ -50,7 +50,7 @@ export class SessionExportSettingsComponent {
   readonly endTime = signal("");
 
   readonly channels = computed(() => this.chatListService.getVisibleChannels());
-  readonly platforms: ChatMessage["platform"][] = ["twitch", "kick", "youtube"];
+  readonly platforms = PLATFORMS;
 
   readonly preview = computed(() => {
     return this.sessionExportService.getExportPreview({

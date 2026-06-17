@@ -1,5 +1,5 @@
 import { inject, signal, DestroyRef } from "@angular/core";
-import { PlatformType, ChatAccount, AuthStatus } from "@models/chat.model";
+import { PlatformType, ChatAccount, AuthStatus, PLATFORMS } from "@models/chat.model";
 import { LOGGER_SERVICE } from "@services/core/logger.service";
 import { AuthorizationAccountsHandler, RawAccount } from "./authorization-accounts.handler";
 import { TauriApiService } from "@app/api/tauri-api.service";
@@ -76,9 +76,7 @@ export class AuthorizationPermissionsHandler {
   }
 
   async validateAllPlatforms(): Promise<void> {
-    const platforms: PlatformType[] = ["twitch", "kick", "youtube"];
-
-    for (const platform of platforms) {
+    for (const platform of PLATFORMS) {
       try {
         const result = (await this.tauriApi.authValidate({ platform })) as AuthCommandResultPayload;
         if (result.accounts?.length) {
@@ -145,9 +143,8 @@ export class AuthorizationPermissionsHandler {
 
   async refreshAllExpiredTokens(): Promise<Map<PlatformType, boolean>> {
     const results = new Map<PlatformType, boolean>();
-    const platforms: PlatformType[] = ["twitch", "kick", "youtube"];
 
-    for (const platform of platforms) {
+    for (const platform of PLATFORMS) {
       const account = this.accountsHandler.getAccounts().find((acc) => acc.platform === platform);
       if (account && (account.authStatus === "tokenExpired" || account.authStatus === "revoked")) {
         const success = await this.refreshAccountToken(account.id, platform);

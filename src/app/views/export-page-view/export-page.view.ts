@@ -14,7 +14,7 @@ import {
 import { ThemeService } from "@services/core/theme.service";
 
 /* models */
-import { PlatformType } from "@models/chat.model";
+import { PlatformType, PLATFORMS } from "@models/chat.model";
 
 /* helpers */
 import { getPlatformLabel } from "@shared/utils/chat.helper";
@@ -33,7 +33,7 @@ export class ExportPageView {
   readonly themeService = inject(ThemeService);
   readonly themeMode = this.themeService.themeMode;
 
-  readonly platforms: PlatformType[] = ["twitch", "kick", "youtube"];
+  readonly platforms = PLATFORMS;
   readonly channels = computed(() => this.chatListService.channels());
   readonly visibleChannels = computed(() => this.chatListService.getVisibleChannels());
 

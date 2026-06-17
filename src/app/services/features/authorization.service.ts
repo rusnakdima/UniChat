@@ -3,7 +3,7 @@ import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { listen } from "@tauri-apps/api/event";
 
 /* models */
-import { AuthStatus, ChatAccount, PlatformType } from "@models/chat.model";
+import { AuthStatus, ChatAccount, PlatformType, PLATFORMS } from "@models/chat.model";
 
 /* services */
 import { LOGGER_SERVICE } from "@services/core/logger.service";
@@ -160,8 +160,6 @@ export class AuthorizationService {
   }
 
   private async refreshStatuses(): Promise<void> {
-    const platforms: PlatformType[] = ["twitch", "kick", "youtube"];
-
     const cachedAccounts = this.accountsHandler.loadAccountsCache();
     if (cachedAccounts.length > 0) {
       this.accountsHandler.setAccounts(cachedAccounts);
@@ -174,7 +172,7 @@ export class AuthorizationService {
 
     const loaded: ChatAccount[] = [];
 
-    for (const platform of platforms) {
+    for (const platform of PLATFORMS) {
       try {
         const result = (await this.tauriApi.authStatus({ platform })) as AuthCommandResultPayload;
         if (result.accounts?.length) {
