@@ -42,7 +42,7 @@ impl AppLogger {
     }
   }
 
-  pub fn with_app_handle(mut self, app_handle: AppHandle) -> Self {
+  pub fn with_app_handle(self, app_handle: AppHandle) -> Self {
     *self.app_handle.lock().unwrap() = Some(app_handle);
     self
   }
