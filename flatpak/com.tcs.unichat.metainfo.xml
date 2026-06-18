@@ -29,6 +29,23 @@
   </provides>
 
   <releases>
+    <release version="0.4.0" date="2026-06-18">
+      <description>
+        <p>Release version 0.4.0 with major architecture refactoring, unified logger system, and enhanced error handling:</p>
+        <ul>
+          <li>Restructured backend with new commands/, repositories/, utils/, constants/, and errors/ modules replacing legacy helpers/, routes/, and providers/</li>
+          <li>Reorganized Angular services into core/ and shared/ modules with better separation of concerns</li>
+          <li>Extracted RuleBasedService base class for BlockedWordsService and HighlightRulesService</li>
+          <li>Created unified LoggerService with LOGGER_SERVICE InjectionToken and LoggerBackend with structured logging</li>
+          <li>Added ErrorHandlerService with signals, online/offline detection, and retry logic</li>
+          <li>Added typed STORAGE_KEYS to LocalStorageService for type-safe storage access</li>
+          <li>Reorganized storage services into core/services/ directory</li>
+          <li>Fixed i18n singleton bug in I18nService</li>
+          <li>Updated Android launcher icons and added splash screen</li>
+          <li>Applied comprehensive Rust and TypeScript formatting across codebase</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.3.4" date="2026-05-19">
       <description>
         <p>Release version 0.3.4 with build configuration improvements:</p>
