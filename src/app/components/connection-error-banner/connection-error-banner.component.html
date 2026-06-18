@@ -28,12 +28,7 @@
         Retry
       </button>
     }
-    <button
-      mat-icon-button
-      class="shrink-0"
-      (click)="dismissError.emit()"
-      aria-label="Dismiss error"
-    >
+    <button mat-icon-button class="shrink-0" (click)="onDismiss()" aria-label="Dismiss error">
       <mat-icon [fontIcon]="'close'" />
     </button>
   </div>
