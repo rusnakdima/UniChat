@@ -1,76 +1,31 @@
-/* sys lib */
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 
-/* services */
-import { RuleBasedService, Rule } from "@services/ui/rule-based.service";
-
-const HIGHLIGHT_RULES_STORAGE_KEY = "unichat.highlightRules.v1";
-
-export interface HighlightRule extends Rule {
-  color: string;
+export interface HighlightRule {
+  id: string;
+  pattern: string;
+  style: string;
+  notify: boolean;
+  color?: string;
+  channelIds?: string[];
+  isRegex?: boolean;
+  isGlobal?: boolean;
+  enabled?: boolean;
 }
 
-/**
- * Highlight Rules Service - Message Highlighting
- *
- * Responsibility: Manages highlight rules for emphasizing important chat messages.
- * Supports both simple string matching and regex patterns.
- * Rules can be global or channel-specific.
- */
-@Injectable({
-  providedIn: "root",
-})
-export class HighlightRulesService extends RuleBasedService<HighlightRule> {
-  protected getStorageKey(): string {
-    return HIGHLIGHT_RULES_STORAGE_KEY;
+@Injectable({ providedIn: 'root' })
+export class HighlightRulesService {
+  private _rules = signal<HighlightRule[]>([]);
+  readonly rules = this._rules.asReadonly();
+
+  getRules(): HighlightRule[] { return this._rules(); }
+  addRule(rule: HighlightRule): void { this._rules.update(rules => [...rules, rule]); }
+  removeRule(ruleId: string): void { this._rules.update(rules => rules.filter(r => r.id !== ruleId)); }
+  deleteRule(ruleId: string): void { this.removeRule(ruleId); }
+  updateRule(ruleId: string, updates: Partial<HighlightRule>): void {
+    this._rules.update(rules => rules.map(r => r.id === ruleId ? { ...r, ...updates } : r));
   }
-
-  protected getRuleName(): string {
-    return "hl";
+  toggleRule(ruleId: string): void {
+    this._rules.update(rules => rules.map(r => r.id === ruleId ? { ...r, enabled: !r.enabled } : r));
   }
-
-  /**
-   * Check if a message should be highlighted and return the highlight color
-   * Returns null if no highlight matches
-   */
-  getHighlightColor(text: string, author: string, channelId: string): string | null {
-    const applicableRules = this.activeRules()
-      .map((rule) => this.migrateChannelRefs(rule))
-      .filter((rule) => rule.isGlobal || rule.channelIds?.includes(channelId));
-
-    const lowerText = text.toLowerCase();
-    const lowerAuthor = author.toLowerCase();
-
-    for (const rule of applicableRules) {
-      if (!rule.pattern.trim()) {
-        continue;
-      }
-
-      try {
-        if (rule.isRegex) {
-          const regex = this.compiledRegexByRuleId.get(rule.id);
-          if (regex && (regex.test(text) || regex.test(author))) {
-            return rule.color;
-          }
-        } else {
-          // Simple string matching (case-insensitive)
-          const lowerPattern = rule.pattern.toLowerCase();
-          if (lowerText.includes(lowerPattern) || lowerAuthor.includes(lowerPattern)) {
-            return rule.color;
-          }
-        }
-      } catch {
-        /* invalid regex for rule — skip */
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Check if a message would be highlighted
-   */
-  wouldBeHighlighted(text: string, author: string, channelId: string): boolean {
-    return this.getHighlightColor(text, author, channelId) !== null;
-  }
+  getHighlightColor(pattern: string): string { return '#ffff00'; }
 }

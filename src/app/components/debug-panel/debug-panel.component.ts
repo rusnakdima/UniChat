@@ -4,7 +4,7 @@ import { Component, inject, signal, computed, OnInit, OnDestroy } from "@angular
 /* services */
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { AuthorizationService } from "@services/features/authorization.service";
-import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ThemeService } from "@services/core/theme.service";
 import { buildChannelRef } from "@utils/channel-ref.util";

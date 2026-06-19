@@ -48,6 +48,11 @@ use crate::commands::overlay_command::{
   emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
   init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
 };
+use crate::commands::storage_command::StorageState;
+use crate::commands::storage_command::{
+  count_storage, exists_storage, query_storage, storage_clear, storage_get, storage_keys,
+  storage_remove, storage_set,
+};
 use crate::commands::update_command::{
   check_for_update, download_update, get_current_version, install_update,
 };
@@ -80,6 +85,7 @@ pub struct AppState {
   pub account_service: Arc<AccountService>,
   pub overlay_server_service: Arc<OverlayServerService>,
   pub data: DataState,
+  pub storage: StorageState,
 }
 
 pub struct DataState {
@@ -138,6 +144,7 @@ pub fn run() {
         data: DataState {
           json_provider: data_provider,
         },
+        storage: StorageState::new(),
       });
 
       let app_handle = app.handle().clone();
@@ -251,6 +258,14 @@ pub fn run() {
       delete_custom_emote,
       get_custom_emotes_by_platform,
       log_message,
+      storage_get,
+      storage_set,
+      storage_remove,
+      storage_clear,
+      storage_keys,
+      query_storage,
+      count_storage,
+      exists_storage,
     ]);
 
   if let Err(e) = builder.run(tauri::generate_context!()) {

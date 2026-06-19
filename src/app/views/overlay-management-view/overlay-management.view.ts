@@ -20,12 +20,12 @@ import {
 } from "@models/chat.model";
 
 /* services */
-import { LocalStorageService } from "@services/core/local-storage.service";
+import { LocalStorageService } from "@shared/services/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
-import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
 import { findChannelByRef, migrateLegacyChannelRefs, toChannelRef } from "@utils/channel-ref.util";
 import { buildOverlayUrl } from "@shared/utils/chat.helper";

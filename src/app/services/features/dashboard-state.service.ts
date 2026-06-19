@@ -1,48 +1,22 @@
-/* sys lib */
-import { Injectable, computed, inject } from "@angular/core";
+import { Injectable, signal, computed } from '@angular/core';
+import { WidgetConfig } from '@models/chat.model';
 
-/* services */
-import { ChatStateService } from "@services/data/chat-state.service";
-import { ConnectionStateService } from "@services/data/connection-state.service";
-import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
+export interface DashboardState {
+  activeTab: string;
+  isGridView: boolean;
+  featuredWidget: WidgetConfig | null;
+  widgets: WidgetConfig[];
+}
 
-/* models */
-import { WidgetConfig } from "@models/chat.model";
-import { OVERLAY_CONSTANTS } from "@shared/utils/constants";
-
-const DEFAULT_WIDGETS: WidgetConfig[] = [
-  {
-    id: "widget-main",
-    name: "Main Stage",
-    status: "live",
-    filter: "all",
-    sceneHint: "Studio A browser source",
-    themeHint: "Aurora glass",
-    port: OVERLAY_CONSTANTS.DEFAULT_PORT,
-  },
-];
-
-@Injectable({
-  providedIn: "root",
-})
+@Injectable({ providedIn: 'root' })
 export class DashboardStateService {
-  private readonly connectionStateService = inject(ConnectionStateService);
-  private readonly chatStateService = inject(ChatStateService);
-  private readonly dashboardPreferencesService = inject(DashboardPreferencesService);
-
-  readonly connections = this.connectionStateService.connections;
-  readonly messages = this.chatStateService.messages;
-  readonly splitFeed = this.chatStateService.splitFeed;
-  readonly widgets = computed(() => DEFAULT_WIDGETS);
-  readonly preferences = this.dashboardPreferencesService.preferences;
-
-  readonly visibleSplitPlatforms = computed(() => {
-    const preferences = this.preferences();
-
-    return preferences.splitLayout.orderedPlatforms.filter(
-      (platform) => !preferences.splitLayout.hiddenPlatforms.includes(platform)
-    );
+  private _state = signal<DashboardState>({
+    activeTab: 'chat', isGridView: true, featuredWidget: null, widgets: []
   });
+  readonly state = this._state.asReadonly();
+  readonly featuredWidget = computed(() => this._state().featuredWidget);
+  readonly widgets = computed(() => this._state().widgets);
 
-  readonly featuredWidget = computed(() => this.widgets()[0]);
+  getState(): DashboardState { return this._state(); }
+  setState(state: Partial<DashboardState>): void { this._state.update(s => ({ ...s, ...state })); }
 }

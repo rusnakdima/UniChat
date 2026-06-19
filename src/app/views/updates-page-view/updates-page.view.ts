@@ -42,24 +42,16 @@ export class UpdatesPageView implements OnInit, OnDestroy {
 
   async checkForUpdate(): Promise<void> {
     this.errorMessage.set(null);
-    const result = await this.updateService.checkForUpdate();
+    const result = await this.updateService.checkForUpdates();
 
-    if (result.error) {
-      this.errorMessage.set(result.error);
-      this.status.set("error");
-      return;
-    }
-
-    if (!result.has_update) {
+    if (!result) {
       this.latestVersion.set(this.currentVersion());
       this.status.set("up-to-date");
       return;
     }
 
-    if (result.update_info) {
-      this.latestVersion.set(result.update_info.latest_version);
-      this.status.set("update-available");
-    }
+    this.latestVersion.set(result.version);
+    this.status.set("update-available");
   }
 
   async downloadAndInstall(): Promise<void> {
@@ -71,10 +63,10 @@ export class UpdatesPageView implements OnInit, OnDestroy {
     const serviceStatus = this.updateService.getStatus();
     this.downloadProgress.set(this.updateService.getDownloadProgress());
 
-    if (serviceStatus === "ready-to-install") {
+    if (serviceStatus.state === "ready") {
       this.status.set("ready-to-install");
-    } else if (serviceStatus === "error") {
-      this.errorMessage.set(this.updateService.getErrorMessage());
+    } else if (serviceStatus.error) {
+      this.errorMessage.set(serviceStatus.error);
       this.status.set("error");
     }
   }
@@ -85,8 +77,8 @@ export class UpdatesPageView implements OnInit, OnDestroy {
     await this.updateService.installUpdate();
 
     const serviceStatus = this.updateService.getStatus();
-    if (serviceStatus === "error") {
-      this.errorMessage.set(this.updateService.getErrorMessage());
+    if (serviceStatus.error) {
+      this.errorMessage.set(serviceStatus.error);
       this.status.set("error");
     }
   }

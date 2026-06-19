@@ -7,7 +7,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { ChatChannel, ChatMessageEmote, PlatformType } from "@models/chat.model";
 
 /* services */
-import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@core/services/logger.service";
 import {
   CustomEmoteManagerService,
   CustomEmote,
@@ -53,11 +53,11 @@ export class ComposerEmotePopoverComponent {
 
   readonly customList = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
-    const list = this.customEmotes.getEmotesForMessageRendering(this.platform());
+    const list = Array.from(this.customEmotes.getEmotesForMessageRendering().values());
     if (!q) {
       return list;
     }
-    return list.filter((e) => e.code.toLowerCase().includes(q));
+    return list.filter((e: CustomEmote) => e.code.toLowerCase().includes(q));
   });
 
   readonly twitchList = computed(() => {
@@ -147,11 +147,11 @@ export class ComposerEmotePopoverComponent {
           }
         }
         try {
-          const rows = await this.iconsCatalog.listPickableIconsEmotes(roomId);
+          const rows = await this.iconsCatalog.listPickableIconsEmotes();
           this.twitchPickable.set(rows);
         } catch {
           this.twitchIconsError.set("Could not load channel emote set.");
-          const globalsOnly = await this.iconsCatalog.listPickableIconsEmotes(null);
+          const globalsOnly = await this.iconsCatalog.listPickableIconsEmotes();
           this.twitchPickable.set(globalsOnly);
         }
       } else if (this.platform() === "kick") {
@@ -160,7 +160,7 @@ export class ComposerEmotePopoverComponent {
         if (channelSlug) {
           try {
             const emotes = await this.kickEmoteLoader.fetchChannelEmotes(channelSlug);
-            this.kickEmotes.set(emotes);
+            this.kickEmotes.set(emotes as ChatMessageEmote[]);
           } catch (error) {
             this.kickEmotesError.set("Could not load Kick emotes.");
             this.logger.warn("Failed to load Kick emotes", {

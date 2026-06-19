@@ -116,7 +116,7 @@ export class ChannelFilterDropdownComponent implements AfterViewInit {
   }
 
   getChannelImage(channel: ChatChannel): string | null {
-    return this.channelAvatars.getChannelImageForChannel(channel);
+    return this.channelAvatars.getChannelImageForChannel(buildChannelRef(channel.platform, channel.channelId));
   }
 
   getChannelInitial(channelName: string): string {

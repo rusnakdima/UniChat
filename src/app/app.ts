@@ -41,7 +41,7 @@ export class App {
 
   constructor() {
     this.themeService.hydrateTheme();
-    this.memoryService.startAutoPrune();
+    this.memoryService.startAutoPrune(60000);
     this.authService.startAutoRefresh();
     // Preload channel images in background (non-blocking)
     void this.channelImagePreloader.preloadAllVisibleChannels();

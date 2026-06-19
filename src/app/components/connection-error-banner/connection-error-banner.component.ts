@@ -28,9 +28,16 @@ export class ConnectionErrorBannerComponent {
   readonly channelId = input.required<string>();
   readonly platform = input.required<PlatformType>();
 
-  readonly error = computed(() =>
-    this.connectionStateService.getChannelError(buildChannelRef(this.platform(), this.channelId()))
-  );
+  readonly error = computed(() => {
+    const info = this.connectionStateService.getRoomState(buildChannelRef(this.platform(), this.channelId()));
+    if (!info?.error) return null;
+    return {
+      code: info.error,
+      message: info.error,
+      occurredAt: '',
+      isRecoverable: info.isRecoverable ?? false,
+    };
+  });
 
   readonly retryConnection = output<void>();
   readonly dismissError = output<void>();

@@ -1,6 +1,6 @@
 import { Injectable, inject } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
-import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { DEFAULT_TIMEOUT_MS } from "@shared/utils/constants";
 
 export interface InvokeOptions {
@@ -97,29 +97,6 @@ export class TauriApiService {
 
   async twitchFetchChannelIcons(args: { roomId: string }) {
     return this.invoke("twitch_fetch_channel_icons", args);
-  }
-
-  async youtubeFetchLiveChatId(args: { videoId: string; accessToken: string }): Promise<string> {
-    return this.invoke<string>("youtubeFetchLiveChatId", args);
-  }
-
-  async youtubeSendMessage(args: {
-    liveChatId: string;
-    messageText: string;
-    accessToken: string;
-  }): Promise<string> {
-    return this.invoke<string>("youtubeSendMessage", args);
-  }
-
-  async youtubeDeleteMessage(args: { messageId: string; accessToken: string }): Promise<string> {
-    return this.invoke<string>("youtubeDeleteMessage", args);
-  }
-
-  async youtubeFetchLiveVideoId(args: {
-    channelName: string;
-    accessToken: string;
-  }): Promise<string> {
-    return this.invoke<string>("youtubeFetchLiveVideoId", args);
   }
 
   async youtubeFetchLiveVideoIdByApiKey(args: {

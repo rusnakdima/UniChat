@@ -17,7 +17,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { ChatChannel, PlatformType, PLATFORMS } from "@models/chat.model";
 
 /* services */
-import { LocalStorageService } from "@services/core/local-storage.service";
+import { LocalStorageService } from "@shared/services/local-storage.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ChatStateService } from "@services/data/chat-state.service";
 import { UnifiedStorageService } from "@core/services/unified-storage.service";

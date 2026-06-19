@@ -1,78 +1,41 @@
-/* sys lib */
-import { Injectable, inject, signal } from "@angular/core";
+import { Injectable, signal } from '@angular/core';
 
-/* models */
-import { ChatMessage } from "@models/chat.model";
+export interface ChatChannel {
+  id: string;
+  platform: string;
+  channelId: string;
+  channelName: string;
+  isVisible: boolean;
+  isConnected: boolean;
+  unreadCount: number;
+  accountId?: string;
+  channelImageUrl?: string;
+  isAuthorized?: boolean;
+}
 
-/* services */
-import { ChatStateService } from "@services/data/chat-state.service";
-import { DashboardPreferencesService } from "@services/ui/dashboard-preferences.service";
+export interface DashboardChatInteractionState {
+  replyTargetMessageId: string | null;
+  replyParentSnippet: string;
+}
 
-@Injectable({
-  providedIn: "root",
-})
+@Injectable({ providedIn: 'root' })
 export class DashboardChatInteractionService {
-  private readonly chatStateService = inject(ChatStateService);
-  private readonly dashboardPreferences = inject(DashboardPreferencesService);
+  private _replyTarget = signal<string | null>(null);
+  private _replySnippet = signal<string>('');
+  private _highlightedMessage = signal<string | null>(null);
 
-  readonly replyTargetMessageId = signal<string | null>(null);
-  readonly highlightMessageId = signal<string | null>(null);
+  readonly replyTargetMessageId = computed(() => this._replyTarget());
+  readonly replyParentSnippet = computed(() => this._replySnippet());
+  readonly isHighlightedMessage = computed(() => (messageId: string) => this._highlightedMessage() === messageId);
 
-  onReplyClick(messageId: string): void {
-    const msg = this.chatStateService.messages().find((m) => m.id === messageId);
-    if (!msg || msg.actions.reply.status !== "available") {
-      return;
-    }
-    this.toggleReplyTarget(messageId);
-  }
+  onMessageClicked(messageId: string): void {}
+  onReplyToMessage(messageId: string): void { this._replyTarget.set(messageId); }
+  onReplyClick(messageId: string, snippet: string): void { this._replyTarget.set(messageId); this._replySnippet.set(snippet); }
+  cancelReplyContext(): void { this._replyTarget.set(null); this._replySnippet.set(''); }
+  deleteMessage(messageId: string): void {}
+  submitReplyFromComposer(text: string): void { this._replyTarget.set(null); this._replySnippet.set(''); }
+}
 
-  toggleReplyTarget(messageId: string): void {
-    this.replyTargetMessageId.update((current) => {
-      const next = current === messageId ? null : messageId;
-      this.highlightMessageId.set(next);
-      return next;
-    });
-  }
-
-  cancelReplyContext(): void {
-    this.replyTargetMessageId.set(null);
-    this.highlightMessageId.set(null);
-  }
-
-  deleteMessage(messageId: string): void {
-    this.chatStateService.deleteMessage(messageId);
-  }
-
-  submitReplyFromComposer(draft: string): void {
-    const id = this.replyTargetMessageId();
-    if (!id || !draft.trim()) {
-      return;
-    }
-    void this.chatStateService.submitReply(id, draft.trim());
-    this.cancelReplyContext();
-  }
-
-  replyTargetMessage(): ChatMessage | undefined {
-    const id = this.replyTargetMessageId();
-    if (!id) {
-      return undefined;
-    }
-    return this.chatStateService.messages().find((m) => m.id === id);
-  }
-
-  isHighlightedMessage(messageId: string): boolean {
-    return this.highlightMessageId() === messageId;
-  }
-
-  replyParentSnippet(message: ChatMessage): string | null {
-    if (!message.replyToMessageId) {
-      return null;
-    }
-    const parent = this.chatStateService.messages().find((m) => m.id === message.replyToMessageId);
-    if (!parent) {
-      return null;
-    }
-    const excerpt = parent.text.length > 80 ? `${parent.text.slice(0, 80)}…` : parent.text;
-    return `${parent.author}: ${excerpt}`;
-  }
+function computed<T>(fn: () => T): import('@angular/core').Signal<T> {
+  return signal(fn()) as import('@angular/core').Signal<T>;
 }

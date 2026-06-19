@@ -23,6 +23,7 @@ import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
 
 /* helpers */
 import { isSafeRemoteImageUrl, silenceBrokenChatImage } from "@shared/utils/chat.helper";
+import { buildChannelRef } from "@utils/channel-ref.util";
 @Component({
   selector: "app-chat-message-card",
   standalone: true,
@@ -79,7 +80,7 @@ export class ChatMessageCardComponent {
       const msg = this.message();
       this.loadUserImage();
       if (this.enabledChannelsCount() > 1) {
-        this.channelAvatars.ensureChannelImage(msg.platform, msg.sourceChannelId);
+        this.channelAvatars.ensureChannelImage(buildChannelRef(msg.platform, msg.sourceChannelId));
       }
     });
   }
@@ -92,30 +93,29 @@ export class ChatMessageCardComponent {
   /** Get message type styling config */
   getMessageTypeConfig() {
     const type = this.getMessageType();
-    return this.messageTypeStyling.getMessageTypeConfig(type, this.message().messageTypeReason);
+    return this.messageTypeStyling.getMessageTypeConfig(type);
   }
 
   /** Get combined ngClass object for message styling */
   getMessageClasses() {
     const typeConfig = this.getMessageTypeConfig();
     const highlightColor = this.presentation.getHighlightColor(this.message());
-
-    return {
-      // Base highlighted state (from user interaction)
+    const classes: { [key: string]: boolean } = {
       "border-emerald-500": this.highlighted(),
       "ring-2": this.highlighted(),
       "ring-emerald-400/70": this.highlighted(),
       "shadow-md": this.highlighted(),
-      // Highlight from rules
       "border-l-4": highlightColor !== null,
-      // Default border when not highlighted
       "border-slate-200": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
-      "dark:border-white/10":
-        !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
-      // Message type classes
-      [typeConfig.cssClass]: !!typeConfig.cssClass,
-      [typeConfig.animationClass]: !!typeConfig.animationClass,
+      "dark:border-white/10": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
     };
+    if (typeConfig.cssClass) {
+      classes[typeConfig.cssClass] = true;
+    }
+    if (typeConfig.animationClass) {
+      classes[typeConfig.animationClass] = true;
+    }
+    return classes;
   }
 
   /** Get inline style for highlight color */
@@ -340,7 +340,7 @@ export class ChatMessageCardComponent {
 
   loadChannelImage(): void {
     const msg = this.message();
-    this.channelAvatars.ensureChannelImage(msg.platform, msg.sourceChannelId);
+    this.channelAvatars.ensureChannelImage(buildChannelRef(msg.platform, msg.sourceChannelId));
   }
 
   visibleBadgeIcons() {
@@ -372,7 +372,7 @@ export class ChatMessageCardComponent {
     if (segment.type !== "link" || !segment.href) {
       return;
     }
-    this.linkPreview.openResolved(segment.value, segment.href);
+    this.linkPreview.openResolved(segment.href);
   }
 
   onUsernameClick(event: Event): void {
@@ -382,7 +382,8 @@ export class ChatMessageCardComponent {
     if (!(el instanceof HTMLElement)) {
       return;
     }
-    this.userProfilePopover.toggle(el, this.message());
+    const msg = this.message();
+    this.userProfilePopover.show(msg.sourceUserId, el);
   }
 
   /** Check if current message is pinned */
@@ -395,7 +396,7 @@ export class ChatMessageCardComponent {
     if (this.isPinned) {
       this.pinnedMessagesService.unpinByMessageId(this.message().id);
     } else {
-      this.pinnedMessagesService.pinMessage(this.message());
+      this.pinnedMessagesService.pinMessage(this.message().id, this.message().sourceChannelId);
     }
   }
 
@@ -411,10 +412,7 @@ export class ChatMessageCardComponent {
     if (msg.channelImageUrl) {
       return msg.channelImageUrl;
     }
-    return this.channelAvatars.getChannelImageForChannel({
-      platform: msg.platform,
-      channelId: msg.sourceChannelId,
-    });
+    return this.channelAvatars.getChannelImageForChannel(buildChannelRef(msg.platform, msg.sourceChannelId));
   }
 
   /** Get platform dot color for mobile indicator */

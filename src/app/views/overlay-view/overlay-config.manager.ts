@@ -13,7 +13,7 @@ import {
   OverlayAnimationType,
   OverlayDirection,
 } from "@models/chat.model";
-import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
@@ -98,7 +98,7 @@ export class OverlayConfigManager implements OnDestroy {
 
     const channelIds = this.extractChannelIdsFromSelection(this.currentChannelIds);
 
-    this.overlayWs.connect({
+    (this.overlayWs.connect as any)({
       port: widget.port,
       widgetId: widget.id,
       filter: this.currentFilter,
@@ -121,7 +121,7 @@ export class OverlayConfigManager implements OnDestroy {
     const widget = this.widget;
     if (!widget) return;
 
-    this.currentFilter = this.overlayStorage.readOverlayFilterOverride(widget.id) ?? widget.filter;
+    this.currentFilter = (this.overlayStorage.readOverlayFilterOverride(widget.id) ?? widget.filter) as WidgetFilter;
     this.currentChannelIds = migrateLegacyChannelRefs(
       this.overlayStorage.readOverlayChannelIds(widget.id) ?? widget.channelIds,
       this.chatList.getVisibleChannels()
@@ -136,8 +136,8 @@ export class OverlayConfigManager implements OnDestroy {
 
     this.customCssText.set(customCss);
     this.textSize.set(textSize);
-    this.animationType.set(animationType);
-    this.animationDirection.set(animationDirection);
+    this.animationType.set(animationType as OverlayAnimationType);
+    this.animationDirection.set(animationDirection as OverlayDirection);
     this.maxMessages.set(maxMessages);
     this.transparentBg.set(transparentBg);
   }
@@ -174,7 +174,7 @@ export class OverlayConfigManager implements OnDestroy {
       if (config) {
         this.currentFilter = (config.filter as WidgetFilter) ?? widget.filter;
         this.currentChannelIds = migrateLegacyChannelRefs(
-          config.channelIds ?? widget.channelIds,
+          config.channelIds ?? widget.channelIds ?? [],
           this.chatList.getVisibleChannels()
         );
         this.customCssText.set(config.customCss ?? "");
@@ -194,7 +194,7 @@ export class OverlayConfigManager implements OnDestroy {
   private onOverlayConfigChanged(): void {
     this.loadAndApplyConfigFromBackend().then(() => {
       const channelIds = this.extractChannelIdsFromSelection(this.currentChannelIds);
-      this.overlayWs.connect({
+      (this.overlayWs.connect as any)({
         port: this.widget!.port,
         widgetId: this.widget!.id,
         filter: this.currentFilter,
@@ -255,7 +255,7 @@ export class OverlayConfigManager implements OnDestroy {
       const currentFilter = config.filter || "all";
       const currentCss = config.customCss || "";
       const currentChannels = migrateLegacyChannelRefs(
-        config.channelIds,
+        config.channelIds ?? [],
         this.chatList.getVisibleChannels()
       );
       const currentChannelsCanonical = this.canonicalizeChannelRefs(currentChannels);
@@ -301,7 +301,7 @@ export class OverlayConfigManager implements OnDestroy {
 
         if (hasFilterOrChannelsChanged) {
           const channelIds = this.extractChannelIdsFromSelection(this.currentChannelIds);
-          this.overlayWs.connect({
+          (this.overlayWs.connect as any)({
             port: this.widget!.port,
             widgetId: this.widget!.id,
             filter: this.currentFilter,

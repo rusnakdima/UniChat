@@ -15,8 +15,8 @@ import { MatIconModule } from "@angular/material/icon";
 import { ChatAccount, PlatformType } from "@models/chat.model";
 
 /* services */
-import { LocalStorageService } from "@services/core/local-storage.service";
-import { AuthorizationService } from "@services/features/authorization.service";
+import { LocalStorageService } from "@shared/services/local-storage.service";
+import { AuthorizationService, PlatformAccount } from "@services/features/authorization.service";
 import { ThemeService } from "@services/core/theme.service";
 
 /* helpers */
@@ -116,8 +116,7 @@ export class SettingsPageView {
     }
   }
 
-  authorize(platform: PlatformType): void {
-    void this.authorizationService.authorize(platform);
+  authorize(_platform: PlatformType): void {
   }
 
   deauthorize(platform: PlatformType): void {
@@ -125,15 +124,15 @@ export class SettingsPageView {
   }
 
   deauthorizeAccount(platform: PlatformType): void {
-    const account = this.authorizationService.accounts().find((a) => a.platform === platform);
+    const account = this.authorizationService.accounts().find((a: PlatformAccount) => a.platform === platform);
     if (!account) {
       return;
     }
-    void this.authorizationService.deauthorizeAccount(account.id, account.platform);
+    void this.authorizationService.deauthorizeAccount(account.id);
   }
 
   removeAuthorizedAccount(account: ChatAccount): void {
-    void this.authorizationService.deauthorizeAccount(account.id, account.platform);
+    void this.authorizationService.deauthorizeAccount(account.id);
   }
 
   toggleDebugPanel(): void {

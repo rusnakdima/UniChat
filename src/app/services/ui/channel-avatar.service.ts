@@ -1,78 +1,43 @@
-/* sys lib */
-import { Injectable, inject } from "@angular/core";
+import { Injectable, signal } from '@angular/core';
 
-/* models */
-import { PlatformType } from "@models/chat.model";
+export interface ChannelAvatar {
+  channelId: string;
+  imageUrl: string;
+  initial?: string;
+}
 
-/* services */
-import { AvatarCacheService } from "@services/core/avatar-cache.service";
-import { ChatListService } from "@services/data/chat-list.service";
-
-@Injectable({
-  providedIn: "root",
-})
+@Injectable({ providedIn: 'root' })
 export class ChannelAvatarService {
-  private readonly chatListService = inject(ChatListService);
-  private readonly avatarCache = inject(AvatarCacheService);
+  private _avatars = new Map<string, string>();
 
-  private readonly pendingEnsures = new Set<string>();
-
-  getChannelImage(platform: PlatformType, channelId: string): string | null {
-    return this.avatarCache.getChannelAvatar(this.cacheKey(platform, channelId)) ?? null;
+  getAvatarUrl(channelRef: string): string | null {
+    return this._avatars.get(channelRef) || null;
   }
 
-  getChannelImageForChannel(channel: { platform: PlatformType; channelId: string }): string | null {
-    return this.getChannelImage(channel.platform, channel.channelId);
+  getChannelImageForChannel(channelRef: string): string | null {
+    return this.getAvatarUrl(channelRef);
   }
 
-  hasChannelImage(platform: PlatformType, channelId: string): boolean {
-    return !!this.getChannelImage(platform, channelId);
+  getChannelInitial(channelRef: string): string {
+    return channelRef.charAt(0).toUpperCase();
   }
 
-  hasChannelImageForChannel(channel: { platform: PlatformType; channelId: string }): boolean {
-    return this.hasChannelImage(channel.platform, channel.channelId);
-  }
-
-  getChannelInitial(channelName: string | undefined): string {
-    return channelName?.trim().charAt(0).toUpperCase() || "?";
-  }
-
-  ensureChannelImage(platform: PlatformType, channelId: string): void {
-    if (this.getChannelImage(platform, channelId)) {
-      return;
+  ensureChannelImage(channelRef: string): string | null {
+    if (!this._avatars.has(channelRef)) {
+      this._avatars.set(channelRef, `https://avatar.example.com/${channelRef}`);
     }
+    return this.getAvatarUrl(channelRef);
+  }
 
-    const cacheKey = this.cacheKey(platform, channelId);
-    if (this.pendingEnsures.has(cacheKey)) {
-      return;
-    }
-
-    const channel = this.findChannel(platform, channelId);
-    if (!channel) {
-      return;
-    }
-
-    this.pendingEnsures.add(cacheKey);
-    void this.chatListService.loadChannelImage(channel.id).finally(() => {
-      this.pendingEnsures.delete(cacheKey);
+  preloadAvatars(channelRefs: string[]): void {
+    channelRefs.forEach(ref => {
+      if (!this._avatars.has(ref)) {
+        this._avatars.set(ref, `https://avatar.example.com/${ref}`);
+      }
     });
   }
 
-  ensureChannelImageForChannel(channel: {
-    platform: PlatformType;
-    channelId: string;
-    id: string;
-  }): void {
-    this.ensureChannelImage(channel.platform, channel.channelId);
-  }
-
-  private findChannel(platform: PlatformType, channelId: string): { id: string } | undefined {
-    return this.chatListService
-      .getChannels(platform)
-      .find((channel) => channel.channelId === channelId);
-  }
-
-  private cacheKey(platform: PlatformType, channelId: string): string {
-    return `${platform}:${channelId}`;
+  setChannelAvatar(channelRef: string, avatarUrl: string): void {
+    this._avatars.set(channelRef, avatarUrl);
   }
 }

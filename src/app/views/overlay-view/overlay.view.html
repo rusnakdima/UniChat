@@ -34,8 +34,8 @@
           @if (shouldShowPlatformContextIcon() && shouldShowPlatformIcon(message)) {
             <img
               [src]="presentation.platformIconUrl(message.platform)"
-              [alt]="platformLabel(message.platform)"
-              [title]="platformLabel(message.platform)"
+              [alt]="platformLabel($any(message.platform))"
+              [title]="platformLabel($any(message.platform))"
               class="h-5 w-5 shrink-0 rounded-sm object-contain"
             />
           }
@@ -92,18 +92,18 @@
                 @if (segment.type === "text") {
                   <span>{{ segment.value }}</span>
                 } @else if (
-                  segment.emote && segment.emote.url && !isEmoteUrlBroken(segment.emote.url)
+                  segment.emote && segment.emote.urls[0] && !isEmoteUrlBroken(segment.emote.urls[0])
                 ) {
                   <img
-                    [src]="segment.emote.url"
+                    [src]="segment.emote.urls[0]"
                     [alt]="segment.emote.code"
                     [title]="segment.emote.code"
                     class="overlay-emote mx-0.5 inline align-middle"
                     [class.overlay-emote-dynamic]="
-                      !segment.emote.url.includes('static-cdn.jtvnw.net')
+                      !segment.emote.urls[0].includes('static-cdn.jtvnw.net')
                     "
                     loading="lazy"
-                    (error)="onEmoteImageError(segment.emote!.url)"
+                    (error)="onEmoteImageError(segment.emote!.urls[0])"
                   />
                 } @else if (segment.emote) {
                   <span

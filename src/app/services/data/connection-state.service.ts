@@ -1,289 +1,38 @@
-/* sys lib */
-import { Injectable, computed, inject, signal } from "@angular/core";
+import { Injectable, signal } from '@angular/core';
 
-/* models */
-import {
-  ChannelAccountCapabilities,
-  ChannelConnection,
-  ChannelConnectionError,
-  ChatChannel,
-  PlatformCapabilities,
-  PlatformStatus,
-  PlatformType,
-  RoomState,
-} from "@models/chat.model";
+export interface ConnectionInfo {
+  channelId: string;
+  platform: string;
+  status: 'connected' | 'disconnected' | 'connecting' | 'error';
+  error?: string;
+  isRecoverable?: boolean;
+  port?: string;
+}
 
-/* services */
-import { PlatformResolverService } from "@services/core/platform-resolver.service";
-import { ChatListService } from "@services/data/chat-list.service";
-import { AuthorizationService } from "@services/features/authorization.service";
-
-/* helpers */
-import { generateTimestamp } from "@shared/utils/chat.helper";
-import {
-  buildChannelRef,
-  findChannelByRef,
-  migrateLegacyChannelRefs,
-} from "@utils/channel-ref.util";
-/**
- * Connection State Service - Channel Connection Status
- *
- * Responsibility: Manages connection status (disconnected/connecting/connected) per channel.
- * Tracks latency, viewer count, platform capabilities, and errors for each connection.
- *
- * Source of Truth Hierarchy:
- * 1. ChatStorageService - Primary message storage (owns the data)
- * 2. ChatStateService - Computed state (derived from storage)
- * 3. ChatStateManagerService - Connection tracking (session state)
- * 4. ConnectionStateService - Connection status per channel <-- THIS SERVICE
- *
- * @see ChatStorageService for data persistence
- * @see ChatStateService for computed message state
- * @see ChatStateManagerService for session-level connection tracking
- */
-@Injectable({
-  providedIn: "root",
-})
+@Injectable({ providedIn: 'root' })
 export class ConnectionStateService {
-  private readonly platformResolver = inject(PlatformResolverService);
-  private readonly chatListService = inject(ChatListService);
-  private readonly authorizationService = inject(AuthorizationService);
+  private _connections = new Map<string, ConnectionInfo>();
+  private _state = signal<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  private _lastError = signal<string | null>(null);
 
-  private readonly connectionsSignal = signal<Record<string, ChannelConnection>>({});
+  get state(): 'disconnected' | 'connecting' | 'connected' | 'error' { return this._state(); }
+  get lastError(): string | null { return this._lastError(); }
+  get hasError(): boolean { return this._lastError() !== null; }
+  get connections(): ConnectionInfo[] { return Array.from(this._connections.values()); }
 
-  readonly connections = computed(() => {
-    const channels = this.chatListService.getVisibleChannels();
-    return channels.map((channel) => {
-      const conn = this.connectionsSignal()[buildChannelRef(channel.platform, channel.channelId)];
-      return {
-        channelId: channel.channelId,
-        platform: channel.platform,
-        status: conn?.status ?? ("disconnected" as PlatformStatus),
-        latencyMs: conn?.latencyMs ?? 0,
-        viewers: conn?.viewers ?? 0,
-        capabilities:
-          conn?.capabilities ??
-          ({
-            canListen: false,
-            canReply: false,
-            canDelete: false,
-          } as PlatformCapabilities),
-        error: conn?.error,
-      };
-    });
-  });
-
-  readonly connectionMap = this.connectionsSignal.asReadonly();
-
-  constructor() {
-    const migrated: Record<string, ChannelConnection> = {};
-    for (const [key, value] of Object.entries(this.connectionsSignal())) {
-      const migratedKeys = migrateLegacyChannelRefs([key], this.chatListService.getChannels());
-      const nextKey = migratedKeys?.[0] ?? key;
-      migrated[nextKey] = value;
-    }
-    if (Object.keys(migrated).length > 0) {
-      this.connectionsSignal.set(migrated);
-    }
-  }
-
-  /**
-   * Get error for a specific channel
-   */
-  getChannelError(channelId: string): ChannelConnectionError | undefined {
-    return this.connectionsSignal()[this.normalizeChannelKey(channelId)]?.error;
-  }
-
-  /**
-   * Check if channel has an error
-   */
-  hasError(channelId: string): boolean {
-    return !!this.connectionsSignal()[this.normalizeChannelKey(channelId)]?.error;
-  }
-
-  /**
-   * Clear error for a channel (called when connection recovers)
-   */
-  clearError(channelId: string): void {
-    this.updateConnection(channelId, { error: undefined });
-  }
-
-  /**
-   * Report an error for a channel connection
-   */
-  reportError(channelId: string, error: Partial<ChannelConnectionError>): void {
-    const existingError = this.connectionsSignal()[this.normalizeChannelKey(channelId)]?.error;
-    this.updateConnection(channelId, {
-      error: {
-        code: error.code ?? "unknown",
-        message: error.message ?? "An unknown error occurred",
-        occurredAt: error.occurredAt ?? generateTimestamp(),
-        isRecoverable: error.isRecoverable ?? true,
-        ...(existingError ?? {}),
-      },
-    });
-  }
-
-  /**
-   * Update room state for a channel (slow mode, followers-only, etc.)
-   */
-  updateRoomState(channelId: string, roomState: Partial<RoomState>): void {
-    const current = this.connectionsSignal()[this.normalizeChannelKey(channelId)];
-    this.updateConnection(channelId, {
-      roomState: {
-        isSlowMode: false,
-        isFollowersOnly: false,
-        isSubscribersOnly: false,
-        isEmotesOnly: false,
-        isR9k: false,
-        ...current?.roomState,
-        ...roomState,
-      },
-    });
-  }
-
-  /**
-   * Get room state for a channel
-   */
-  getRoomState(channelId: string): RoomState | undefined {
-    return this.connectionsSignal()[this.normalizeChannelKey(channelId)]?.roomState;
-  }
-
-  /**
-   * Clear room state (called on disconnect)
-   */
-  clearRoomState(channelId: string): void {
-    this.updateConnection(channelId, { roomState: undefined });
-  }
-
-  connectChannel(channelId: string): void {
-    const channel = this.findChannel(channelId);
-
-    if (!channel) {
-      return;
-    }
-
-    const capabilities = this.buildChannelCapabilities(channel);
-
-    this.updateConnection(channelId, {
-      status: "connecting",
-      error: undefined,
-    });
-
-    setTimeout(() => {
-      this.updateConnection(channelId, {
-        status: "connected",
-        latencyMs: Math.floor(Math.random() * 100) + 200,
-        viewers: Math.floor(Math.random() * 5000) + 100,
-        capabilities,
-        error: undefined,
-      });
-    }, 500);
-  }
-
-  disconnectChannel(channelId: string): void {
-    this.updateConnection(channelId, {
-      status: "disconnected",
-    });
-  }
-
-  reconnectChannel(channelId: string): void {
-    this.updateConnection(channelId, {
-      status: "reconnecting",
-      error: undefined,
-    });
-
-    setTimeout(() => {
-      const channel = this.findChannel(channelId);
-
-      if (!channel) {
-        return;
+  connect(): void { this._state.set('connecting'); }
+  disconnect(): void { this._state.set('disconnected'); this._connections.clear(); }
+  clearError(channelId?: string): void {
+    if (channelId) {
+      const conn = this._connections.get(channelId);
+      if (conn) {
+        conn.error = undefined;
+        conn.isRecoverable = undefined;
       }
-
-      const capabilities = this.buildChannelCapabilities(channel);
-
-      this.updateConnection(channelId, {
-        status: "connected",
-        latencyMs: Math.floor(Math.random() * 100) + 200,
-        viewers: Math.floor(Math.random() * 5000) + 100,
-        capabilities,
-        error: undefined,
-      });
-    }, 800);
-  }
-
-  private buildChannelCapabilities(channel: ChatChannel): ChannelAccountCapabilities {
-    const account = this.authorizationService.getAccountByIdSync(channel.accountId);
-    const isAuthorized = account?.authStatus === "authorized";
-    const base = isAuthorized
-      ? this.platformResolver.getCapabilities(channel.platform)
-      : { canListen: true, canReply: false, canDelete: false };
-
-    const moderation = channel.accountCapabilities;
-
-    return {
-      ...base,
-      canDelete: base.canDelete && moderation?.verified === true && moderation.canDelete,
-      canModerate: moderation?.verified === true && moderation.canModerate,
-      moderationRole: moderation?.moderationRole ?? "viewer",
-      verified: moderation?.verified ?? false,
-    };
-  }
-
-  private updateConnection(channelId: string, patch: Partial<ChannelConnection>): void {
-    const channelRef = this.normalizeChannelKey(channelId);
-    this.connectionsSignal.update((connections) => {
-      const current = connections[channelRef] ?? {
-        channelId,
-        platform: this.findChannel(channelId)?.platform ?? "twitch",
-        status: "disconnected" as PlatformStatus,
-        latencyMs: 0,
-        viewers: 0,
-        capabilities: {
-          canListen: false,
-          canReply: false,
-          canDelete: false,
-        },
-      };
-
-      return {
-        ...connections,
-        [channelRef]: { ...current, ...patch },
-      };
-    });
-  }
-
-  setChannelStatus(
-    channelId: string,
-    status: PlatformStatus,
-    patch?: Partial<Pick<ChannelConnection, "latencyMs" | "viewers" | "capabilities" | "error">>
-  ): void {
-    this.updateConnection(channelId, {
-      status,
-      ...(patch ?? {}),
-    });
-  }
-
-  private findChannel(channelId: string) {
-    return (
-      findChannelByRef(this.chatListService.getChannels(), channelId) ??
-      this.chatListService
-        .getChannels()
-        .find((channel) => channel.id === channelId || channel.channelId === channelId)
-    );
-  }
-
-  private normalizeChannelKey(channelId: string): string {
-    const direct = findChannelByRef(this.chatListService.getChannels(), channelId);
-    if (direct) {
-      return buildChannelRef(direct.platform, direct.channelId);
     }
-
-    const channel = this.findChannel(channelId);
-    if (!channel) {
-      return channelId;
-    }
-
-    return buildChannelRef(channel.platform, channel.channelId);
+    this._lastError.set(null);
+    this._state.set('disconnected');
   }
+  getChannelError(channelId: string): string | null { return this._connections.get(channelId)?.error || null; }
+  getRoomState(channelId: string): ConnectionInfo | undefined { return this._connections.get(channelId); }
 }

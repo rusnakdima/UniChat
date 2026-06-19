@@ -105,7 +105,7 @@
           @if (message().actions.reply.status === "available") {
             <button
               type="button"
-              (click)="interactions.onReplyClick(message().id)"
+              (click)="interactions.onReplyClick(message().id, message().text)"
               class="inline-flex items-center justify-center rounded p-1.5 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
               title="Reply"
               aria-label="Reply to message"
@@ -138,7 +138,7 @@
     </div>
 
     <!-- Reply Section (if exists) -->
-    @if (interactions.replyParentSnippet(message()); as snippet) {
+    @if (interactions.replyParentSnippet(); as snippet) {
       <div
         class="flex gap-2 rounded-lg border border-zinc-200/90 bg-zinc-50/90 px-2.5 py-2 text-xs dark:border-white/10 dark:bg-white/5"
       >
@@ -155,7 +155,7 @@
 
     <!-- Message Text -->
     <p class="overflow-wrap-anywhere text-sm break-words text-zinc-700 dark:text-zinc-300">
-      @for (segment of richText.buildSegments(message()); track $index) {
+      @for (segment of richText.buildSegments(message().text); track $index) {
         @if (segment.type === "text") {
           <span>{{ segment.value }}</span>
         } @else if (segment.type === "link") {
@@ -166,13 +166,13 @@
           >
             {{ segment.value }}
           </button>
-        } @else if (segment.emote && isSafeRemoteImageUrl(segment.emote.url)) {
+        } @else if (segment.emote && isSafeRemoteImageUrl(segment.emote.urls[0])) {
           <img
-            [src]="segment.emote.url"
+            [src]="segment.emote.urls[0]"
             [alt]="segment.emote.code"
             [title]="segment.emote.code"
             class="chat-emote mx-0.5 inline align-middle"
-            [class.chat-emote-dynamic]="!segment.emote.url.includes('static-cdn.jtvnw.net')"
+            [class.chat-emote-dynamic]="!segment.emote.urls[0].includes('static-cdn.jtvnw.net')"
             loading="lazy"
             (error)="onEmoteImageError($event)"
           />

@@ -48,9 +48,9 @@ export class BlockedWordsSettingsComponent {
   startEdit(rule: BlockedWordRule): void {
     this.editingRuleId.set(rule.id);
     this.editingPattern.set(rule.pattern);
-    this.editingIsRegex.set(rule.isRegex);
-    this.editingIsGlobal.set(rule.isGlobal);
-    this.editingReplacement.set(rule.replacement);
+    this.editingIsRegex.set(rule.isRegex ?? false);
+    this.editingIsGlobal.set(rule.isGlobal ?? true);
+    this.editingReplacement.set(rule.replacement ?? "***");
     this.editingChannelIds.set(rule.channelIds ?? []);
   }
 
@@ -77,7 +77,9 @@ export class BlockedWordsSettingsComponent {
     if (!pattern) return;
 
     this.blockedWordsService.addRule({
+      id: crypto.randomUUID(),
       pattern,
+      action: 'hide',
       isRegex: this.newIsRegex(),
       isGlobal: this.newIsGlobal(),
       replacement: this.newReplacement(),

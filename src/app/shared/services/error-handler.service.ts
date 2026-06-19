@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable, inject, signal, computed, DestroyRef } from "@angular/core";
-import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@core/services/logger.service";
 
 export enum ErrorCode {
   UNKNOWN = "UNKNOWN",

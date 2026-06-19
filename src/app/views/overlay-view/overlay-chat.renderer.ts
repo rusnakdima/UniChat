@@ -6,10 +6,11 @@ import {
   OverlayAnimationType,
   OverlayDirection,
   ChatMessage,
+  ChatMessageEmote,
 } from "@models/chat.model";
 import { YouTubeChannelInfo } from "@models/platform-api.model";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
-import { LOGGER_SERVICE } from "@services/core/logger.service";
+import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { KickChatService } from "@services/providers/kick-chat.service";
@@ -381,15 +382,15 @@ export class OverlayChatRenderer {
   getMessageSegments(message: OverlayChatMessage): ChatTextSegment[] {
     const chatMessage: ChatMessage = {
       id: message.id,
-      platform: message.platform,
+      platform: message.platform as PlatformType,
       sourceMessageId: message.id,
       sourceChannelId: message.sourceChannelId || "",
       sourceUserId: message.author,
       author: message.author,
       text: message.text,
-      timestamp: message.timestamp,
+      timestamp: String(message.timestamp),
       badges: [],
-      isSupporter: message.isSupporter,
+      isSupporter: message.isSupporter ?? false,
       isOutgoing: false,
       isDeleted: false,
       canRenderInOverlay: true,
@@ -398,7 +399,7 @@ export class OverlayChatRenderer {
         delete: { status: "disabled", kind: "delete" },
       },
       rawPayload: {
-        emotes: message.emotes ?? [],
+        emotes: Array.from(message.emotes?.values() ?? []) as ChatMessageEmote[],
         badgeIcons: [],
         providerEvent: "",
         providerChannelId: message.sourceChannelId || "",
@@ -408,7 +409,7 @@ export class OverlayChatRenderer {
       authorAvatarUrl: message.authorAvatarUrl,
     };
 
-    return this.richText.buildSegments(chatMessage);
+    return this.richText.buildSegments(chatMessage.text);
   }
 
   messagesContainerClasses(): string {

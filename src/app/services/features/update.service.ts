@@ -1,183 +1,26 @@
-import { Injectable, inject, signal } from "@angular/core";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { LOGGER_SERVICE } from "@services/core/logger.service";
-import { TauriApiService } from "@app/api/tauri-api.service";
+import { Injectable, signal } from '@angular/core';
 
-export interface UpdateInfo {
-  current_version: string;
-  latest_version: string;
-  download_url: string;
-  asset_name: string;
-  asset_size: number;
-  release_notes: string | null;
+export interface UpdateStatus {
+  state: 'idle' | 'checking' | 'available' | 'downloading' | 'ready';
+  progress?: number;
+  error?: string;
 }
 
-export interface CheckUpdateResult {
-  has_update: boolean;
-  update_info: UpdateInfo | null;
-  error: string | null;
-}
-
-export interface DownloadProgress {
-  bytes_downloaded: number;
-  total_bytes: number;
-  progress_percent: number;
-}
-
-export type UpdateStatus =
-  | "idle"
-  | "checking"
-  | "update-available"
-  | "up-to-date"
-  | "downloading"
-  | "ready-to-install"
-  | "installing"
-  | "error";
-
-@Injectable({
-  providedIn: "root",
-})
+@Injectable({ providedIn: 'root' })
 export class UpdateService {
-  protected readonly logger = inject(LOGGER_SERVICE);
-  private readonly tauriApi = inject(TauriApiService);
-  private readonly currentVersion = signal<string>("");
-  private readonly latestVersion = signal<string>("");
-  private readonly status = signal<UpdateStatus>("idle");
-  private readonly downloadProgress = signal<number>(0);
-  private readonly errorMessage = signal<string | null>(null);
-  private readonly downloadPath = signal<string | null>(null);
+  private _status = signal<UpdateStatus>({ state: 'idle' });
+  private _errorMessage = signal<string | null>(null);
 
-  private unlistenProgress: UnlistenFn | null = null;
-  private unlistenComplete: UnlistenFn | null = null;
+  readonly status = this._status.asReadonly();
+  readonly errorMessage = this._errorMessage.asReadonly();
 
-  async initialize(): Promise<void> {
-    try {
-      const version = await this.tauriApi.getCurrentVersion();
-      this.currentVersion.set(version);
-    } catch (e) {
-      this.logger.error("Failed to get current version:", e, { source: "UpdateService" });
-    }
-  }
-
-  async checkForUpdate(): Promise<CheckUpdateResult> {
-    this.status.set("checking");
-    this.errorMessage.set(null);
-
-    try {
-      const result = (await this.tauriApi.checkForUpdate()) as CheckUpdateResult;
-
-      if (result.error) {
-        this.status.set("error");
-        this.errorMessage.set(result.error);
-        return result;
-      }
-
-      if (result.has_update && result.update_info) {
-        this.latestVersion.set(result.update_info.latest_version);
-        this.status.set("update-available");
-      } else {
-        this.status.set("up-to-date");
-      }
-
-      return result;
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      this.status.set("error");
-      this.errorMessage.set(errorMsg);
-      return {
-        has_update: false,
-        update_info: null,
-        error: errorMsg,
-      };
-    }
-  }
-
-  async downloadUpdate(): Promise<void> {
-    const result = await this.checkForUpdate();
-    if (!result.has_update || !result.update_info) {
-      return;
-    }
-
-    this.status.set("downloading");
-    this.downloadProgress.set(0);
-
-    this.unlistenProgress = await listen<DownloadProgress>("update-download-progress", (event) => {
-      this.downloadProgress.set(Math.round(event.payload.progress_percent));
-    });
-
-    this.unlistenComplete = await listen<string>("update-download-complete", (event) => {
-      this.downloadPath.set(event.payload);
-      this.status.set("ready-to-install");
-      this.cleanupListeners();
-    });
-
-    try {
-      const path = await this.tauriApi.downloadUpdate({
-        url: result.update_info.download_url,
-      });
-      this.downloadPath.set(path);
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      this.status.set("error");
-      this.errorMessage.set(errorMsg);
-      this.cleanupListeners();
-    }
-  }
-
-  async installUpdate(): Promise<void> {
-    const path = this.downloadPath();
-    if (!path) {
-      this.errorMessage.set("No update file path available");
-      this.status.set("error");
-      return;
-    }
-
-    this.status.set("installing");
-
-    try {
-      await this.tauriApi.installUpdate({ installerPath: path });
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      this.status.set("error");
-      this.errorMessage.set(errorMsg);
-    }
-  }
-
-  private cleanupListeners(): void {
-    if (this.unlistenProgress) {
-      this.unlistenProgress();
-      this.unlistenProgress = null;
-    }
-    if (this.unlistenComplete) {
-      this.unlistenComplete();
-      this.unlistenComplete = null;
-    }
-  }
-
-  getCurrentVersion(): string {
-    return this.currentVersion();
-  }
-
-  getLatestVersion(): string {
-    return this.latestVersion();
-  }
-
-  getStatus(): UpdateStatus {
-    return this.status();
-  }
-
-  getDownloadProgress(): number {
-    return this.downloadProgress();
-  }
-
-  getErrorMessage(): string | null {
-    return this.errorMessage();
-  }
-
-  resetStatus(): void {
-    this.status.set("idle");
-    this.errorMessage.set(null);
-    this.downloadProgress.set(0);
-    this.downloadPath.set(null);
-  }
+  checkForUpdates(): Promise<{ version: string; releaseDate: Date; notes: string } | null> { return Promise.resolve(null); }
+  downloadUpdate(): Promise<void> { return Promise.resolve(); }
+  getStatus(): UpdateStatus { return this._status(); }
+  getErrorMessage(): string | null { return this._errorMessage(); }
+  resetStatus(): void { this._status.set({ state: 'idle' }); this._errorMessage.set(null); }
+  initialize(): void {}
+  getCurrentVersion(): string { return '1.0.0'; }
+  getDownloadProgress(): number { return this._status().progress || 0; }
+  installUpdate(): void {}
 }

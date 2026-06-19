@@ -38,11 +38,11 @@ export class ChatGapIndicator implements OnInit, OnDestroy {
     this.missedCount = this.reconnectionService.getMissedCount(this.channelId());
 
     // Subscribe to gap updates
-    this.unsubscribe = this.reconnectionService.onGap(
+    this.reconnectionService.onGap(
       this.channelId(),
-      (missedCount, _platform) => {
-        this.hasGap = missedCount > 0;
-        this.missedCount = missedCount;
+      () => {
+        this.hasGap = this.reconnectionService.hasGap(this.channelId());
+        this.missedCount = this.reconnectionService.getMissedCount(this.channelId());
       }
     );
   }
