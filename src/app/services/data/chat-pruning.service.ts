@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 
 export interface ChatPruningStats {
   messageCount: number;
@@ -8,9 +8,15 @@ export interface ChatPruningStats {
   totalMessages?: number;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ChatPruningService {
-  prune(olderThanMs: number): number { return 0; }
-  pruneOldMessages(): number { return 0; }
-  getMemoryStats(): ChatPruningStats { return { messageCount: 0, oldestTimestamp: 0 }; }
+  prune(olderThanMs: number): number {
+    return 0;
+  }
+  pruneOldMessages(): number {
+    return 0;
+  }
+  getMemoryStats(): ChatPruningStats {
+    return { messageCount: 0, oldestTimestamp: 0 };
+  }
 }

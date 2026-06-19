@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from "@angular/core";
-import { ChatMessage } from "@models/chat.model";
+import { ChatMessage } from "@entities/chat.model";
 
 interface CacheEntry<T> {
   data: T;

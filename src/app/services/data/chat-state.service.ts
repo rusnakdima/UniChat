@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 
 export interface ChatState {
   isConnected: boolean;
@@ -6,13 +6,23 @@ export interface ChatState {
   highlightedMessageId: string | null;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ChatStateService {
-  private _state = signal<ChatState>({ isConnected: false, currentChannel: null, highlightedMessageId: null });
+  private _state = signal<ChatState>({
+    isConnected: false,
+    currentChannel: null,
+    highlightedMessageId: null,
+  });
   readonly state = this._state.asReadonly();
 
-  getState(): ChatState { return this._state(); }
-  setChannel(channelRef: string): void { this._state.update(s => ({ ...s, currentChannel: channelRef })); }
-  setHighlightedMessage(messageId: string | null): void { this._state.update(s => ({ ...s, highlightedMessageId: messageId })); }
+  getState(): ChatState {
+    return this._state();
+  }
+  setChannel(channelRef: string): void {
+    this._state.update((s) => ({ ...s, currentChannel: channelRef }));
+  }
+  setHighlightedMessage(messageId: string | null): void {
+    this._state.update((s) => ({ ...s, highlightedMessageId: messageId }));
+  }
   sendOutgoingChatMessage(message: string): void {}
 }

@@ -96,7 +96,7 @@
       <!-- Scroll Region -->
       <div class="relative flex min-h-0 flex-1 flex-col">
         @for (channel of orderedVisibleChannels(); track channel.id) {
-          @if (connectionStateService.hasError(channelRefFor(channel))) {
+          @if (connectionStateService.hasError) {
             <div class="shrink-0 px-3 pt-2">
               <app-connection-error-banner
                 [channelId]="channel.channelId"
@@ -116,7 +116,9 @@
               <app-chat-message-card
                 [message]="message"
                 [channelLabel]="
-                  chatListService.getChannelDisplayName(message.platform, message.sourceChannelId)
+                  chatListService.getChannelDisplayName(
+                    message.platform + ':' + message.sourceChannelId
+                  )
                 "
                 [enabledChannelsCount]="enabledChannelsCount()"
                 [highlighted]="interactions.isHighlightedMessage(message.id)"

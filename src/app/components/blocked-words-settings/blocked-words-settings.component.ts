@@ -79,7 +79,7 @@ export class BlockedWordsSettingsComponent {
     this.blockedWordsService.addRule({
       id: crypto.randomUUID(),
       pattern,
-      action: 'hide',
+      action: "hide",
       isRegex: this.newIsRegex(),
       isGlobal: this.newIsGlobal(),
       replacement: this.newReplacement(),

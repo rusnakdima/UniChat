@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from "@angular/core";
 
 export interface OverlayChatMessage {
   id: string;
@@ -14,7 +14,7 @@ export interface OverlayChatMessage {
   isSupporter?: boolean;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class OverlayWsStateService {
   readonly isConnected = false;
   private _messages = signal<OverlayChatMessage[]>([]);
@@ -23,5 +23,7 @@ export class OverlayWsStateService {
   connect(): void {}
   disconnect(): void {}
   sendMessage(data: unknown): void {}
-  addMessage(message: OverlayChatMessage): void { this._messages.update(msgs => [...msgs, message]); }
+  addMessage(message: OverlayChatMessage): void {
+    this._messages.update((msgs) => [...msgs, message]);
+  }
 }

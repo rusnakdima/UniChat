@@ -5,7 +5,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 
 /* services */
 import { InAppLinkBrowserService } from "@services/ui/in-app-link-browser.service";
-import { getLinkPreviewIframeSrc, LinkPreviewService } from "@services/ui/link-preview.service";
+import { LinkPreviewService } from "@services/ui/link-preview.service";
 @Component({
   selector: "app-link-preview-modal",
   standalone: true,
@@ -21,7 +21,7 @@ export class LinkPreviewModal {
     // Keep the trust bypass narrow: only allow URLs that our iframe-src allowlist already approved.
     // `frameSrc` is derived from `getLinkPreviewIframeSrc()`, but re-check here to avoid implicit trust.
     try {
-      const validated = getLinkPreviewIframeSrc(href);
+      const validated = this.linkPreview.getLinkPreviewIframeSrc(href);
       const url = new URL(href);
 
       if (validated === href && (url.protocol === "http:" || url.protocol === "https:")) {
@@ -35,12 +35,12 @@ export class LinkPreviewModal {
   }
 
   iframeSrc(href: string): string | null {
-    return getLinkPreviewIframeSrc(href);
+    return this.linkPreview.getLinkPreviewIframeSrc(href);
   }
 
   /** Original link was rewritten to YouTube `/embed/` so the iframe can load. */
   isYoutubeEmbedSubstitute(href: string): boolean {
-    const src = getLinkPreviewIframeSrc(href);
+    const src = this.linkPreview.getLinkPreviewIframeSrc(href);
     return src !== null && src !== href && src.includes("youtube.com/embed/");
   }
 

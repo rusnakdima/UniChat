@@ -12,8 +12,7 @@ import {
   WidgetFilter,
   OverlayAnimationType,
   OverlayDirection,
-} from "@models/chat.model";
-import { LOGGER_SERVICE } from "@core/services/logger.service";
+} from "@entities/chat.model";
 import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
@@ -29,7 +28,6 @@ export class OverlayConfigManager implements OnDestroy {
   readonly overlayWs = inject(OverlayWsStateService);
   private readonly chatList = inject(ChatListService);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly logger = inject(LOGGER_SERVICE);
   private readonly overlayStorage = inject(OverlayStorageService);
   private readonly tauriApi = inject(TauriApiService);
 
@@ -121,7 +119,8 @@ export class OverlayConfigManager implements OnDestroy {
     const widget = this.widget;
     if (!widget) return;
 
-    this.currentFilter = (this.overlayStorage.readOverlayFilterOverride(widget.id) ?? widget.filter) as WidgetFilter;
+    this.currentFilter = (this.overlayStorage.readOverlayFilterOverride(widget.id) ??
+      widget.filter) as WidgetFilter;
     this.currentChannelIds = migrateLegacyChannelRefs(
       this.overlayStorage.readOverlayChannelIds(widget.id) ?? widget.channelIds,
       this.chatList.getVisibleChannels()
@@ -163,11 +162,7 @@ export class OverlayConfigManager implements OnDestroy {
             config = await response.json();
           }
         } catch (httpError) {
-          this.logger.debug("HTTP fallback unavailable for overlay config", {
-            tauriError,
-            httpError,
-            source: "OverlayConfigManager",
-          });
+          // HTTP fallback unavailable
         }
       }
 
@@ -240,11 +235,7 @@ export class OverlayConfigManager implements OnDestroy {
             config = await response.json();
           }
         } catch (httpError) {
-          this.logger.debug("HTTP fallback unavailable for pollBackendConfig", {
-            tauriError,
-            httpError,
-            source: "OverlayConfigManager",
-          });
+          // HTTP fallback unavailable
         }
       }
 
@@ -316,10 +307,7 @@ export class OverlayConfigManager implements OnDestroy {
         this.cdr.markForCheck();
       }
     } catch (pollError) {
-      this.logger.warn("Backend config poll failed", {
-        source: "OverlayConfigManager",
-        error: pollError,
-      });
+      // Backend config poll failed silently
     }
   }
 

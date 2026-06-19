@@ -103,16 +103,16 @@
               <div class="mb-2 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-medium text-zinc-900 dark:text-white">
-                    {{ pin.author }}
+                    {{ pin.sender }}
                   </span>
                   <span
                     class="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-600 dark:bg-white/10 dark:text-zinc-400"
                   >
-                    {{ pin.platform }}
+                    {{ pin.channelId }}
                   </span>
                 </div>
                 <span class="text-[10px] text-zinc-400">
-                  {{ pin.pinnedAt | date: "short" }}
+                  {{ pin.timestamp ? (pin.timestamp | date: "short") : '' }}
                 </span>
               </div>
 

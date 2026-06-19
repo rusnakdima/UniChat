@@ -5,7 +5,7 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 
 /* models */
-import { ChannelConnectionError, PlatformType } from "@models/chat.model";
+import { ChannelConnectionError, PlatformType } from "@entities/chat.model";
 
 /* services */
 import { ConnectionStateService } from "@services/data/connection-state.service";
@@ -29,12 +29,14 @@ export class ConnectionErrorBannerComponent {
   readonly platform = input.required<PlatformType>();
 
   readonly error = computed(() => {
-    const info = this.connectionStateService.getRoomState(buildChannelRef(this.platform(), this.channelId()));
+    const info = this.connectionStateService.getRoomState(
+      buildChannelRef(this.platform(), this.channelId())
+    );
     if (!info?.error) return null;
     return {
       code: info.error,
       message: info.error,
-      occurredAt: '',
+      occurredAt: "",
       isRecoverable: info.isRecoverable ?? false,
     };
   });

@@ -53,8 +53,8 @@
           Close
         </button>
       </div>
-      @if (iframeSrc(preview.href); as frameSrc) {
-        @if (isYoutubeEmbedSubstitute(preview.href)) {
+      @if (iframeSrc(preview.href || ''); as frameSrc) {
+        @if (isYoutubeEmbedSubstitute(preview.href || '')) {
           <p
             class="shrink-0 border-b border-zinc-900/10 bg-emerald-50 px-4 py-2 text-[11px] leading-snug text-emerald-950 dark:border-white/10 dark:bg-emerald-950/30 dark:text-emerald-100"
           >

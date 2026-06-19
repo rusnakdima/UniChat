@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { ChatChannel } from '@services/data/chat-list.service';
+import { Injectable } from "@angular/core";
+import { ChatChannel } from "@services/data/chat-list.service";
 
 export interface ChannelRef {
   platform: string;
@@ -8,14 +8,20 @@ export interface ChannelRef {
   providerChannelId?: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ChannelRefService {
   buildChannelRef(platform: string, channelId: string, username: string): ChannelRef {
     return { platform, channelId, username };
   }
-  parseChannelRef(ref: string): ChannelRef | null { return null; }
-  toChannelRef(platform: string, channel: string): ChannelRef { return { platform, channelId: channel, username: channel }; }
-  findChannelByRef(ref: ChannelRef): string { return ref.channelId; }
+  parseChannelRef(ref: string): ChannelRef | null {
+    return null;
+  }
+  toChannelRef(platform: string, channel: string): ChannelRef {
+    return { platform, channelId: channel, username: channel };
+  }
+  findChannelByRef(ref: ChannelRef): string {
+    return ref.channelId;
+  }
   migrateLegacyChannelRefs(): void {}
 }
 
@@ -24,14 +30,21 @@ export function buildChannelRef(platform: string, channelId: string, username?: 
 }
 
 export function parseChannelRef(ref: string): ChannelRef | null {
-  const [platform, channelId] = ref.split(':');
+  const [platform, channelId] = ref.split(":");
   if (!platform || !channelId) return null;
   return { platform, channelId, username: channelId };
 }
 
-export function findChannelByRef(ref: ChannelRef): string { return ref.channelId; }
-export function toChannelRef(platform: string, channel: string): ChannelRef { return { platform, channelId: channel, username: channel }; }
-export function migrateLegacyChannelRefs(channelIds: string[], visibleChannels: ChatChannel[]): string[] {
+export function findChannelByRef(ref: ChannelRef): string {
+  return ref.channelId;
+}
+export function toChannelRef(platform: string, channel: string): ChannelRef {
+  return { platform, channelId: channel, username: channel };
+}
+export function migrateLegacyChannelRefs(
+  channelIds: string[],
+  visibleChannels: ChatChannel[]
+): string[] {
   if (!channelIds || channelIds.length === 0) {
     return [];
   }

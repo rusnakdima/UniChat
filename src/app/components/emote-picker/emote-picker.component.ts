@@ -65,13 +65,13 @@ export class EmotePickerComponent {
       return this.emoteManager.getRecentEmotes(50);
     }
 
-    const categories = this.emoteManager.categories();
-    const cat = categories.find((c) => c.id === category);
+    const categories = this.emoteManager.categories;
+    const cat = categories.find((c: EmoteCategory) => c.id === category);
     return cat?.emotes ?? [];
   };
 
-  readonly categories = () => this.emoteManager.categories();
-  readonly totalEmotes = () => this.emoteManager.emotes().length;
+  readonly categories = () => this.emoteManager.categories;
+  readonly totalEmotes = () => this.emoteManager.emotes.length;
 
   onEmoteClick(emote: CustomEmote): void {
     this.emoteSelected.emit(emote);

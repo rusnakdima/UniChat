@@ -12,7 +12,7 @@ import {
   WidgetConfig,
   WidgetFilter,
   WidgetStatus,
-} from "@models/chat.model";
+} from "@entities/chat.model";
 
 /* services */
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
@@ -102,7 +102,7 @@ export function createMessageActionState(
 }
 
 export function getPlatformLabel(platform: PlatformType): string {
-  return getPlatformResolver().getDisplayName(platform);
+  return getPlatformResolver().getDisplayName(platform, "");
 }
 
 export function getPlatformBadgeClasses(platform: PlatformType): string {

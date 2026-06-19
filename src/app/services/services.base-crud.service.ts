@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ChatMessage, ChatChannel, ChatAccount, DashboardPreferences } from "@models/chat.model";
+import { ChatMessage, ChatChannel, ChatAccount, DashboardPreferences } from "@entities/chat.model";
 import { CustomEmote } from "@services/features/custom-emote-manager.service";
 
 export interface CrudOptions {

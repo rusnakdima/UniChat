@@ -2,7 +2,7 @@
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
 
 /* models */
-import { PlatformType } from "@models/chat.model";
+import { PlatformType } from "@entities/chat.model";
 
 /* helpers */
 import { getPlatformBadgeClasses, getPlatformLabel } from "@shared/utils/chat.helper";

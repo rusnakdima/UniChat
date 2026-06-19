@@ -28,6 +28,7 @@ export class AppSidebarComponent implements OnInit {
     { path: "/connections", icon: "power", label: "Platforms" },
     { path: "/analytics", icon: "bar_chart", label: "Analytics" },
     { path: "/export", icon: "download", label: "Export Chat" },
+    { path: "/overlay-management", icon: "tv", label: "Overlay" },
     { path: "/settings", icon: "settings", label: "Settings" },
     { path: "/about", icon: "info", label: "About" },
   ];

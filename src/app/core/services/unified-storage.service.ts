@@ -1,5 +1,5 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
-import { ChatMessage, ChatHistoryLoadState, PlatformType } from "@models/chat.model";
+import { ChatMessage, ChatHistoryLoadState, PlatformType } from "@entities/chat.model";
 import { StorageEntityService, StorageEntityServiceImpl } from "./storage-entity.service";
 import { StorageCacheService } from "./storage-cache.service";
 import { ChatPruningService } from "@services/data/chat-pruning.service";

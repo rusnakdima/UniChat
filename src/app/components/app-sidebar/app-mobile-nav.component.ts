@@ -30,6 +30,7 @@ export class AppMobileNavComponent implements OnInit {
     { path: "/connections", icon: "power", label: "Links" },
     { path: "/analytics", icon: "bar_chart", label: "Stats" },
     { path: "/export", icon: "download", label: "Export" },
+    { path: "/overlay-management", icon: "tv", label: "Overlay" },
     { path: "/settings", icon: "settings", label: "Settings" },
     { path: "/about", icon: "info", label: "About" },
   ];

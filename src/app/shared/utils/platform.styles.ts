@@ -3,8 +3,8 @@
  * Centralized color schemes and CSS classes for consistent branding
  */
 
-import { PlatformType } from "@models/chat.model";
-import { PlatformStatus, WidgetStatus } from "@models/chat.model";
+import { PlatformType } from "@entities/chat.model";
+import { PlatformStatus, WidgetStatus } from "@entities/chat.model";
 
 /**
  * Platform badge classes for standard display

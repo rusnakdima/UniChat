@@ -4,7 +4,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 /* models */
-import { ChatHistoryLoadState } from "@models/chat.model";
+import { ChatHistoryLoadState } from "@entities/chat.model";
 
 /* services */
 import { UnifiedStorageService } from "@core/services/unified-storage.service";

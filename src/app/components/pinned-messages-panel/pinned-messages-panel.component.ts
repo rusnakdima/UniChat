@@ -27,9 +27,11 @@ export class PinnedMessagesPanelComponent {
   private readonly pinnedMessagesService = inject(PinnedMessagesService);
   private readonly chatListService = inject(ChatListService);
 
-  readonly pinnedMessages = this.pinnedMessagesService.pinnedMessages;
-  readonly pinnedCount = this.pinnedMessagesService.pinnedCount;
-  readonly hasPinnedMessages = this.pinnedMessagesService.hasPinnedMessages;
+  readonly pinnedMessages = computed(() => this.pinnedMessagesService.getPinnedMessages());
+  readonly pinnedCount = computed(() => this.pinnedMessagesService.pinnedCount);
+  readonly hasPinnedMessages = computed(
+    () => this.pinnedMessagesService.getPinnedMessages().length > 0
+  );
 
   readonly filterPlatform = signal<string>("all");
   readonly filterChannel = signal<string>("all");
@@ -50,19 +52,22 @@ export class PinnedMessagesPanelComponent {
     return channels;
   });
 
-  readonly filteredPinnedMessages = computed(() => {
-    let messages = this.pinnedMessages();
+  readonly filteredPinnedMessages = computed((): PinnedMessage[] => {
+    let messages: PinnedMessage[] = this.pinnedMessages();
 
     if (this.filterPlatform() !== "all") {
-      messages = messages.filter((m) => m.platform === this.filterPlatform());
+      messages = messages.filter((m: PinnedMessage) => m.platform === this.filterPlatform());
     }
 
     if (this.filterChannel() !== "all") {
-      messages = messages.filter((m) => m.channelId === this.filterChannel());
+      messages = messages.filter((m: PinnedMessage) => m.channelId === this.filterChannel());
     }
 
     // Sort by pinned date (newest first)
-    return messages.sort((a, b) => new Date(b.pinnedAt).getTime() - new Date(a.pinnedAt).getTime());
+    return messages.sort(
+      (a: PinnedMessage, b: PinnedMessage) =>
+        (b.timestamp ?? 0) - (a.timestamp ?? 0)
+    );
   });
 
   readonly closed = output<void>();
@@ -92,7 +97,8 @@ export class PinnedMessagesPanelComponent {
   }
 
   exportPinned(): void {
-    const json = this.pinnedMessagesService.exportPinned();
+    const messages = this.pinnedMessagesService.getPinnedMessages();
+    const json = JSON.stringify(messages, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

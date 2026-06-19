@@ -26,7 +26,5 @@ pub mod http_client;
 #[path = "http-error.helper.rs"]
 pub mod http_error_helper;
 
-pub mod logger;
-
 pub mod errors;
 pub mod validation;

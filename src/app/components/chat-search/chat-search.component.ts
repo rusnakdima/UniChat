@@ -15,7 +15,7 @@ import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 /* models */
-import { ChatMessage, PlatformType } from "@models/chat.model";
+import { ChatMessage, PlatformType } from "@entities/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";

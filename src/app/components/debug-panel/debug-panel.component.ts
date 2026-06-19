@@ -4,7 +4,6 @@ import { Component, inject, signal, computed, OnInit, OnDestroy } from "@angular
 /* services */
 import { ConnectionStateService } from "@services/data/connection-state.service";
 import { AuthorizationService } from "@services/features/authorization.service";
-import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { ThemeService } from "@services/core/theme.service";
 import { buildChannelRef } from "@utils/channel-ref.util";
@@ -69,7 +68,7 @@ interface ActivityEntry {
                     <div class="font-medium">{{ conn.channelId }}</div>
                     <div class="text-zinc-500 dark:text-zinc-400">Status: {{ conn.status }}</div>
                     @if (conn.error) {
-                      <div class="text-[10px] text-red-500">Error: {{ conn.error.code }}</div>
+                      <div class="text-[10px] text-red-500">Error: {{ conn.error }}</div>
                     }
                   </div>
                 }
@@ -161,7 +160,6 @@ interface ActivityEntry {
 export class DebugPanelComponent implements OnInit, OnDestroy {
   private readonly connectionState = inject(ConnectionStateService);
   private readonly authService = inject(AuthorizationService);
-  private readonly logger = inject(LOGGER_SERVICE);
   private readonly chatList = inject(ChatListService);
   private readonly themeService = inject(ThemeService);
 
@@ -180,7 +178,7 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
   private initialSize = { width: 320, height: 280 };
   private logIntervalId: ReturnType<typeof setInterval> | null = null;
 
-  readonly connections = computed(() => this.connectionState.connections());
+  readonly connections = computed(() => this.connectionState.connections);
   readonly accounts = computed(() => this.authService.accounts());
   readonly themeMode = this.themeService.themeMode;
 

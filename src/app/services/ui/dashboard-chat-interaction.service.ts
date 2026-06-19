@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from "@angular/core";
 
 export interface ChatChannel {
   id: string;
@@ -18,24 +18,40 @@ export interface DashboardChatInteractionState {
   replyParentSnippet: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class DashboardChatInteractionService {
   private _replyTarget = signal<string | null>(null);
-  private _replySnippet = signal<string>('');
+  private _replySnippet = signal<string>("");
   private _highlightedMessage = signal<string | null>(null);
 
   readonly replyTargetMessageId = computed(() => this._replyTarget());
   readonly replyParentSnippet = computed(() => this._replySnippet());
-  readonly isHighlightedMessage = computed(() => (messageId: string) => this._highlightedMessage() === messageId);
+
+  isHighlightedMessage(messageId: string): boolean {
+    return this._highlightedMessage() === messageId;
+  }
+
+  readonly replyTargetMessage = computed((): { author: string; text: string } | null => {
+    const id = this._replyTarget();
+    if (!id) return null;
+    return { author: "User", text: this._replySnippet() };
+  });
 
   onMessageClicked(messageId: string): void {}
-  onReplyToMessage(messageId: string): void { this._replyTarget.set(messageId); }
-  onReplyClick(messageId: string, snippet: string): void { this._replyTarget.set(messageId); this._replySnippet.set(snippet); }
-  cancelReplyContext(): void { this._replyTarget.set(null); this._replySnippet.set(''); }
+  onReplyToMessage(messageId: string): void {
+    this._replyTarget.set(messageId);
+  }
+  onReplyClick(messageId: string, snippet: string): void {
+    this._replyTarget.set(messageId);
+    this._replySnippet.set(snippet);
+  }
+  cancelReplyContext(): void {
+    this._replyTarget.set(null);
+    this._replySnippet.set("");
+  }
   deleteMessage(messageId: string): void {}
-  submitReplyFromComposer(text: string): void { this._replyTarget.set(null); this._replySnippet.set(''); }
-}
-
-function computed<T>(fn: () => T): import('@angular/core').Signal<T> {
-  return signal(fn()) as import('@angular/core').Signal<T>;
+  submitReplyFromComposer(text: string): void {
+    this._replyTarget.set(null);
+    this._replySnippet.set("");
+  }
 }

@@ -15,7 +15,7 @@ export const routes: Routes = [
   },
   {
     path: "overlay",
-    loadComponent: () => import("@views/overlay-view/overlay.view").then((m) => m.OverlayView),
+    loadComponent: () => import("@pages/overlay-page/overlay-page.view").then((m) => m.OverlayView),
   },
   {
     path: "",
@@ -24,52 +24,47 @@ export const routes: Routes = [
       {
         path: "dashboard",
         loadComponent: () =>
-          import("@views/dashboard-view/dashboard.view").then((m) => m.DashboardView),
+          import("@pages/dashboard-page/dashboard-page.view").then((m) => m.DashboardView),
         resolve: { chatData: ChatDataResolver },
       },
       {
         path: "connections",
         loadComponent: () =>
-          import("@views/connections-page-view/connections-page.view").then(
+          import("@pages/connections-page/connections-page.view").then(
             (m) => m.ConnectionsPageView
           ),
       },
       {
         path: "analytics",
         loadComponent: () =>
-          import("@views/analytics-page-view/analytics-page.view").then((m) => m.AnalyticsPageView),
+          import("@pages/analytics-page/analytics-page.view").then((m) => m.AnalyticsPageView),
       },
       {
         path: "export",
         loadComponent: () =>
-          import("@views/export-page-view/export-page.view").then((m) => m.ExportPageView),
+          import("@pages/export-page/export-page.view").then((m) => m.ExportPageView),
       },
       {
         path: "overlay-management",
         loadComponent: () =>
-          import("@views/overlay-management-view/overlay-management.view").then(
+          import("@pages/overlay-management-page/overlay-management-page.view").then(
             (m) => m.OverlayManagementView
           ),
       },
       {
         path: "settings",
         loadComponent: () =>
-          import("@views/settings-page-view/settings-page.view").then((m) => m.SettingsPageView),
-      },
-      {
-        path: "updates",
-        loadComponent: () =>
-          import("@views/updates-page-view/updates-page.view").then((m) => m.UpdatesPageView),
+          import("@pages/settings-page/settings-page.view").then((m) => m.SettingsPageView),
       },
       {
         path: "about",
         loadComponent: () =>
-          import("@views/about-page-view/about-page.view").then((m) => m.AboutPageView),
+          import("@pages/about-page/about-page.view").then((m) => m.AboutPageView),
       },
       {
         path: "keyboard-shortcuts",
         loadComponent: () =>
-          import("@views/keyboard-shortcuts-page-view/keyboard-shortcuts-page.view").then(
+          import("@pages/keyboard-shortcuts-page/keyboard-shortcuts-page.view").then(
             (m) => m.KeyboardShortcutsPageView
           ),
       },

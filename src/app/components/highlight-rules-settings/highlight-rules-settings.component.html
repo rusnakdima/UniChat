@@ -152,7 +152,7 @@
     @for (rule of rules(); track rule.id) {
       <div
         class="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-white/10 dark:bg-black/20"
-        [class.opacity-60]="!rule.isActive"
+        [class.opacity-60]="!rule.enabled"
       >
         @if (editingRuleId() === rule.id) {
           <!-- Edit Mode -->
@@ -242,10 +242,10 @@
               type="button"
               (click)="toggleRule(rule.id)"
               class="rounded-lg p-2 transition hover:bg-zinc-200 dark:hover:bg-white/10"
-              [title]="rule.isActive ? 'Disable rule' : 'Enable rule'"
+              [title]="rule.enabled ? 'Disable rule' : 'Enable rule'"
             >
               <mat-icon
-                [fontIcon]="rule.isActive ? 'visibility' : 'visibility_off'"
+                [fontIcon]="rule.enabled ? 'visibility' : 'visibility_off'"
                 class="h-4! w-0!"
               />
             </button>

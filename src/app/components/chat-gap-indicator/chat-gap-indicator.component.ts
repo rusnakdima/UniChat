@@ -38,13 +38,10 @@ export class ChatGapIndicator implements OnInit, OnDestroy {
     this.missedCount = this.reconnectionService.getMissedCount(this.channelId());
 
     // Subscribe to gap updates
-    this.reconnectionService.onGap(
-      this.channelId(),
-      () => {
-        this.hasGap = this.reconnectionService.hasGap(this.channelId());
-        this.missedCount = this.reconnectionService.getMissedCount(this.channelId());
-      }
-    );
+    this.reconnectionService.onGap(this.channelId(), () => {
+      this.hasGap = this.reconnectionService.hasGap(this.channelId());
+      this.missedCount = this.reconnectionService.getMissedCount(this.channelId());
+    });
   }
 
   ngOnDestroy(): void {

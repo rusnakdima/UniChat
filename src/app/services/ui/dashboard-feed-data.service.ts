@@ -1,24 +1,36 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed, Signal } from "@angular/core";
+import { ChatMessage } from "@entities/chat.model";
 
 export interface DashboardFeedDataService {
-  feedItems: unknown[];
-  mixedFeedChronological: boolean;
-  mixedScrollToken: string;
-  platformFilter: string[];
+  readonly feedItems: Signal<ChatMessage[]>;
+  readonly mixedFeedChronological: Signal<ChatMessage[]>;
+  readonly mixedScrollToken: Signal<string>;
+  readonly platformFilter: Signal<string>;
+  readonly platformsWithVisibleChannels: Signal<string[]>;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class DashboardFeedDataService {
-  private _items = signal<unknown[]>([]);
-  private _chronological = signal(false);
-  private _scrollToken = signal('');
+  private _items = signal<ChatMessage[]>([]);
+  private _chronological = signal<ChatMessage[]>([]);
+  private _scrollToken = signal("");
   private _platforms = signal<string[]>([]);
 
-  getFeedItems(): unknown[] { return this._items(); }
+  readonly feedItems: Signal<ChatMessage[]> = this._items.asReadonly();
+  readonly mixedFeedChronological: Signal<ChatMessage[]> = this._chronological.asReadonly();
+  readonly mixedScrollToken: Signal<string> = this._scrollToken.asReadonly();
+  readonly platformFilter: Signal<string> = computed(() => this._platforms()[0] || "all");
+  readonly platformsWithVisibleChannels: Signal<string[]> = this._platforms.asReadonly();
+
+  getFeedItems(): unknown[] {
+    return this._items();
+  }
   refreshFeed(): void {}
-  get platformsWithVisibleChannels(): string[] { return this._platforms(); }
-  get mixedFeedChronological(): boolean { return this._chronological(); }
-  get mixedScrollToken(): string { return this._scrollToken(); }
-  get platformFilter(): string[] { return this._platforms(); }
-  setPlatformFilter(platforms: string[]): void { this._platforms.set(platforms); }
+  setPlatformFilter(platform: string): void {
+    if (platform === "all") {
+      this._platforms.set([]);
+    } else {
+      this._platforms.set([platform]);
+    }
+  }
 }

@@ -1,6 +1,5 @@
 import { Injectable, inject } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
-import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { DEFAULT_TIMEOUT_MS } from "@shared/utils/constants";
 
 export interface InvokeOptions {
@@ -16,8 +15,6 @@ interface TauriResponse<T> {
 
 @Injectable({ providedIn: "root" })
 export class TauriApiService {
-  private readonly logger = inject(LOGGER_SERVICE);
-
   async invoke<T>(
     command: string,
     args?: Record<string, unknown>,
@@ -41,11 +38,6 @@ export class TauriApiService {
 
       return response as T;
     } catch (error: unknown) {
-      if (!options.suppressError) {
-        this.logger.error(`Error invoking command "${command}":`, error, {
-          source: "TauriApiService",
-        });
-      }
       throw error;
     }
   }

@@ -1,5 +1,5 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 
 /* services */
@@ -18,7 +18,7 @@ import {
 export class KeyboardShortcutsSettingsComponent {
   private readonly keyboardShortcutsService = inject(KeyboardShortcutsService);
 
-  readonly shortcuts = this.keyboardShortcutsService.shortcuts;
+  readonly shortcuts = computed(() => this.keyboardShortcutsService.shortcuts);
   readonly editBindingId = signal<string | null>(null);
   readonly editKeys = signal("");
   readonly conflictError = signal(false);

@@ -43,7 +43,7 @@ use crate::commands::dashboard_preferences_command::{
   update_dashboard_preferences,
 };
 use crate::commands::icons_command::{twitch_fetch_channel_icons, twitch_fetch_global_icons};
-use crate::commands::logger_command::log_message;
+
 use crate::commands::overlay_command::{
   emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
   init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
@@ -94,8 +94,6 @@ pub struct DataState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  utils::logger::init_logger("unichat", log::LevelFilter::Info).ok();
-
   register_relations_for_entity::<ChatMessageEntity>();
   register_relations_for_entity::<ChatChannelEntity>();
   register_relations_for_entity::<ChatAccountEntity>();
@@ -257,7 +255,6 @@ pub fn run() {
       patch_custom_emote,
       delete_custom_emote,
       get_custom_emotes_by_platform,
-      log_message,
       storage_get,
       storage_set,
       storage_remove,

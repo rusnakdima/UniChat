@@ -12,7 +12,7 @@ import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
 /* models */
-import { ChatAccount, PlatformType } from "@models/chat.model";
+import { ChatAccount, PlatformType } from "@entities/chat.model";
 
 /* services */
 import { LocalStorageService } from "@shared/services/local-storage.service";
@@ -116,15 +116,16 @@ export class SettingsPageView {
     }
   }
 
-  authorize(_platform: PlatformType): void {
-  }
+  authorize(_platform: PlatformType): void {}
 
   deauthorize(platform: PlatformType): void {
     void this.authorizationService.deauthorize(platform);
   }
 
   deauthorizeAccount(platform: PlatformType): void {
-    const account = this.authorizationService.accounts().find((a: PlatformAccount) => a.platform === platform);
+    const account = this.authorizationService
+      .accounts()
+      .find((a: PlatformAccount) => a.platform === platform);
     if (!account) {
       return;
     }

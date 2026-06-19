@@ -5,14 +5,22 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { NgClass, TitleCasePipe, DecimalPipe } from "@angular/common";
 
 /* models */
-import { ChatMessage, PlatformType } from "@models/chat.model";
+import { ChatMessage, PlatformType } from "@entities/chat.model";
 
 /* services */
 import {
   ModerationService,
-  ModerationMacro,
   DEFAULT_MODERATION_MACROS,
 } from "@services/features/moderation.service";
+
+interface ModerationMacro {
+  id: string;
+  name: string;
+  action: string;
+  reason?: string;
+  duration?: number;
+  color?: string;
+}
 
 /**
  * Moderation Dashboard Component
@@ -38,7 +46,7 @@ export class ModerationDashboardComponent {
   /**
    * Get color classes for macro button
    */
-  getMacroColorClasses(macro: ModerationMacro): string {
+  getMacroColorClasses(_macro: ModerationMacro): string {
     const colorMap: Record<string, string> = {
       amber:
         "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50",
@@ -51,8 +59,7 @@ export class ModerationDashboardComponent {
         "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50",
       blue: "bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50",
     };
-    const color = macro.color ?? "slate";
-    return colorMap[color] ?? colorMap["slate"];
+    return colorMap[_macro.color ?? "slate"] ?? colorMap["slate"];
   }
 
   /**
@@ -77,31 +84,26 @@ export class ModerationDashboardComponent {
    */
   async executeMacro(macro: ModerationMacro): Promise<void> {
     if (!this.message()) return;
-
-    await this.moderationService.executeMacro(
-      this.message()!.platform,
-      this.message()!.sourceChannelId,
-      this.message()!.author,
-      macro
-    );
+    const msg = this.message()!;
+    await this.moderationService.executeMacro(macro.id, msg.author);
   }
 
   /**
    * Check if moderation is available
    */
   canModerate(): boolean {
-    if (!this.message()) return false;
-    return this.moderationService.canModerate(
-      this.message()!.platform,
-      this.message()!.sourceChannelId
-    );
+    return this.moderationService.canModerate();
   }
 
   /**
    * Get available macros for current platform
    */
   getAvailableMacros(): ModerationMacro[] {
-    if (!this.message()) return [];
-    return this.moderationService.getMacrosForPlatform(this.message()!.platform);
+    return Object.entries(DEFAULT_MODERATION_MACROS).map(([key, reason]) => ({
+      id: key,
+      name: key.charAt(0).toUpperCase() + key.slice(1),
+      action: "warn",
+      reason,
+    }));
   }
 }

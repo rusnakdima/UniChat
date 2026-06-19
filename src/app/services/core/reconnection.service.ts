@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ReconnectionService {
   private _isReconnecting = false;
   private _reconnectAttempt = 0;
@@ -8,8 +8,12 @@ export class ReconnectionService {
   private _missedCounts = new Map<string, number>();
   private _gapCallbacks = new Map<string, () => void>();
 
-  get isReconnecting(): boolean { return this._isReconnecting; }
-  get reconnectAttempt(): number { return this._reconnectAttempt; }
+  get isReconnecting(): boolean {
+    return this._isReconnecting;
+  }
+  get reconnectAttempt(): number {
+    return this._reconnectAttempt;
+  }
 
   initiateReconnection(): void {
     this._isReconnecting = true;

@@ -4,7 +4,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
 
 /* models */
-import { RoomState } from "@models/chat.model";
+import { RoomState } from "@entities/chat.model";
 
 /* services */
 import { ConnectionStateService } from "@services/data/connection-state.service";

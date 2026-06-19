@@ -11,7 +11,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { Router } from "@angular/router";
 
 /* models */
-import { ChatMessage } from "@models/chat.model";
+import { ChatMessage } from "@entities/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";

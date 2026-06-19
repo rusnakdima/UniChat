@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal } from "@angular/core";
 
 export interface ChannelAvatar {
   channelId: string;
@@ -6,7 +6,7 @@ export interface ChannelAvatar {
   initial?: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ChannelAvatarService {
   private _avatars = new Map<string, string>();
 
@@ -29,8 +29,12 @@ export class ChannelAvatarService {
     return this.getAvatarUrl(channelRef);
   }
 
+  ensureChannelImageForChannel(channelRef: string): string | null {
+    return this.ensureChannelImage(channelRef);
+  }
+
   preloadAvatars(channelRefs: string[]): void {
-    channelRefs.forEach(ref => {
+    channelRefs.forEach((ref) => {
       if (!this._avatars.has(ref)) {
         this._avatars.set(ref, `https://avatar.example.com/${ref}`);
       }

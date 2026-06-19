@@ -26,7 +26,7 @@
       <div>
         <h3 class="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Navigation</h3>
         <div class="space-y-2">
-          @for (shortcut of shortcutsByCategory().navigation; track shortcut.bindingId) {
+          @for (shortcut of shortcutsByCategory()["navigation"]; track shortcut.id) {
             <div class="flex items-center justify-between">
               <span class="text-sm text-zinc-600 dark:text-zinc-400">
                 {{ shortcut.description }}
@@ -34,7 +34,7 @@
               <kbd
                 class="rounded border border-zinc-300 bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-700 dark:border-white/20 dark:bg-white/5 dark:text-zinc-300"
               >
-                {{ shortcut.keys }}
+                {{ shortcut.keyBinding }}
               </kbd>
             </div>
           }
@@ -45,7 +45,7 @@
       <div>
         <h3 class="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Actions</h3>
         <div class="space-y-2">
-          @for (shortcut of shortcutsByCategory().actions; track shortcut.bindingId) {
+          @for (shortcut of shortcutsByCategory()["actions"]; track shortcut.id) {
             <div class="flex items-center justify-between">
               <span class="text-sm text-zinc-600 dark:text-zinc-400">
                 {{ shortcut.description }}
@@ -53,7 +53,7 @@
               <kbd
                 class="rounded border border-zinc-300 bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-700 dark:border-white/20 dark:bg-white/5 dark:text-zinc-300"
               >
-                {{ shortcut.keys }}
+                {{ shortcut.keyBinding }}
               </kbd>
             </div>
           }
@@ -64,7 +64,7 @@
       <div>
         <h3 class="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Overlay</h3>
         <div class="space-y-2">
-          @for (shortcut of shortcutsByCategory().overlay; track shortcut.bindingId) {
+          @for (shortcut of shortcutsByCategory()["overlay"]; track shortcut.id) {
             <div class="flex items-center justify-between">
               <span class="text-sm text-zinc-600 dark:text-zinc-400">
                 {{ shortcut.description }}
@@ -72,7 +72,7 @@
               <kbd
                 class="rounded border border-zinc-300 bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-700 dark:border-white/20 dark:bg-white/5 dark:text-zinc-300"
               >
-                {{ shortcut.keys }}
+                {{ shortcut.keyBinding }}
               </kbd>
             </div>
           }
@@ -83,7 +83,7 @@
       <div>
         <h3 class="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">General</h3>
         <div class="space-y-2">
-          @for (shortcut of shortcutsByCategory().general; track shortcut.bindingId) {
+          @for (shortcut of shortcutsByCategory()["general"]; track shortcut.id) {
             <div class="flex items-center justify-between">
               <span class="text-sm text-zinc-600 dark:text-zinc-400">
                 {{ shortcut.description }}
@@ -91,7 +91,7 @@
               <kbd
                 class="rounded border border-zinc-300 bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-700 dark:border-white/20 dark:bg-white/5 dark:text-zinc-300"
               >
-                {{ shortcut.keys }}
+                {{ shortcut.keyBinding }}
               </kbd>
             </div>
           }

@@ -31,8 +31,5 @@ pub mod dashboard_preferences_command;
 #[path = "custom-emote.command.rs"]
 pub mod custom_emote_command;
 
-#[path = "logger.command.rs"]
-pub mod logger_command;
-
 #[path = "storage.command.rs"]
 pub mod storage_command;

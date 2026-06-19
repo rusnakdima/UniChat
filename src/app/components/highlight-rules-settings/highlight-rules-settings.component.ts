@@ -63,9 +63,9 @@ export class HighlightRulesSettingsComponent {
   startEdit(rule: HighlightRule): void {
     this.editingRuleId.set(rule.id);
     this.editingPattern.set(rule.pattern);
-    this.editingIsRegex.set(rule.isRegex);
-    this.editingIsGlobal.set(rule.isGlobal);
-    this.editingColor.set(rule.color);
+    this.editingIsRegex.set(rule.isRegex ?? false);
+    this.editingIsGlobal.set(rule.isGlobal ?? false);
+    this.editingColor.set(rule.color ?? "#FFD700");
     this.editingChannelIds.set(rule.channelIds ?? []);
   }
 
@@ -92,12 +92,15 @@ export class HighlightRulesSettingsComponent {
     if (!pattern) return;
 
     this.highlightRulesService.addRule({
+      id: crypto.randomUUID(),
       pattern,
+      style: "highlight",
+      notify: false,
       isRegex: this.newIsRegex(),
       isGlobal: this.newIsGlobal(),
       color: this.newColor(),
       channelIds: this.newIsGlobal() ? undefined : this.newChannelIds(),
-      isActive: true,
+      enabled: true,
     });
 
     // Reset form

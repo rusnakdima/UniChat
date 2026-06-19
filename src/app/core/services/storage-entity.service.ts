@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 
 export interface StorageEntity {
   id: string;
@@ -6,7 +6,7 @@ export interface StorageEntity {
   data: unknown;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class StorageEntityService {
   private _entities = new Map<string, StorageEntity>();
 
@@ -23,14 +23,21 @@ export class StorageEntityService {
   }
 
   createChatMessage(channelId: string, message: unknown): StorageEntity {
-    const entity: StorageEntity = { id: crypto.randomUUID(), type: 'chat_message', data: { channelId, message } };
+    const entity: StorageEntity = {
+      id: crypto.randomUUID(),
+      type: "chat_message",
+      data: { channelId, message },
+    };
     this.save(entity);
     return entity;
   }
 
   deleteChatMessagesByChannel(channelId: string): void {
     for (const [id, entity] of this._entities) {
-      if (entity.type === 'chat_message' && (entity.data as { channelId?: string }).channelId === channelId) {
+      if (
+        entity.type === "chat_message" &&
+        (entity.data as { channelId?: string }).channelId === channelId
+      ) {
         this._entities.delete(id);
       }
     }

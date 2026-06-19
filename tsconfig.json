@@ -20,12 +20,12 @@
       "@components/*": ["src/app/components/*"],
       "@directives/*": ["src/app/directives/*"],
       "@features/*": ["src/app/features/*"],
-      "@models/*": ["src/app/models/*"],
+      "@entities/*": ["src/app/entities/*"],
       "@services/*": ["src/app/services/*"],
       "@core/*": ["src/app/core/*"],
       "@shared/*": ["src/app/shared/*"],
-      "@stores/*": ["src/app/stores/*"],
-      "@views/*": ["src/app/views/*"],
+      "@store/*": ["src/app/store/*"],
+      "@pages/*": ["src/app/pages/*"],
       "@utils/*": ["src/app/utils/*"],
       "@tauri-shared/*": ["../_shared/*"]
     }

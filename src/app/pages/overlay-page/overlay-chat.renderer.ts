@@ -7,10 +7,9 @@ import {
   OverlayDirection,
   ChatMessage,
   ChatMessageEmote,
-} from "@models/chat.model";
-import { YouTubeChannelInfo } from "@models/platform-api.model";
+} from "@entities/chat.model";
+import { YouTubeChannelInfo } from "@entities/platform-api.model";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
-import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { KickChatService } from "@services/providers/kick-chat.service";
@@ -39,7 +38,6 @@ export class OverlayChatRenderer {
   readonly authService = inject(AuthorizationService);
   readonly channelImageLoader = inject(ChannelImageLoaderService);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly logger = inject(LOGGER_SERVICE);
   private readonly tauriApi = inject(TauriApiService);
 
   private readonly pendingUserAvatarLoads = new Set<string>();

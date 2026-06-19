@@ -1,5 +1,5 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, output } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, output, computed } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 
@@ -15,6 +15,6 @@ import { KeyboardShortcutsService } from "@services/ui/keyboard-shortcuts.servic
 export class KeyboardShortcutsHelpComponent {
   private readonly keyboardShortcutsService = inject(KeyboardShortcutsService);
 
-  readonly shortcutsByCategory = this.keyboardShortcutsService.shortcutsByCategory;
+  readonly shortcutsByCategory = computed(() => this.keyboardShortcutsService.shortcutsByCategory);
   readonly closed = output<void>();
 }

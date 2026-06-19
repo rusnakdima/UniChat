@@ -14,7 +14,7 @@ import {
 import { ThemeService } from "@services/core/theme.service";
 
 /* models */
-import { PlatformType, PLATFORMS } from "@models/chat.model";
+import { PlatformType, PLATFORMS } from "@entities/chat.model";
 
 /* helpers */
 import { getPlatformLabel } from "@shared/utils/chat.helper";

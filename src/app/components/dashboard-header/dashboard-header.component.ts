@@ -15,7 +15,7 @@ import { ChatMessagePresentationService } from "@services/ui/chat-message-presen
 import { ThemeService } from "@services/core/theme.service";
 
 /* models */
-import { PlatformType, PLATFORMS } from "@models/chat.model";
+import { PlatformType, PLATFORMS } from "@entities/chat.model";
 
 type PlatformFilter = "all" | "twitch" | "kick" | "youtube";
 

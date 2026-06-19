@@ -1,5 +1,5 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { ChatMessage } from '@models/chat.model';
+import { Injectable, signal, computed } from "@angular/core";
+import { ChatMessage } from "@entities/chat.model";
 
 export interface HighlightSegment {
   text: string;
@@ -11,7 +11,7 @@ export interface SearchResult {
   channelRef: string;
   text: string;
   timestamp: number;
-  matchType?: 'text' | 'author' | 'both';
+  matchType?: "text" | "author" | "both";
   message: ChatMessage;
   highlightedSegments: HighlightSegment[];
 }
@@ -26,7 +26,7 @@ export interface SearchOptions {
   limit?: number;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ChatSearchService {
   private _results = signal<SearchResult[]>([]);
   private _isSearching = signal(false);
@@ -54,12 +54,4 @@ export class ChatSearchService {
   clearSearch(): void {
     this._results.set([]);
   }
-}
-
-  clearSearch(): void { this._results = []; }
-
-  get hasResults(): boolean { return this._results.length > 0; }
-  get isSearching(): boolean { return this._isSearching; }
-  get resultCount(): number { return this._results.length; }
-  get searchResults(): typeof this._results { return this._results; }
 }

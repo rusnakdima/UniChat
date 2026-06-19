@@ -17,7 +17,7 @@ import {
   WidgetFilter,
   OverlayAnimationType,
   OverlayDirection,
-} from "@models/chat.model";
+} from "@entities/chat.model";
 
 /* services */
 import { LocalStorageService } from "@shared/services/local-storage.service";
@@ -25,7 +25,6 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
-import { LOGGER_SERVICE } from "@core/services/logger.service";
 import { TauriApiService } from "@app/api/tauri-api.service";
 import { findChannelByRef, migrateLegacyChannelRefs, toChannelRef } from "@utils/channel-ref.util";
 import { buildOverlayUrl } from "@shared/utils/chat.helper";
@@ -48,11 +47,10 @@ import { SharedHeaderComponent } from "@components/shared-header/shared-header.c
   selector: "app-overlay-management-view",
   standalone: true,
   imports: [FormsModule, MatIconModule, CheckboxComponent, SharedHeaderComponent],
-  templateUrl: "./overlay-management.view.html",
+  templateUrl: "./overlay-management-page.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OverlayManagementView {
-  private readonly logger = inject(LOGGER_SERVICE);
   private readonly route = inject(ActivatedRoute);
   private readonly dashboardState = inject(DashboardStateService);
   private readonly chatList = inject(ChatListService);
@@ -144,11 +142,7 @@ export class OverlayManagementView {
     // Ensure overlay server is started so OBS can load the URL immediately.
     void this.tauriApi
       .invoke("startOverlayServer", { port: w.port }, { suppressError: true })
-      .catch((error) => {
-        this.logger.warn("Failed to start overlay server:", error, {
-          source: "[OverlayManagement]",
-        });
-      });
+      .catch(() => undefined);
   }
 
   private async initBackendConfigFromStorage(widgetId: string): Promise<void> {

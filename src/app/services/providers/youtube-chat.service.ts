@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 
 export interface YouTubeChatMessage {
   id: string;
@@ -6,7 +6,7 @@ export interface YouTubeChatMessage {
   author: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class YouTubeChatService {
   connect(channelId: string): void {}
   disconnect(): void {}

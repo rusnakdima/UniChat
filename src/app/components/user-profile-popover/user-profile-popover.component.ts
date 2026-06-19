@@ -11,8 +11,8 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 /* models */
-import { ChatBadgeIcon } from "@models/chat.model";
-import { KickUserInfo, TwitchUserInfo } from "@models/platform-api.model";
+import { ChatBadgeIcon } from "@entities/chat.model";
+import { KickUserInfo, TwitchUserInfo } from "@entities/platform-api.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";

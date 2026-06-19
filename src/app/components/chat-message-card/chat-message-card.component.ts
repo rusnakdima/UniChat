@@ -5,7 +5,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
 
 /* models */
-import { ChatMessage } from "@models/chat.model";
+import { ChatMessage } from "@entities/chat.model";
 
 /* services */
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
@@ -86,7 +86,7 @@ export class ChatMessageCardComponent {
   }
 
   /** Get message type from message or default to "regular" */
-  getMessageType(): import("@models/chat.model").MessageType {
+  getMessageType(): import("@entities/chat.model").MessageType {
     return this.message().messageType ?? "regular";
   }
 
@@ -107,7 +107,8 @@ export class ChatMessageCardComponent {
       "shadow-md": this.highlighted(),
       "border-l-4": highlightColor !== null,
       "border-slate-200": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
-      "dark:border-white/10": !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
+      "dark:border-white/10":
+        !this.highlighted() && !typeConfig.cssClass && highlightColor === null,
     };
     if (typeConfig.cssClass) {
       classes[typeConfig.cssClass] = true;
@@ -412,7 +413,9 @@ export class ChatMessageCardComponent {
     if (msg.channelImageUrl) {
       return msg.channelImageUrl;
     }
-    return this.channelAvatars.getChannelImageForChannel(buildChannelRef(msg.platform, msg.sourceChannelId));
+    return this.channelAvatars.getChannelImageForChannel(
+      buildChannelRef(msg.platform, msg.sourceChannelId)
+    );
   }
 
   /** Get platform dot color for mobile indicator */

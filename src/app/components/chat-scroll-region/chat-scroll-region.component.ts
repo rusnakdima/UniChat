@@ -20,7 +20,7 @@ import { throttleTime } from "rxjs/operators";
 import { toSignal } from "@angular/core/rxjs-interop";
 
 /* models */
-import { ChatMessage } from "@models/chat.model";
+import { ChatMessage } from "@entities/chat.model";
 @Component({
   selector: "app-chat-scroll-region",
   standalone: true,

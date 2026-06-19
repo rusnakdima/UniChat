@@ -1,6 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable, inject, signal, computed, DestroyRef } from "@angular/core";
-import { LOGGER_SERVICE } from "@core/services/logger.service";
 
 export enum ErrorCode {
   UNKNOWN = "UNKNOWN",
@@ -61,7 +60,6 @@ function generateLogId(): string {
   providedIn: "root",
 })
 export class ErrorHandlerService {
-  protected readonly logger = inject(LOGGER_SERVICE);
   private destroyRef = inject(DestroyRef);
 
   private errorsSignal = signal<AppError[]>([]);
@@ -87,12 +85,6 @@ export class ErrorHandlerService {
     const appError = this.convertToAppError(error);
     this.logError(appError, context);
 
-    const logContext = context ? { source: context } : undefined;
-    this.logger.debug("[ERROR_HANDLER] handleError completed", {
-      ...logContext,
-      code: appError.code,
-      retryable: appError.retryable,
-    });
     return appError;
   }
 
@@ -100,11 +92,6 @@ export class ErrorHandlerService {
     const appError = this.convertHttpError(error);
     this.logError(appError, context);
 
-    const logContext = context ? { source: context } : undefined;
-    this.logger.debug("[ERROR_HANDLER] handleHttpError completed", {
-      ...logContext,
-      code: appError.code,
-    });
     return appError;
   }
 
@@ -243,11 +230,6 @@ export class ErrorHandlerService {
     config: Partial<RetryConfig> = {},
     context?: string
   ): Promise<T> {
-    const logContext = context ? { source: context } : undefined;
-    this.logger.debug("[ERROR_HANDLER] retry started", {
-      ...logContext,
-      maxAttempts: config.maxAttempts,
-    });
     const { maxAttempts, delayMs, backoffMultiplier } = { ...DEFAULT_RETRY_CONFIG, ...config };
 
     let lastError: AppError | null = null;
@@ -255,18 +237,10 @@ export class ErrorHandlerService {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const result = await operation();
-        this.logger.debug("[ERROR_HANDLER] retry completed", {
-          ...logContext,
-          attempt,
-        });
         return result;
       } catch (error) {
         lastError = this.handleError(error, context);
         if (!lastError.retryable || attempt === maxAttempts) {
-          this.logger.error("[ERROR_HANDLER] retry failed", lastError, {
-            ...logContext,
-            attempt,
-          });
           throw lastError;
         }
 
@@ -291,11 +265,5 @@ export class ErrorHandlerService {
     };
     this.logsSignal.update((logs) => [entry, ...logs].slice(0, 100));
     this.errorsSignal.update((errors) => [error, ...errors].slice(0, 100));
-
-    this.logger.error("[ERROR_HANDLER] Error logged", context, {
-      code: error.code,
-      message: error.message,
-      timestamp: error.timestamp,
-    });
   }
 }

@@ -8,7 +8,7 @@ import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 
 /* models */
-import { ChatMessage, PLATFORMS } from "@models/chat.model";
+import { ChatMessage, PLATFORMS } from "@entities/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";

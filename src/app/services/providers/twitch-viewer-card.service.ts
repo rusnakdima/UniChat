@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 
 export interface TwitchViewerInfo {
   id: string;
@@ -9,13 +9,19 @@ export interface TwitchViewerInfo {
   badges: string[];
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class TwitchViewerCardService {
   getViewerCard(userId: string): Promise<TwitchViewerInfo> {
-    return Promise.resolve({ userId, username: '', avatarUrl: '', badges: [], id: userId });
+    return Promise.resolve({ userId, username: "", avatarUrl: "", badges: [], id: userId });
   }
 
-  fetchUserInfo(userId: string): Promise<TwitchViewerInfo> { return this.getViewerCard(userId); }
-  fetchTwitchViewerCard(userId: string): Promise<TwitchViewerInfo> { return this.getViewerCard(userId); }
-  fetchChannelProfileImage(channelId: string): Promise<string> { return Promise.resolve(''); }
+  fetchUserInfo(userId: string): Promise<TwitchViewerInfo> {
+    return this.getViewerCard(userId);
+  }
+  fetchTwitchViewerCard(userId: string): Promise<TwitchViewerInfo> {
+    return this.getViewerCard(userId);
+  }
+  fetchChannelProfileImage(channelId: string): Promise<string> {
+    return Promise.resolve("");
+  }
 }

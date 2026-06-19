@@ -12,7 +12,7 @@ import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
 /* models */
-import { ChatAccount, PlatformType, PLATFORMS } from "@models/chat.model";
+import { ChatAccount, PlatformType, PLATFORMS } from "@entities/chat.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";

@@ -1,5 +1,12 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, output, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  output,
+  signal,
+  computed,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
@@ -24,7 +31,7 @@ export class KeyboardShortcutsDialogComponent {
   readonly closeShortcutDialog = output<void>();
 
   readonly themeMode = this.themeService.themeMode;
-  readonly shortcuts = this.keyboardShortcutsService.shortcuts;
+  readonly shortcuts = computed(() => this.keyboardShortcutsService.shortcuts);
   readonly editBindingId = signal<string | null>(null);
   readonly editKeys = signal("");
   readonly conflictError = signal(false);
@@ -46,8 +53,9 @@ export class KeyboardShortcutsDialogComponent {
       return;
     }
     const ok = this.keyboardShortcutsService.updateBindingKeys(id, this.editKeys());
-    this.conflictError.set(!ok);
-    if (ok) {
+    if (!ok) {
+      this.conflictError.set(true);
+    } else {
       this.cancelEdit();
     }
   }

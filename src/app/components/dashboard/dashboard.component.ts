@@ -14,7 +14,7 @@ import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
 /* models */
-import { ChatChannel, PlatformType, PLATFORMS } from "@models/chat.model";
+import { ChatChannel, PlatformType, PLATFORMS } from "@entities/chat.model";
 
 /* services */
 import { LocalStorageService } from "@shared/services/local-storage.service";
@@ -80,7 +80,7 @@ export class DashboardComponent {
     HTMLElement & { setLoadingComplete(success: boolean, hasMore: boolean): void }
   >("historyHeader");
 
-  readonly enabledChannels = computed(() => {
+  readonly enabledChannels = computed((): Set<string> => {
     const saved = this.dashboardPreferences.preferences().mixedEnabledChannelIds;
     const visible = new Set(
       this.chatListService
@@ -88,7 +88,7 @@ export class DashboardComponent {
         .filter((ch) => ch.isVisible)
         .map((c) => this.channelRefFor(c))
     );
-    return new Set(saved.filter((id) => visible.has(id)));
+    return new Set(Array.from(saved).filter((id: string) => visible.has(id)));
   });
 
   readonly enabledChannelsCount = computed(() => this.enabledChannels().size);
@@ -131,7 +131,7 @@ export class DashboardComponent {
   readonly enabledVisibleChannels = computed(() =>
     this.orderedVisibleChannels().filter((ch) => this.enabledChannels().has(this.channelRefFor(ch)))
   );
-  readonly mixedMessages = this.feedData.mixedFeedChronological;
+  readonly mixedMessages = this.feedData.feedItems;
   readonly visibleChannelCount = computed(
     () => this.chatListService.channels().filter((ch) => ch.isVisible).length
   );
@@ -139,7 +139,7 @@ export class DashboardComponent {
   constructor() {
     effect(() => {
       for (const channel of this.orderedVisibleChannels()) {
-        this.channelAvatars.ensureChannelImageForChannel(channel);
+        this.channelAvatars.ensureChannelImageForChannel(this.channelRefFor(channel));
       }
     });
   }
@@ -265,7 +265,7 @@ export class DashboardComponent {
   }
 
   readonly loadChannelImage = (channel: ChatChannel): void => {
-    this.channelAvatars.ensureChannelImageForChannel(channel);
+    this.channelAvatars.ensureChannelImageForChannel(this.channelRefFor(channel));
   };
 
   // Check if any platform has authorized account for sending messages
@@ -332,12 +332,7 @@ export class DashboardComponent {
       }
       // Only send if platform is authorized for this channel
       if (this.authorizationService.isAuthorized(channel.platform)) {
-        void this.chatStateService.sendOutgoingChatMessage(
-          channel.channelId,
-          channel.platform,
-          text,
-          false // Don't create optimistic message - wait for service echo
-        );
+        void this.chatStateService.sendOutgoingChatMessage(text);
       }
     }
 
@@ -363,7 +358,7 @@ export class DashboardComponent {
     for (let i = 0; i < channels.length; i++) {
       const messages = results[i];
       if (messages.length > 0) {
-        this.chatStorage.prependMessages(channels[i].channelId, messages);
+        this.chatStorage.prependMessages(channels[i].channelId, messages as any);
         totalLoaded += messages.length;
       }
     }
@@ -383,7 +378,7 @@ export class DashboardComponent {
     const messages = await this.twitchChat.loadChannelHistory(channelId, count);
 
     if (messages.length > 0) {
-      this.chatStorage.prependMessages(channelId, messages);
+      this.chatStorage.prependMessages(channelId, messages as any);
     }
 
     this.historyHeader()?.setLoadingComplete(true, messages.length >= count);

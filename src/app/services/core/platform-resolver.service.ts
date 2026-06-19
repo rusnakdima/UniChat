@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 
 export interface PlatformStatus {
   platform: string;
@@ -9,16 +9,32 @@ export interface PlatformStatus {
   mixedFilterBadgeClasses?: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class PlatformResolverService {
   private _platforms = new Map<string, PlatformStatus>();
 
-  resolve(channelRef: string): string { return 'twitch'; }
-  getPlatformName(platform: string): string { return platform; }
-  getStatusLabel(platform: string): string { return platform; }
-  getStatusClasses(platform: string): string { return ''; }
-  getBadgeClasses(platform: string): string { return ''; }
-  getChannelDisplayName(platform: string, channelId: string): string { return channelId; }
-  getDisplayName(platform: string, channelId: string): string { return channelId; }
-  getMixedFilterBadgeClasses(platform: string): string { return ''; }
+  resolve(channelRef: string): string {
+    return "twitch";
+  }
+  getPlatformName(platform: string): string {
+    return platform;
+  }
+  getStatusLabel(platform: string): string {
+    return platform;
+  }
+  getStatusClasses(platform: string): string {
+    return "";
+  }
+  getBadgeClasses(platform: string): string {
+    return "";
+  }
+  getChannelDisplayName(platform: string, channelId: string): string {
+    return channelId;
+  }
+  getDisplayName(platform: string, _channelId: string): string {
+    return platform;
+  }
+  getMixedFilterBadgeClasses(platform: string, _channelEnabled?: boolean): string {
+    return "";
+  }
 }

@@ -11,7 +11,7 @@ import {
 } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { DensityMode, PlatformType, WidgetConfig } from "@models/chat.model";
+import { DensityMode, PlatformType, WidgetConfig } from "@entities/chat.model";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
