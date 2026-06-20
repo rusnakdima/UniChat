@@ -1,11 +1,37 @@
-import { Injectable, signal } from "@angular/core";
+import { Injectable, signal, effect } from "@angular/core";
 import { ChatChannel } from "@entities/chat.model";
 export type { ChatChannel } from "@entities/chat.model";
 
+const CHANNELS_STORAGE_KEY = "unichat_channels";
+
 @Injectable({ providedIn: "root" })
 export class ChatListService {
-  private _channels = signal<ChatChannel[]>([]);
+  private _channels = signal<ChatChannel[]>(this.loadFromStorage());
   readonly channels = this._channels.asReadonly();
+
+  constructor() {
+    effect(() => {
+      const channels = this._channels();
+      this.saveToStorage(channels);
+    });
+  }
+
+  private loadFromStorage(): ChatChannel[] {
+    try {
+      const stored = localStorage.getItem(CHANNELS_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveToStorage(channels: ChatChannel[]): void {
+    try {
+      localStorage.setItem(CHANNELS_STORAGE_KEY, JSON.stringify(channels));
+    } catch (e) {
+      console.error("[CHAT_LIST] Failed to save channels to localStorage:", e);
+    }
+  }
 
   getChats(): ChatChannel[] {
     return this._channels();
