@@ -1,5 +1,7 @@
 import { Injectable, signal, Signal } from "@angular/core";
 
+const STORAGE_KEY = "unichat-dashboard-preferences";
+
 export interface DashboardPreferences {
   theme: string;
   fontSize: number;
@@ -10,9 +12,25 @@ export interface DashboardPreferences {
   splitLayout: unknown;
 }
 
-@Injectable({ providedIn: "root" })
-export class DashboardPreferencesService {
-  private _prefs = signal<DashboardPreferences>({
+function loadFromStorage(): DashboardPreferences {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        theme: parsed.theme ?? "dark",
+        fontSize: parsed.fontSize ?? 14,
+        mixedEnabledChannelIds: new Set<string>(parsed.mixedEnabledChannelIds ?? []),
+        autoScroll: parsed.autoScroll ?? true,
+        feedMode: parsed.feedMode ?? "mixed",
+        densityMode: parsed.densityMode ?? "comfortable",
+        splitLayout: parsed.splitLayout ?? {},
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return {
     theme: "dark",
     fontSize: 14,
     mixedEnabledChannelIds: new Set(),
@@ -20,7 +38,26 @@ export class DashboardPreferencesService {
     feedMode: "mixed",
     densityMode: "comfortable",
     splitLayout: {},
-  });
+  };
+}
+
+function saveToStorage(prefs: DashboardPreferences): void {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...prefs,
+        mixedEnabledChannelIds: Array.from(prefs.mixedEnabledChannelIds),
+      })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+@Injectable({ providedIn: "root" })
+export class DashboardPreferencesService {
+  private _prefs = signal<DashboardPreferences>(loadFromStorage());
 
   readonly preferences: Signal<DashboardPreferences> = this._prefs.asReadonly();
 
@@ -29,25 +66,38 @@ export class DashboardPreferencesService {
   }
   savePreferences(prefs: DashboardPreferences): void {
     this._prefs.set(prefs);
+    saveToStorage(prefs);
   }
   addMixedEnabledChannelId(channelId: string): void {
     this._prefs.update((p) => {
       const s = new Set(p.mixedEnabledChannelIds);
       s.add(channelId);
-      return { ...p, mixedEnabledChannelIds: s };
+      const next = { ...p, mixedEnabledChannelIds: s };
+      saveToStorage(next);
+      return next;
     });
   }
   removeMixedEnabledChannelId(channelId: string): void {
     this._prefs.update((p) => {
       const s = new Set(p.mixedEnabledChannelIds);
       s.delete(channelId);
-      return { ...p, mixedEnabledChannelIds: s };
+      const next = { ...p, mixedEnabledChannelIds: s };
+      saveToStorage(next);
+      return next;
     });
   }
   setMixedEnabledChannelIds(channelIds: string[]): void {
-    this._prefs.update((p) => ({ ...p, mixedEnabledChannelIds: new Set(channelIds) }));
+    this._prefs.update((p) => {
+      const next = { ...p, mixedEnabledChannelIds: new Set(channelIds) };
+      saveToStorage(next);
+      return next;
+    });
   }
   setAutoScroll(enabled: boolean): void {
-    this._prefs.update((p) => ({ ...p, autoScroll: enabled }));
+    this._prefs.update((p) => {
+      const next = { ...p, autoScroll: enabled };
+      saveToStorage(next);
+      return next;
+    });
   }
 }
