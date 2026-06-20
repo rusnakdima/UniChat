@@ -29,6 +29,7 @@ import { buildChannelRef } from "@utils/channel-ref.util";
 })
 export class ChannelFilterDropdownComponent implements AfterViewInit {
   private readonly channelsSource = signal<ChatChannel[]>([]);
+  private readonly enabledChannelIdsSource = signal<Set<string>>(new Set());
 
   @Input()
   set channels(value: ChatChannel[]) {
@@ -36,7 +37,16 @@ export class ChannelFilterDropdownComponent implements AfterViewInit {
   }
 
   readonly channelsSignal = computed(() => this.channelsSource());
-  @Input() enabledChannelIds: Set<string> = new Set();
+
+  @Input()
+  set enabledChannelIds(value: Set<string>) {
+    this.enabledChannelIdsSource.set(value);
+  }
+
+  get enabledChannelIds(): Set<string> {
+    return this.enabledChannelIdsSource();
+  }
+
   @Input() visibleChannelCount: number = 0;
   @Output() enabledChannelIdsChange = new EventEmitter<Set<string>>();
   @Output() closeDropdown = new EventEmitter<void>();
@@ -79,7 +89,7 @@ export class ChannelFilterDropdownComponent implements AfterViewInit {
     return channels.filter((ch) => ch.channelName.toLowerCase().includes(query));
   });
 
-  readonly selectedCount = computed(() => this.enabledChannelIds.size);
+  readonly selectedCount = computed(() => this.enabledChannelIdsSource().size);
 
   channelRefFor(channel: ChatChannel): string {
     return buildChannelRef(channel.platform, channel.channelId);
