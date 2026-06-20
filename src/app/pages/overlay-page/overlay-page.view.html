@@ -7,7 +7,6 @@
   <style [textContent]="customCssText()"></style>
   <style [textContent]="animationCssText()"></style>
   <style>
-    /* Force transparent background for overlay - required for OBS browser source */
     html,
     body {
       background: transparent !important;
@@ -17,7 +16,6 @@
     }
   </style>
 
-  <!-- Messages Container -->
   @if (orderedMessages().length === 0) {
     <div class="flex h-screen flex-col items-center justify-center">
       <mat-icon
@@ -30,53 +28,14 @@
     <div class="flex flex-col items-start justify-start gap-2" [class]="messagesContainerClasses()">
       @for (message of orderedMessages(); track message.id) {
         <article class="message-item flex items-center gap-2">
-          <!-- Service icon always leads multi-channel overlays -->
-          @if (shouldShowPlatformContextIcon() && shouldShowPlatformIcon(message)) {
+          @if (shouldShowPlatformIcon(message)) {
             <img
               [src]="presentation.platformIconUrl(message.platform)"
               [alt]="platformLabel($any(message.platform))"
-              [title]="platformLabel($any(message.platform))"
               class="h-5 w-5 shrink-0 rounded-sm object-contain"
             />
           }
 
-          <!-- Message source channel image stays in the first avatar slot for multi-channel overlays -->
-          @if (shouldShowChannelImage(message)) {
-            <img
-              [src]="getChannelImageUrl(message)"
-              [alt]="channelTitle(message)"
-              [title]="channelTitle(message)"
-              class="h-6 w-6 shrink-0 rounded-full object-cover"
-              loading="lazy"
-            />
-          } @else if (hasMultipleChannels()) {
-            <div
-              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold text-white uppercase"
-              [title]="channelTitle(message)"
-            >
-              {{ channelInitial(message) }}
-            </div>
-          }
-
-          <!-- User avatar becomes the second image slot in multi-channel overlays -->
-          @if (shouldShowUserImage(message)) {
-            <img
-              [src]="getUserImageUrl(message)"
-              [alt]="message.author"
-              [title]="message.author"
-              class="h-6 w-6 shrink-0 rounded-full object-cover"
-              loading="lazy"
-            />
-          } @else if (shouldShowAuthorInitial(message)) {
-            <div
-              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold uppercase"
-              [title]="message.author"
-            >
-              {{ authorInitial(message) }}
-            </div>
-          }
-
-          <!-- Username and Message -->
           <div class="flex min-w-0 flex-1 items-baseline gap-1">
             <span
               class="shrink-0 font-semibold text-white"
@@ -97,7 +56,6 @@
                   <img
                     [src]="segment.emote.urls[0]"
                     [alt]="segment.emote.code"
-                    [title]="segment.emote.code"
                     class="overlay-emote mx-0.5 inline align-middle"
                     [class.overlay-emote-dynamic]="
                       !segment.emote.urls[0].includes('static-cdn.jtvnw.net')
@@ -106,11 +64,9 @@
                     (error)="onEmoteImageError(segment.emote!.urls[0])"
                   />
                 } @else if (segment.emote) {
-                  <span
-                    class="mx-0.5 inline align-middle text-xs text-white/50"
-                    [title]="segment.emote.code"
-                    >{{ segment.emote.code }}</span
-                  >
+                  <span class="mx-0.5 inline align-middle text-xs text-white/50">{{
+                    segment.emote.code
+                  }}</span>
                 }
               }
             </p>

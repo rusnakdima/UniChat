@@ -8,7 +8,9 @@ import {
   DestroyRef,
   effect,
   inject,
+  Injector,
   input,
+  runInInjectionContext,
   signal,
   untracked,
   viewChild,
@@ -38,6 +40,7 @@ export class ChatScrollRegionComponent implements AfterViewInit {
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly injector = inject(Injector);
 
   readonly scrollToken = input.required<string>();
   readonly messages = input.required<readonly ChatMessage[]>();
@@ -87,26 +90,28 @@ export class ChatScrollRegionComponent implements AfterViewInit {
 
     this.prevTotalHeight = node.scrollHeight;
 
-    const scrollEvent = toSignal(
-      fromEvent(node, "scroll", { passive: true }).pipe(throttleTime(16)),
-      { initialValue: null }
-    );
+    runInInjectionContext(this.injector, () => {
+      const scrollEvent = toSignal(
+        fromEvent(node, "scroll", { passive: true }).pipe(throttleTime(16)),
+        { initialValue: null }
+      );
 
-    effect(() => {
-      scrollEvent();
-      this.onScroll();
-    });
+      effect(() => {
+        scrollEvent();
+        this.onScroll();
+      });
 
-    const resizeEvent = toSignal(
-      fromEvent(window, "resize", { passive: true }).pipe(throttleTime(100)),
-      { initialValue: null }
-    );
+      const resizeEvent = toSignal(
+        fromEvent(window, "resize", { passive: true }).pipe(throttleTime(100)),
+        { initialValue: null }
+      );
 
-    effect(() => {
-      resizeEvent();
-      if (this.pinnedToBottom() && !this.pendingRaf) {
-        this.pendingScrollTop = this.getScrollContainer()?.scrollHeight ?? null;
-      }
+      effect(() => {
+        resizeEvent();
+        if (this.pinnedToBottom() && !this.pendingRaf) {
+          this.pendingScrollTop = this.getScrollContainer()?.scrollHeight ?? null;
+        }
+      });
     });
 
     if (this.pinnedToBottom() && this.autoScroll()) {
