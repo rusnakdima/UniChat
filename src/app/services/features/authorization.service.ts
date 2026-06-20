@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject, effect } from "@angular/core";
 import { PlatformType } from "@entities/chat.model";
 import { TauriApiService } from "@app/api/api.api.service";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { ChatListService } from "@services/data/chat-list.service";
 
 const ACCOUNTS_STORAGE_KEY = "unichat_accounts";
 
@@ -20,6 +21,7 @@ export interface PlatformAccount {
 @Injectable({ providedIn: "root" })
 export class AuthorizationService {
   private readonly api = inject(TauriApiService);
+  private readonly chatList = inject(ChatListService);
   private _accounts = signal<PlatformAccount[]>(this.loadFromStorage());
   private _autoRefreshEnabled = false;
   readonly accounts = computed(() => this._accounts());
@@ -54,10 +56,16 @@ export class AuthorizationService {
   canModerate(): boolean {
     return false;
   }
-  deauthorizeAccount(accountId: string, _platform?: PlatformType): void {
-    this._accounts.update((accounts) =>
-      accounts.map((a) => (a.id === accountId ? { ...a, isConnected: false } : a))
-    );
+  async deauthorizeAccount(accountId: string, platform?: PlatformType): Promise<void> {
+    const account = this._accounts().find((a) => a.id === accountId);
+    if (account) {
+      try {
+        await this.api.authDisconnect({ platform: account.platform, accountId });
+      } catch (error) {
+        console.error("[AUTH] Failed to disconnect account:", error);
+      }
+    }
+    this._accounts.update((accounts) => accounts.filter((a) => a.id !== accountId));
   }
   deauthorize(accountId: string): void {
     this.deauthorizeAccount(accountId);
@@ -108,6 +116,24 @@ export class AuthorizationService {
           const others = current.filter((a) => a.platform !== platform);
           return [...others, ...mapped];
         });
+
+        for (const account of mapped) {
+          const existingChannels = this.chatList.getChannels();
+          const hasChannel = existingChannels.some(
+            (ch) => ch.platform === account.platform && ch.channelId === account.username
+          );
+          if (!hasChannel) {
+            this.chatList.addChannel({
+              platform: account.platform,
+              channelId: account.username,
+              channelName: account.username,
+              accountId: account.id,
+              isVisible: true,
+              isAuthorized: true,
+              addedAt: new Date().toISOString(),
+            });
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to load account status:", error);
