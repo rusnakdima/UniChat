@@ -46,6 +46,12 @@ impl OAuthLoopbackService {
       guard.insert(platform_key.to_string(), rx);
     }
     let expected_path = callback_path.to_string();
+    log_info!(
+      "OAuth callback: Starting listener on {}:{} for path {}",
+      host,
+      port,
+      expected_path
+    );
     let platform_key_owned = platform_key.to_string();
     let handle = Handle::current().spawn(async move {
       log_debug!(
@@ -55,9 +61,11 @@ impl OAuthLoopbackService {
       let listener = match TcpListener::bind(&address).await {
         Ok(l) => l,
         Err(e) => {
+          log_error!("OAuth callback: Failed to bind to {} - {}", address, e);
           return;
         }
       };
+      log_info!("OAuth callback: Waiting for connection on {}...", address);
       match listener.accept().await {
         Ok((mut stream, _)) => {
           let mut buffer = [0_u8; 4096];
@@ -94,8 +102,12 @@ impl OAuthLoopbackService {
           );
           let _ = stream.write_all(response.as_bytes()).await;
           if let Some(url) = callback_url {
+            log_info!("OAuth callback: Received callback URL for {}: {}", platform_key_owned, url);
             if let Err(e) = tx.send(url) {
+              log_error!("OAuth callback: Failed to send URL to channel: {}", e);
             }
+          } else {
+            log_warn!("OAuth callback: No valid callback URL found in request for {}", platform_key_owned);
           }
         }
         Err(e) => {

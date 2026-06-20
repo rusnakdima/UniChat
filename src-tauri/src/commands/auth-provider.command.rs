@@ -1,5 +1,6 @@
+use crate::log_warn;
 use crate::models::auth_account_model::AuthCommandResultModel;
-use crate::models::platform_type_model::PlatformTypeModel;
+use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
 use crate::AppState;
 use tauri::State;
 #[tauri::command]
@@ -30,6 +31,28 @@ pub async fn auth_complete(
     .complete_auth(platform, callback_url)
     .await
     .map_err(|e| e.to_string())?;
+
+  // Sync account to CRUD chat_accounts table
+  let chat_account_data = serde_json::json!({
+    "platform": account.platform.as_key(),
+    "username": account.username,
+    "user_id": account.user_id,
+    "avatar_url": account.avatar_url,
+    "auth_status": "authorized",
+    "access_token": account.access_token,
+    "refresh_token": account.refresh_token,
+    "token_expires_at": account.token_expires_at,
+  });
+
+  if let Err(e) = state
+    .data
+    .json_provider
+    .insert("chat_accounts", chat_account_data)
+    .await
+  {
+    log_warn!("Failed to sync account to chat_accounts table: {}", e);
+  }
+
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization completed and account saved.".to_string(),
@@ -48,6 +71,28 @@ pub async fn auth_await_callback(
     .await_loopback_and_complete(platform)
     .await
     .map_err(|e| e.to_string())?;
+
+  // Sync account to CRUD chat_accounts table
+  let chat_account_data = serde_json::json!({
+    "platform": account.platform.as_key(),
+    "username": account.username,
+    "user_id": account.user_id,
+    "avatar_url": account.avatar_url,
+    "auth_status": "authorized",
+    "access_token": account.access_token,
+    "refresh_token": account.refresh_token,
+    "token_expires_at": account.token_expires_at,
+  });
+
+  if let Err(e) = state
+    .data
+    .json_provider
+    .insert("chat_accounts", chat_account_data)
+    .await
+  {
+    log_warn!("Failed to sync account to chat_accounts table: {}", e);
+  }
+
   Ok(AuthCommandResultModel {
     success: true,
     message: "Authorization callback received and account saved.".to_string(),
