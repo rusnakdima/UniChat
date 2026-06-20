@@ -12,6 +12,7 @@ export interface ConnectionInfo {
 @Injectable({ providedIn: "root" })
 export class ConnectionStateService {
   private _connections = new Map<string, ConnectionInfo>();
+  private _connectionsSignal = signal<ConnectionInfo[]>([]);
   private _state = signal<"disconnected" | "connecting" | "connected" | "error">("disconnected");
   private _lastError = signal<string | null>(null);
 
@@ -24,8 +25,12 @@ export class ConnectionStateService {
   get hasError(): boolean {
     return this._lastError() !== null;
   }
-  get connections(): ConnectionInfo[] {
+  getConnections(): ConnectionInfo[] {
     return Array.from(this._connections.values());
+  }
+
+  connectionsSignal() {
+    return this._connectionsSignal();
   }
 
   connect(): void {

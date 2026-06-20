@@ -4,7 +4,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
 
 /* models */
-import { RoomState } from "@entities/chat.model";
+import { ConnectionInfo } from "@services/data/connection-state.service";
 
 /* services */
 import { ConnectionStateService } from "@services/data/connection-state.service";
@@ -23,7 +23,7 @@ export class RoomStateIndicatorsComponent {
 
   readonly channelId = input.required<string>();
 
-  readonly roomState = signal<RoomState | undefined>(undefined);
+  readonly roomState = signal<ConnectionInfo | undefined>(undefined);
 
   constructor() {
     effect(() => {

@@ -1,4 +1,4 @@
-import { Injectable, signal } from "@angular/core";
+import { Injectable, signal, Signal } from "@angular/core";
 
 export interface OverlayChatMessage {
   id: string;
@@ -18,7 +18,7 @@ export interface OverlayChatMessage {
 export class OverlayWsStateService {
   readonly isConnected = false;
   private _messages = signal<OverlayChatMessage[]>([]);
-  readonly messages = this._messages.asReadonly();
+  messages = this._messages.asReadonly();
 
   connect(): void {}
   disconnect(): void {}

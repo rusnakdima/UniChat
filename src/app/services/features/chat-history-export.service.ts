@@ -1,5 +1,7 @@
 import { Injectable } from "@angular/core";
 
+export type ExportFormat = "json" | "csv" | "txt";
+
 @Injectable({ providedIn: "root" })
 export class ChatHistoryExportService {
   export(
@@ -13,13 +15,17 @@ export class ChatHistoryExportService {
     return Promise.resolve({ channelRef, messages: [], exportedAt: new Date() });
   }
 
-  exportChannelHistory(channelRef: string, options: unknown): Promise<unknown> {
+  exportChannelHistory(channelRef: string, _platform: unknown, options: unknown): Promise<unknown> {
     return this.export(channelRef, options);
   }
   exportAllHistory(options: unknown): Promise<unknown> {
     return Promise.resolve({});
   }
-  getExportStats(): { messageCount: number; oldestTimestamp: number } {
-    return { messageCount: 0, oldestTimestamp: 0 };
+  getExportStats(): {
+    totalChannels: number;
+    totalMessages: number;
+    byPlatform: { twitch: number; kick: number; youtube: number };
+  } {
+    return { totalChannels: 0, totalMessages: 0, byPlatform: { twitch: 0, kick: 0, youtube: 0 } };
   }
 }

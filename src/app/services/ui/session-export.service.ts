@@ -17,6 +17,7 @@ export class SessionExportService {
     return Promise.resolve(new Blob());
   }
   getExportPreview(options: SessionExportOptions): Promise<SessionExportPreview> {
-    return Promise.resolve({ count: 0 });
+    const preview: SessionExportPreview = { count: 0, platforms: [] };
+    return Promise.resolve(preview);
   }
 }

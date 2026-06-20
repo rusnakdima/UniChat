@@ -1,5 +1,5 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, signal, effect, OnInit } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal, effect } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { Router, NavigationEnd } from "@angular/router";
 import { toSignal } from "@angular/core/rxjs-interop";
@@ -20,7 +20,7 @@ interface MenuItem {
   templateUrl: "./app-sidebar.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppSidebarComponent implements OnInit {
+export class AppSidebarComponent {
   readonly themeService = inject(ThemeService);
 
   readonly menu: MenuItem[] = [
@@ -39,7 +39,7 @@ export class AppSidebarComponent implements OnInit {
 
   activePath: string = "";
 
-  ngOnInit(): void {
+  constructor() {
     const navigationEndEvents = toSignal(
       this.router.events.pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd)

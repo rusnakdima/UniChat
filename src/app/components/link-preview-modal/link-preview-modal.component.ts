@@ -1,5 +1,5 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, inject } from "@angular/core";
 import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
@@ -16,6 +16,10 @@ export class LinkPreviewModal {
   readonly linkPreview = inject(LinkPreviewService);
   private readonly inAppBrowser = inject(InAppLinkBrowserService);
   private readonly domSanitizer = inject(DomSanitizer);
+
+  readonly activePreview = computed(() =>
+    this.linkPreview.state().isOpen ? this.linkPreview.state() : null
+  );
 
   trustedFrameSrc(href: string): SafeResourceUrl {
     // Keep the trust bypass narrow: only allow URLs that our iframe-src allowlist already approved.

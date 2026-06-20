@@ -19,6 +19,12 @@ export class AvatarCacheService {
   hasUserAvatar(userId: string): boolean {
     return this._cache.has(userId);
   }
+  hasChannelAvatar(channelId: string): boolean {
+    return this._cache.has(channelId);
+  }
+  getChannelAvatar(channelId: string): string | null {
+    return this._cache.get(channelId) || null;
+  }
   preloadAvatars(userIds: string[]): void {
     userIds.forEach((id) => {
       if (!this._cache.has(id)) this._cache.set(id, `https://avatar.example.com/${id}`);

@@ -1,23 +1,14 @@
 // Type augmentations for stub services to satisfy consuming code
-import { OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
 import { ChatRichTextService } from "@services/ui/chat-rich-text.service";
 import { CustomEmoteManagerService } from "@services/features/custom-emote-manager.service";
 import { ChatBatchingService } from "@services/data/chat-batching.service";
 import { SessionExportService } from "@services/ui/session-export.service";
 import { OverlayStorageService } from "@app/shared/services/overlay-storage.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
-import { ChatSearchService } from "@services/ui/chat-search.service";
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 
 // Augment services with additional properties/methods as needed
-declare module "@services/ui/overlay-ws-state.service" {
-  interface OverlayWsStateService {
-    messages: any[];
-    addMessage(message: any): void;
-  }
-}
-
 declare module "@services/ui/chat-rich-text.service" {
   interface ChatRichTextService {
     buildSegments(text: string): any[];
@@ -41,7 +32,7 @@ declare module "@services/data/chat-batching.service" {
 
 declare module "@services/ui/session-export.service" {
   interface SessionExportService {
-    getExportPreview(options: any): Promise<{ count: number }>;
+    getExportPreview(options: any): Promise<{ count: number; platforms?: string[] }>;
   }
 }
 
@@ -67,15 +58,6 @@ declare module "@services/ui/chat-message-presentation.service" {
     messageFullTimeLabel(message: any): string;
     replyParentSnippet(message: any): string;
     getHighlightColor(message: any): string;
-  }
-}
-
-declare module "@services/ui/chat-search.service" {
-  interface ChatSearchService {
-    hasResults: boolean;
-    isSearching: boolean;
-    resultCount: number;
-    searchResults: any[];
   }
 }
 

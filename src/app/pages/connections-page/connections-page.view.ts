@@ -160,13 +160,15 @@ export class ConnectionsPageView {
     if (!this.newChannelName.trim()) {
       return;
     }
-    this.chatListService.addChannel(
-      this.selectedPlatform,
-      this.newChannelName.trim(),
-      undefined,
-      this.selectedAccountId || undefined,
-      this.authorizationService.getAccountByIdSync(this.selectedAccountId)?.username
-    );
+    this.chatListService.addChannel({
+      platform: this.selectedPlatform,
+      channelId: this.newChannelName.trim(),
+      channelName: this.newChannelName.trim(),
+      isVisible: true,
+      isAuthorized: false,
+      accountId: this.selectedAccountId || undefined,
+      addedAt: new Date().toISOString(),
+    });
     this.newChannelName = "";
   }
 

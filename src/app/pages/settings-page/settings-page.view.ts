@@ -144,6 +144,9 @@ export class SettingsPageView {
       } else {
         window.localStorage.removeItem("unichat_debug");
       }
+      window.dispatchEvent(
+        new CustomEvent("unichat_debug_change", { detail: this.debugPanelEnabled() })
+      );
     }
   }
 

@@ -1,6 +1,13 @@
 /* sys lib */
 import { UpperCasePipe, KeyValuePipe } from "@angular/common";
-import { ChangeDetectionStrategy, Component, inject, signal, computed } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+  computed,
+  effect,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
@@ -52,16 +59,27 @@ export class SessionExportSettingsComponent {
   readonly channels = computed(() => this.chatListService.getVisibleChannels());
   readonly platforms = PLATFORMS;
 
-  readonly preview = computed(() => {
-    return this.sessionExportService.getExportPreview({
-      format: this.format(),
-      includeMetadata: this.includeMetadata(),
-      channels: this.selectedChannels().length > 0 ? this.selectedChannels() : undefined,
-      platforms: this.selectedPlatforms().length > 0 ? this.selectedPlatforms() : undefined,
-      startTime: this.startTime() || undefined,
-      endTime: this.endTime() || undefined,
+  readonly previewCount = signal(0);
+  readonly previewPlatforms = signal<Record<string, number>>({});
+
+  constructor() {
+    effect(() => {
+      const options = {
+        format: this.format(),
+        includeMessages: this.includeMetadata(),
+      };
+      this.sessionExportService.getExportPreview(options).then((result) => {
+        this.previewCount.set(result.count);
+        const platforms: Record<string, number> = {};
+        if (result.platforms) {
+          for (const p of result.platforms) {
+            platforms[p] = result.count;
+          }
+        }
+        this.previewPlatforms.set(platforms);
+      });
     });
-  });
+  }
 
   toggleChannel(channelId: string): void {
     const current = this.selectedChannels();
@@ -92,11 +110,7 @@ export class SessionExportSettingsComponent {
   export(): void {
     this.sessionExportService.export({
       format: this.format(),
-      includeMetadata: this.includeMetadata(),
-      channels: this.selectedChannels().length > 0 ? this.selectedChannels() : undefined,
-      platforms: this.selectedPlatforms().length > 0 ? this.selectedPlatforms() : undefined,
-      startTime: this.startTime() || undefined,
-      endTime: this.endTime() || undefined,
+      includeMessages: this.includeMetadata(),
     });
   }
 

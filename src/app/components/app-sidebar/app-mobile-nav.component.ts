@@ -1,5 +1,5 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, effect, OnInit } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, effect } from "@angular/core";
 import { MatIconModule } from "@angular/material/icon";
 import { Router, NavigationEnd } from "@angular/router";
 import { toSignal } from "@angular/core/rxjs-interop";
@@ -21,7 +21,7 @@ interface NavItem {
   templateUrl: "./app-mobile-nav.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppMobileNavComponent implements OnInit {
+export class AppMobileNavComponent {
   readonly themeService = inject(ThemeService);
   readonly router = inject(Router);
 
@@ -30,7 +30,7 @@ export class AppMobileNavComponent implements OnInit {
     { path: "/connections", icon: "power", label: "Links" },
     { path: "/analytics", icon: "bar_chart", label: "Stats" },
     { path: "/export", icon: "download", label: "Export" },
-    { path: "/overlay-management", icon: "tv", label: "Overlay" },
+
     { path: "/settings", icon: "settings", label: "Settings" },
     { path: "/about", icon: "info", label: "About" },
   ];
@@ -39,7 +39,7 @@ export class AppMobileNavComponent implements OnInit {
 
   activePath: string = "";
 
-  ngOnInit(): void {
+  constructor() {
     const navigationEndEvents = toSignal(
       this.router.events.pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd)

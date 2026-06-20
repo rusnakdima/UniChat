@@ -34,17 +34,14 @@ export class AnalyticsPageView {
 
   readonly stats = computed<AnalyticsStats>(() => {
     const allMessages = this.chatStorageService.allMessages();
-    const connections = this.connectionStateService.connections();
+    const connections = this.connectionStateService.getConnections();
     const timeRange = this.selectedTimeRange();
 
     const filteredMessages = this.analyticsService.filterMessagesByTimeRange(
       allMessages,
       timeRange
     );
-    const previousMessages = this.analyticsService.getPreviousPeriodMessages(
-      allMessages,
-      timeRange
-    );
+    const previousMessages = this.analyticsService.getPreviousPeriodMessages();
 
     return this.analyticsService.computeStats(filteredMessages, connections, previousMessages);
   });

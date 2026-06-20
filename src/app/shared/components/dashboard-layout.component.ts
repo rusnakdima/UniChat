@@ -52,16 +52,27 @@ export class DashboardLayoutComponent {
 
   readonly isOnDashboard = computed(() => this.currentPath() === "/dashboard");
 
-  readonly showDebugPanel = computed(() => {
-    if (typeof window !== "undefined" && window.localStorage?.getItem("unichat_debug") === "true") {
-      return true;
-    }
-    return false;
-  });
+  readonly showDebugPanel = signal(false);
 
   readonly SIDEBAR_WIDTH = SIDEBAR_WIDTH;
 
   constructor() {
+    this.showDebugPanel.set(
+      typeof window !== "undefined" && window.localStorage?.getItem("unichat_debug") === "true"
+    );
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", (event: StorageEvent) => {
+        if (event.key === "unichat_debug") {
+          this.showDebugPanel.set(event.newValue === "true");
+        }
+      });
+
+      window.addEventListener("unichat_debug_change", ((event: CustomEvent) => {
+        this.showDebugPanel.set(event.detail);
+      }) as EventListener);
+    }
+
     const navigationEndEvents = toSignal(
       this.router.events.pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd)

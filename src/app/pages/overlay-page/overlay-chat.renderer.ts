@@ -8,7 +8,7 @@ import {
   ChatMessage,
   ChatMessageEmote,
 } from "@entities/chat.model";
-import { YouTubeChannelInfo } from "@entities/platform-api.model";
+import { YouTubeChannelInfo } from "@entities/entities.platform-api.model";
 import { AvatarCacheService } from "@services/core/avatar-cache.service";
 import { ChatListService } from "@services/data/chat-list.service";
 import { AuthorizationService } from "@services/features/authorization.service";
@@ -18,7 +18,7 @@ import { ChatMessagePresentationService } from "@services/ui/chat-message-presen
 import { ChatRichTextService, ChatTextSegment } from "@services/ui/chat-rich-text.service";
 import { OverlayChatMessage } from "@services/ui/overlay-ws-state.service";
 import { ChannelImageLoaderService } from "@services/ui/channel-image-loader.service";
-import { buildChannelRef, findChannelByRef } from "@utils/channel-ref.util";
+import { buildChannelRef, findChannelInArray } from "@utils/channel-ref.util";
 import {
   getDensityTextClasses,
   getPlatformBadgeClasses,
@@ -26,7 +26,7 @@ import {
   isSafeRemoteImageUrl,
 } from "@shared/utils/chat.helper";
 import { inject, signal, computed, ChangeDetectorRef } from "@angular/core";
-import { TauriApiService } from "@app/api/tauri-api.service";
+import { TauriApiService } from "@app/api/api.api.service";
 
 export class OverlayChatRenderer {
   readonly chatList = inject(ChatListService);
@@ -109,9 +109,9 @@ export class OverlayChatRenderer {
         }
 
         if (!this.avatarCache.hasChannelAvatar(channelCacheKey)) {
-          const channel = findChannelByRef(
-            this.chatList.getChannels(message.platform),
-            buildChannelRef(message.platform, message.sourceChannelId)
+          const channel = findChannelInArray(
+            this.chatList.getChannels().filter((ch) => ch.platform === message.platform),
+            message.sourceChannelId
           );
 
           if (channel && isSafeRemoteImageUrl(channel.channelImageUrl)) {
@@ -193,7 +193,8 @@ export class OverlayChatRenderer {
     }
 
     const channel = this.chatList
-      .getChannels(message.platform)
+      .getChannels()
+      .filter((ch) => ch.platform === message.platform)
       .find((ch) => ch.channelId === message.sourceChannelId);
 
     if (channel?.channelImageUrl) {
@@ -259,9 +260,14 @@ export class OverlayChatRenderer {
 
   channelTitle(message: OverlayChatMessage): string {
     const channel = this.chatList
-      .getChannels(message.platform)
+      .getChannels()
+      .filter((ch) => ch.platform === message.platform)
       .find((item) => item.channelId === message.sourceChannelId);
-    return channel?.channelName ?? message.sourceChannelId ?? this.platformLabel(message.platform);
+    return (
+      channel?.channelName ??
+      message.sourceChannelId ??
+      this.platformLabel(message.platform as PlatformType)
+    );
   }
 
   messageTimeLabel(message: OverlayChatMessage): string {

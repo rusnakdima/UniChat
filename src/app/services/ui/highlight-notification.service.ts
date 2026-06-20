@@ -1,4 +1,5 @@
 import { Injectable, signal } from "@angular/core";
+import { ChatMessage } from "@entities/chat.model";
 
 @Injectable({ providedIn: "root" })
 export class HighlightNotificationService {
@@ -15,9 +16,9 @@ export class HighlightNotificationService {
   });
   readonly prefs = this._prefs.asReadonly();
 
-  notify(messageId: string): void {}
-  maybeNotify(messageId: string): void {
-    this.notify(messageId);
+  notify(_messageId: string): void {}
+  maybeNotify(message: ChatMessage): void {
+    this.notify(message.id);
   }
   setEnabled(enabled: boolean): void {
     this._prefs.update((p) => ({ ...p, soundEnabled: enabled, enabled }));

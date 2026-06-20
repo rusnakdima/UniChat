@@ -384,7 +384,7 @@ export class ChatMessageCardComponent {
       return;
     }
     const msg = this.message();
-    this.userProfilePopover.show(msg.sourceUserId, el);
+    this.userProfilePopover.show(msg, el);
   }
 
   /** Check if current message is pinned */

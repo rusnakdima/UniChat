@@ -1,5 +1,5 @@
 import { Injectable, inject } from "@angular/core";
-import { TauriApiService } from "@app/api/tauri-api.service";
+import { TauriApiService } from "@app/api/api.api.service";
 
 export interface StorageQueryOptions {
   skip?: number;

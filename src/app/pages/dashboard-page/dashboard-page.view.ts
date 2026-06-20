@@ -44,7 +44,7 @@ import { UserProfilePopoverComponent } from "@components/user-profile-popover/us
     PinnedMessagesPanelComponent,
     KeyboardShortcutsHelpComponent,
   ],
-  templateUrl: "./dashboard.view.html",
+  templateUrl: "./dashboard-page.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardView {
@@ -89,7 +89,7 @@ export class DashboardView {
         const id =
           this.chatStateService.highlightedMessageId() ?? this.interactions.replyTargetMessageId();
         if (id) {
-          this.interactions.onReplyClick(id);
+          this.interactions.onReplyClick(id, "");
         }
       }),
       this.keyboardShortcutsService.registerAction("delete-selected", () => {

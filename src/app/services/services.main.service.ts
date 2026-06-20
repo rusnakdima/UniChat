@@ -1,6 +1,6 @@
 import { Injectable, inject } from "@angular/core";
-import { TauriApiService } from "@app/api/tauri-api.service";
-import { EventBusService } from "./event-bus.service";
+import { TauriApiService } from "@app/api/api.api.service";
+import { EventBusService } from "@services/services.event-bus.service";
 
 @Injectable({
   providedIn: "root",

@@ -25,7 +25,7 @@ import { OverlayStorageService } from "@app/shared/services/overlay-storage.serv
   selector: "app-overlay-view",
   standalone: true,
   imports: [NgStyle, MatIconModule, MatTooltipModule],
-  templateUrl: "./overlay.view.html",
+  templateUrl: "./overlay-page.view.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "block h-full min-h-0",

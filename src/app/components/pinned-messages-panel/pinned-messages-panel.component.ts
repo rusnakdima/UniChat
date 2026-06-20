@@ -65,8 +65,7 @@ export class PinnedMessagesPanelComponent {
 
     // Sort by pinned date (newest first)
     return messages.sort(
-      (a: PinnedMessage, b: PinnedMessage) =>
-        (b.timestamp ?? 0) - (a.timestamp ?? 0)
+      (a: PinnedMessage, b: PinnedMessage) => (b.timestamp ?? 0) - (a.timestamp ?? 0)
     );
   });
 

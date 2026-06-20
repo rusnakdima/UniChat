@@ -6,6 +6,6 @@ export class OverlaySourceBridgeService {
   disconnect(): void {}
   sendMessage(data: unknown): void {}
 
-  ensureConnected(): void {}
+  ensureConnected(port?: number): void {}
   forwardMessage(message: unknown): void {}
 }

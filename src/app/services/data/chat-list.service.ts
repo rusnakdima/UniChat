@@ -1,6 +1,6 @@
 import { Injectable, signal } from "@angular/core";
 import { ChatChannel } from "@entities/chat.model";
-export { ChatChannel } from "@entities/chat.model";
+export type { ChatChannel } from "@entities/chat.model";
 
 @Injectable({ providedIn: "root" })
 export class ChatListService {
@@ -26,7 +26,7 @@ export class ChatListService {
   }
 
   removeChannel(channelId: string): void {
-    this._channels.update((channels) => channels.filter((ch) => ch.channelId !== channelId));
+    this._channels.update((channels) => channels.filter((ch) => ch.id !== channelId));
   }
 
   toggleChannelVisibility(channelId: string): void {

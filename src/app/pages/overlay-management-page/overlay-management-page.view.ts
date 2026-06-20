@@ -25,8 +25,14 @@ import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { ChatMessagePresentationService } from "@services/ui/chat-message-presentation.service";
 import { ChannelAvatarService } from "@services/ui/channel-avatar.service";
-import { TauriApiService } from "@app/api/tauri-api.service";
-import { findChannelByRef, migrateLegacyChannelRefs, toChannelRef } from "@utils/channel-ref.util";
+import { TauriApiService } from "@app/api/api.api.service";
+import {
+  buildChannelRef,
+  migrateLegacyChannelRefs,
+  toChannelRef,
+  findChannelInArray,
+  toChannelRefFromChannel,
+} from "@utils/channel-ref.util";
 import { buildOverlayUrl } from "@shared/utils/chat.helper";
 import { OverlayStorageService } from "@app/shared/services/overlay-storage.service";
 import { parseIntOrNull } from "@app/shared/utils/parse-int.util";
@@ -97,7 +103,9 @@ export class OverlayManagementView {
   constructor() {
     effect(() => {
       for (const channel of this.availableChannels()) {
-        this.channelAvatars.ensureChannelImageForChannel(channel);
+        this.channelAvatars.ensureChannelImageForChannel(
+          buildChannelRef(channel.platform, channel.channelId)
+        );
       }
     });
 
@@ -107,7 +115,7 @@ export class OverlayManagementView {
     }
 
     const overrideFilter = this.overlayStorage.readOverlayFilterOverride(w.id);
-    this.filterModel.set(overrideFilter ?? w.filter);
+    this.filterModel.set((overrideFilter ?? w.filter) as WidgetFilter);
 
     this.customCssModel.set(this.localStorageService.get(overlayCustomCssKey(w.id), ""));
 
@@ -130,9 +138,11 @@ export class OverlayManagementView {
     // Load overlay appearance settings
     this.maxMessagesModel.set(this.overlayStorage.readOverlayMaxMessages(w.id) ?? 6);
     this.textSizeModel.set(this.overlayStorage.readOverlayTextSize(w.id) ?? 16);
-    this.animationTypeModel.set(this.overlayStorage.readOverlayAnimationType(w.id) ?? "fade");
+    this.animationTypeModel.set(
+      (this.overlayStorage.readOverlayAnimationType(w.id) ?? "fade") as OverlayAnimationType
+    );
     this.animationDirectionModel.set(
-      this.overlayStorage.readOverlayAnimationDirection(w.id) ?? "top"
+      (this.overlayStorage.readOverlayAnimationDirection(w.id) ?? "top") as OverlayDirection
     );
     this.transparentBgModel.set(this.overlayStorage.readOverlayTransparentBg(w.id) ?? false);
 
@@ -306,7 +316,7 @@ export class OverlayManagementView {
   }
 
   toggleChannel(channelId: string): void {
-    const channel = findChannelByRef(this.availableChannels(), channelId);
+    const channel = findChannelInArray(this.availableChannels(), channelId);
 
     // If channel is hidden in settings, don't allow toggling
     if (channel && !channel.isVisible) {
@@ -341,14 +351,16 @@ export class OverlayManagementView {
 
   /** Check if a channel is disabled (hidden in settings) */
   isChannelDisabledBySettings(channelId: string): boolean {
-    const channel = findChannelByRef(this.availableChannels(), channelId);
+    const channel = findChannelInArray(this.availableChannels(), channelId);
     return channel ? !channel.isVisible : false;
   }
 
   selectAllChannels(): void {
     // Select all visible channels in overlay only
     // Does NOT change dashboard mixed disabled state or settings visibility
-    const enabledChannels = this.availableChannels().map((ch) => toChannelRef(ch));
+    const enabledChannels = this.availableChannels().map((ch) =>
+      buildChannelRef(ch.platform, ch.channelId)
+    );
     this.channelIdsModel.set(enabledChannels);
     // Auto-save removed - user must click Save button
   }
@@ -361,13 +373,13 @@ export class OverlayManagementView {
   }
 
   getChannelDisplayName(channelId: string): string {
-    const channel = findChannelByRef(this.availableChannels(), channelId);
+    const channel = findChannelInArray(this.availableChannels(), channelId);
     return channel ? `${channel.channelName} (${channel.platform})` : channelId;
   }
 
   channelSelectionValue(
     channel: ReturnType<ChatListService["getVisibleChannels"]>[number]
   ): string {
-    return toChannelRef(channel);
+    return buildChannelRef(channel.platform, channel.channelId);
   }
 }

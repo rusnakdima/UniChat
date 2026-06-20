@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { ChatMessage } from "@entities/chat.model";
 
 export interface ChatPruningStats {
   messageCount: number;
@@ -13,10 +14,14 @@ export class ChatPruningService {
   prune(olderThanMs: number): number {
     return 0;
   }
-  pruneOldMessages(): number {
-    return 0;
+  pruneOldMessages(_store: Record<string, ChatMessage[]>): Record<string, ChatMessage[]> {
+    return _store;
   }
-  getMemoryStats(): ChatPruningStats {
-    return { messageCount: 0, oldestTimestamp: 0 };
+  getMemoryStats(_store: Record<string, ChatMessage[]>): {
+    totalMessages: number;
+    channels: number;
+    byChannel: Record<string, number>;
+  } {
+    return { totalMessages: 0, channels: 0, byChannel: {} };
   }
 }

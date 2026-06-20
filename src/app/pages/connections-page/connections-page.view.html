@@ -207,7 +207,7 @@
                   [title]="getPlatformLbl(channel.platform)"
                   class="h-5 w-5 shrink-0 object-contain"
                 />
-                @if (channelAvatars.getChannelImageForChannel(channel); as channelImage) {
+                @if (channelAvatars.getChannelImageForChannel(channel.channelId); as channelImage) {
                   <img
                     [src]="channelImage"
                     [alt]="channel.channelName"

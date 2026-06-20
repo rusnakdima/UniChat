@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, signal, computed } from "@angular/core";
 
 export interface PinnedMessage {
   id: string;
@@ -15,9 +15,7 @@ export interface PinnedMessage {
 export class PinnedMessagesService {
   private _pinnedMessages = new Map<string, PinnedMessage[]>();
 
-  get pinnedCount(): number {
-    return this.getPinnedMessages().length;
-  }
+  pinnedCount = computed(() => this.getPinnedMessages().length);
 
   getPinnedMessages(): PinnedMessage[] {
     const all: PinnedMessage[] = [];

@@ -5,6 +5,13 @@
 @plugin "flowbite/plugin";
 @source "../node_modules/flowbite";
 
+/* ===== Root Layout - prevent viewport scroll ===== */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* ===== Reusable Component Classes ===== */
 
 /* Card component - use class="card" */

@@ -178,7 +178,7 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
   private initialSize = { width: 320, height: 280 };
   private logIntervalId: ReturnType<typeof setInterval> | null = null;
 
-  readonly connections = computed(() => this.connectionState.connections);
+  readonly connections = computed(() => this.connectionState.getConnections());
   readonly accounts = computed(() => this.authService.accounts());
   readonly themeMode = this.themeService.themeMode;
 

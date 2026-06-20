@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from "@angular/core";
+import { Injectable, signal, computed, Signal } from "@angular/core";
 import { ChatMessage } from "@entities/chat.model";
 
 export interface HighlightSegment {
@@ -31,10 +31,10 @@ export class ChatSearchService {
   private _results = signal<SearchResult[]>([]);
   private _isSearching = signal(false);
 
-  readonly searchResults = this._results.asReadonly();
-  readonly isSearching = this._isSearching.asReadonly();
-  readonly hasResults = computed(() => this._results().length > 0);
-  readonly resultCount = computed(() => this._results().length);
+  searchResults = this._results.asReadonly();
+  isSearching = this._isSearching.asReadonly();
+  hasResults = computed(() => this._results().length > 0);
+  resultCount = computed(() => this._results().length);
 
   async search(options: SearchOptions): Promise<SearchResult[]> {
     this._isSearching.set(true);

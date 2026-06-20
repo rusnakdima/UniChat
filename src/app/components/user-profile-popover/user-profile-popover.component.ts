@@ -12,7 +12,7 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 /* models */
 import { ChatBadgeIcon } from "@entities/chat.model";
-import { KickUserInfo, TwitchUserInfo } from "@entities/platform-api.model";
+import { KickUserInfo, TwitchUserInfo } from "@entities/entities.platform-api.model";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
@@ -189,11 +189,19 @@ export class UserProfilePopoverComponent {
       try {
         const channelLogin = st.message.sourceChannelId;
         const userInfo =
-          (channelLogin
-            ? await this.twitchViewerCard.fetchTwitchViewerCard(channelLogin, username)
-            : null) ?? (await this.twitchViewerCard.fetchUserInfo(username));
+          (channelLogin ? await this.twitchViewerCard.fetchTwitchViewerCard(channelLogin) : null) ??
+          (await this.twitchViewerCard.fetchUserInfo(username));
         if (userInfo) {
-          this.twitchUserInfo.set(userInfo);
+          this.twitchUserInfo.set({
+            id: userInfo.id || userInfo.userId,
+            login: userInfo.username.toLowerCase(),
+            display_name: userInfo.username,
+            description: "",
+            profile_image_url: userInfo.avatarUrl || userInfo.profile_pic_url || "",
+            offline_image_url: "",
+            banner: null,
+            created_at: "",
+          });
         } else {
           // Fallback to basic info
           this.twitchUserInfo.set({
@@ -218,7 +226,12 @@ export class UserProfilePopoverComponent {
       this.kickUserInfoLoading.set(true);
       try {
         const userInfo = await this.kickChat.fetchUserInfo(username);
-        this.kickUserInfo.set(userInfo);
+        this.kickUserInfo.set({
+          id: userInfo.userId,
+          username: userInfo.username,
+          bio: "",
+          profile_pic_url: userInfo.avatarUrl || userInfo.profile_pic_url || "",
+        });
       } catch {
         this.kickUserInfo.set(null);
       } finally {
@@ -248,8 +261,11 @@ export class UserProfilePopoverComponent {
     }
 
     const channel = this.chatList
-      .getChannels(st.message.platform)
-      .find((entry) => entry.channelId === st.message.sourceChannelId);
+      .getChannels()
+      .find(
+        (entry) =>
+          entry.channelId === st.message.sourceChannelId && entry.platform === st.message.platform
+      );
     const fallbackName = channel?.channelName ?? st.message.sourceChannelId;
 
     if (st.message.platform === "twitch") {

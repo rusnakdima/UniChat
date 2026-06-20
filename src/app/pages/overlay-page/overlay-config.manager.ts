@@ -16,7 +16,7 @@ import {
 import { ChatListService } from "@services/data/chat-list.service";
 import { DashboardStateService } from "@services/features/dashboard-state.service";
 import { OverlayChatMessage, OverlayWsStateService } from "@services/ui/overlay-ws-state.service";
-import { TauriApiService } from "@app/api/tauri-api.service";
+import { TauriApiService } from "@app/api/api.api.service";
 import { migrateLegacyChannelRefs } from "@utils/channel-ref.util";
 import { OverlayStorageService } from "@app/shared/services/overlay-storage.service";
 import { POLLING_INTERVAL_MS } from "@app/shared/utils/constants";

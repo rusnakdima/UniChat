@@ -124,10 +124,10 @@
       <p class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Export Preview</p>
       <div class="mt-2 flex items-center gap-4 text-sm">
         <span class="text-zinc-600 dark:text-zinc-400">
-          <span class="font-semibold text-zinc-900 dark:text-white">{{ preview().count }}</span>
+          <span class="font-semibold text-zinc-900 dark:text-white">{{ previewCount() }}</span>
           messages
         </span>
-        @for (count of preview().platforms | keyvalue; track count.key) {
+        @for (count of previewPlatforms() | keyvalue; track count.key) {
           @if (count.value > 0) {
             <span class="text-zinc-600 dark:text-zinc-400">
               <span class="font-semibold text-zinc-900 dark:text-white">{{ count.value }}</span>
@@ -142,12 +142,12 @@
     <button
       type="button"
       (click)="export()"
-      [disabled]="preview().count === 0"
+      [disabled]="previewCount() === 0"
       class="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span class="flex items-center justify-center gap-2">
         <mat-icon [fontIcon]="'download'" class="h-5! w-5!" />
-        Export {{ format() | uppercase }} ({{ preview().count }} messages)
+        Export {{ format() | uppercase }} ({{ previewCount() }} messages)
       </span>
     </button>
   </div>

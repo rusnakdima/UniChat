@@ -40,8 +40,9 @@ export class KeyboardShortcutsService {
   unregisterShortcut(key: string): void {
     this._shortcuts.delete(key);
   }
-  registerAction(action: KeyboardAction): void {
-    this._actions.set(action.id, action);
+  registerAction(id: string, action: () => void): () => void {
+    this._actions.set(id, { id, description: "" });
+    return () => this._actions.delete(id);
   }
   getAction(id: string): KeyboardAction | undefined {
     return this._actions.get(id);
@@ -58,7 +59,19 @@ export class KeyboardShortcutsService {
     this._actions.clear();
   }
   get shortcutsByCategory(): KeyboardShortcutsByCategory {
-    return {};
+    return {
+      navigation: Array.from(this._actions.values()).filter((a) =>
+        a.description.includes("Navigate")
+      ),
+      actions: Array.from(this._actions.values()).filter((a) => a.description.includes("Action")),
+      overlay: Array.from(this._actions.values()).filter((a) => a.description.includes("Overlay")),
+      general: Array.from(this._actions.values()).filter(
+        (a) =>
+          !a.description.includes("Navigate") &&
+          !a.description.includes("Action") &&
+          !a.description.includes("Overlay")
+      ),
+    };
   }
   get shortcuts(): KeyboardShortcutView[] {
     return [];

@@ -1,5 +1,5 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
@@ -22,7 +22,7 @@ export class KeyboardShortcutsPageView {
   private readonly themeService = inject(ThemeService);
 
   readonly themeMode = this.themeService.themeMode;
-  readonly shortcuts = this.keyboardShortcutsService.shortcuts;
+  readonly shortcuts = computed(() => this.keyboardShortcutsService.shortcuts);
   readonly editBindingId = signal<string | null>(null);
   readonly editKeys = signal("");
   readonly conflictError = signal(false);

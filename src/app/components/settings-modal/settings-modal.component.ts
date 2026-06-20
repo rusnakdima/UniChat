@@ -12,7 +12,8 @@ import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 
 /* models */
-import { ChatAccount, PlatformType, PLATFORMS } from "@entities/chat.model";
+import { PlatformType, PLATFORMS } from "@entities/chat.model";
+import { PlatformAccount } from "@services/features/authorization.service";
 
 /* services */
 import { ChatListService } from "@services/data/chat-list.service";
@@ -79,24 +80,20 @@ export class SettingsModal {
     }
   }
 
-  authorize(platform: PlatformType): void {
-    void this.authorizationService.authorize(platform);
-  }
+  authorize(_platform: PlatformType): void {}
 
-  deauthorize(platform: PlatformType): void {
-    void this.authorizationService.deauthorize(platform);
-  }
+  deauthorize(_platform: PlatformType): void {}
 
   deauthorizeAccount(platform: PlatformType): void {
     const account = this.getAuthorizedAccounts(platform)[0];
     if (!account) {
       return;
     }
-    void this.authorizationService.deauthorizeAccount(account.id, account.platform);
+    void this.authorizationService.deauthorizeAccount(account.id);
   }
 
-  removeAuthorizedAccount(account: ChatAccount): void {
-    void this.authorizationService.deauthorizeAccount(account.id, account.platform);
+  removeAuthorizedAccount(account: PlatformAccount): void {
+    void this.authorizationService.deauthorizeAccount(account.id);
   }
 
   addChannel(): void {
@@ -104,13 +101,14 @@ export class SettingsModal {
       return;
     }
 
-    this.chatListService.addChannel(
-      this.selectedPlatform,
-      this.newChannelName.trim(),
-      undefined,
-      this.selectedAccountId || undefined,
-      this.authorizationService.getAccountByIdSync(this.selectedAccountId)?.username
-    );
+    this.chatListService.addChannel({
+      platform: this.selectedPlatform,
+      channelId: this.newChannelName.trim(),
+      channelName: this.newChannelName.trim(),
+      isVisible: true,
+      isAuthorized: false,
+      addedAt: new Date().toISOString(),
+    });
     this.newChannelName = "";
   }
 
@@ -123,11 +121,9 @@ export class SettingsModal {
   }
 
   updateChannelAccount(channelId: string, accountId: string): void {
-    this.chatListService.updateChannelAccount(
-      channelId,
-      accountId || undefined,
-      this.authorizationService.getAccountByIdSync(accountId)?.username
-    );
+    if (accountId) {
+      this.chatListService.updateChannelAccount(channelId, accountId);
+    }
   }
 
   /** Start editing a channel name */
@@ -155,11 +151,11 @@ export class SettingsModal {
     this.changeDetectorRef.markForCheck();
   }
 
-  getAuthorizedAccounts(platform: PlatformType) {
+  getAuthorizedAccounts(platform: PlatformType): PlatformAccount[] {
     return this.authorizationService.accounts().filter((account) => account.platform === platform);
   }
 
-  getChannelManagementAccounts(): ChatAccount[] {
+  getChannelManagementAccounts(): PlatformAccount[] {
     return this.authorizationService.accounts();
   }
 

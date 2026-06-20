@@ -1,4 +1,10 @@
 import { Injectable } from "@angular/core";
+import { PlatformType } from "@entities/chat.model";
+import {
+  PLATFORM_TWITCH_ICON,
+  PLATFORM_KICK_ICON,
+  PLATFORM_YOUTUBE_ICON,
+} from "@shared/utils/constants";
 
 export interface ChatMessagePresentation {
   messageId: string;
@@ -22,11 +28,22 @@ export class ChatMessagePresentationService {
     };
   }
 
-  platformLabel(message: unknown): string {
-    return "";
+  platformLabel(platform: PlatformType): string {
+    const labels: Record<PlatformType, string> = {
+      twitch: "Twitch",
+      kick: "Kick",
+      youtube: "YouTube",
+    };
+    return labels[platform] ?? "";
   }
-  platformIconUrl(message: unknown): string {
-    return "";
+
+  platformIconUrl(platform: PlatformType): string {
+    const icons: Record<PlatformType, string> = {
+      twitch: PLATFORM_TWITCH_ICON,
+      kick: PLATFORM_KICK_ICON,
+      youtube: PLATFORM_YOUTUBE_ICON,
+    };
+    return icons[platform] ?? "";
   }
   usernameColorClasses(message: unknown): string[] {
     return [];

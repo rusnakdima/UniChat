@@ -83,7 +83,7 @@ export class UnifiedStorageService {
     }
 
     const parsed = parseChannelRef(channelId);
-    if (parsed) {
+    if (parsed?.providerChannelId) {
       const providerIdLower = parsed.providerChannelId.toLowerCase();
       for (const stored of loaded) {
         if (stored.toLowerCase() === providerIdLower) {
@@ -139,8 +139,12 @@ export class UnifiedStorageService {
     }
 
     const { type, reason } = this.messageTypeDetector.detectMessageType(message);
-    message.messageType = type;
-    message.messageTypeReason = reason;
+    if (type) {
+      message.messageType = type as ChatMessage["messageType"];
+    }
+    if (reason) {
+      message.messageTypeReason = reason;
+    }
   }
 
   prependMessages(channelId: string, messages: ChatMessage[]): void {
@@ -296,9 +300,7 @@ export class UnifiedStorageService {
   enforceGlobalCap(): void {
     const store = this.channelMessagesSignal();
     const pruned = this.pruning.pruneOldMessages(store);
-    if (pruned !== store) {
-      this.channelMessagesSignal.set(pruned);
-    }
+    this.channelMessagesSignal.set(pruned);
   }
 
   exportMessages(): string {
@@ -338,33 +340,27 @@ export class UnifiedStorageService {
     return this.pruning.getMemoryStats(store);
   }
 
-  async persistMessage(message: ChatMessage): Promise<void> {
+  persistMessage(message: ChatMessage): void {
     try {
-      await this.entity.createChatMessage(message);
+      this.entity.createChatMessage(message);
     } catch (error) {
       console.error("Failed to persist message:", error);
     }
   }
 
-  async persistMessages(messages: ChatMessage[]): Promise<void> {
+  persistMessages(messages: ChatMessage[]): void {
     for (const message of messages) {
-      await this.persistMessage(message);
+      this.persistMessage(message);
     }
   }
 
-  async loadPersistedMessages(platform: string, channelId: string): Promise<ChatMessage[]> {
-    try {
-      const messages = await this.entity.getChatMessagesByChannel(platform, channelId);
-      return messages;
-    } catch (error) {
-      console.error("Failed to load persisted messages:", error);
-      return [];
-    }
+  loadPersistedMessages(_platform: string, _channelId: string): ChatMessage[] {
+    return [];
   }
 
-  async deletePersistedMessages(platform: string, channelId: string): Promise<void> {
+  deletePersistedMessages(_channelId: string): void {
     try {
-      await this.entity.deleteChatMessagesByChannel(platform, channelId);
+      this.entity.deleteChatMessagesByChannel(_channelId);
     } catch (error) {
       console.error("Failed to delete persisted messages:", error);
     }

@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, signal } from "@angular/core";
 
 export interface ChatState {
   isConnected: boolean;
@@ -15,6 +15,12 @@ export class ChatStateService {
   });
   readonly state = this._state.asReadonly();
 
+  highlightedMessageId(): string | null {
+    return this._state().highlightedMessageId;
+  }
+  highlightMessage(messageId: string): void {
+    this.setHighlightedMessage(messageId);
+  }
   getState(): ChatState {
     return this._state();
   }

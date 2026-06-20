@@ -38,8 +38,21 @@ export function parseChannelRef(ref: string): ChannelRef | null {
 export function findChannelByRef(ref: ChannelRef): string {
   return ref.channelId;
 }
+export function findChannelInArray(
+  channels: ChatChannel[],
+  channelId: string
+): ChatChannel | undefined {
+  return channels.find((ch) => ch.channelId === channelId);
+}
 export function toChannelRef(platform: string, channel: string): ChannelRef {
   return { platform, channelId: channel, username: channel };
+}
+export function toChannelRefFromChannel(channel: ChatChannel): ChannelRef {
+  return {
+    platform: channel.platform,
+    channelId: channel.channelId,
+    username: channel.channelName,
+  };
 }
 export function migrateLegacyChannelRefs(
   channelIds: string[],
