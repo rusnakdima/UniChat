@@ -161,9 +161,10 @@ export class ConnectionsPageView {
     if (!this.newChannelName.trim()) {
       return;
     }
+    const channelId = this.newChannelName.trim().toLowerCase();
     this.chatListService.addChannel({
       platform: this.selectedPlatform,
-      channelId: this.newChannelName.trim(),
+      channelId,
       channelName: this.newChannelName.trim(),
       isVisible: true,
       isAuthorized: false,
