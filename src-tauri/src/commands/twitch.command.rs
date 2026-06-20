@@ -1,6 +1,5 @@
 use crate::services::twitch::{TwitchChannelEmoteModel, TwitchService};
 use crate::AppState;
-
 #[tauri::command]
 pub async fn twitch_delete_message(
   state: tauri::State<'_, AppState>,
@@ -10,7 +9,6 @@ pub async fn twitch_delete_message(
 ) -> Result<bool, String> {
   TwitchService::delete_message(&state, channel_id, message_id, access_token).await
 }
-
 #[tauri::command]
 pub async fn twitch_fetch_channel_emotes(
   state: tauri::State<'_, AppState>,

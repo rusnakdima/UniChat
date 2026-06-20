@@ -1,9 +1,7 @@
-use tauri::State;
-
 use crate::models::auth_account_model::AuthCommandResultModel;
 use crate::models::platform_type_model::PlatformTypeModel;
 use crate::AppState;
-
+use tauri::State;
 #[tauri::command]
 pub async fn auth_start(
   state: State<'_, AppState>,
@@ -21,7 +19,6 @@ pub async fn auth_start(
     accounts: None,
   })
 }
-
 #[tauri::command]
 pub async fn auth_complete(
   state: State<'_, AppState>,
@@ -41,7 +38,6 @@ pub async fn auth_complete(
     accounts: None,
   })
 }
-
 #[tauri::command]
 pub async fn auth_await_callback(
   state: State<'_, AppState>,
@@ -60,7 +56,6 @@ pub async fn auth_await_callback(
     accounts: None,
   })
 }
-
 #[tauri::command]
 pub async fn auth_status(
   state: State<'_, AppState>,
@@ -78,7 +73,6 @@ pub async fn auth_status(
     accounts: Some(accounts),
   })
 }
-
 #[tauri::command]
 pub async fn auth_validate(
   state: State<'_, AppState>,
@@ -97,7 +91,6 @@ pub async fn auth_validate(
     accounts: Some(accounts),
   })
 }
-
 #[tauri::command]
 pub async fn auth_refresh(
   state: State<'_, AppState>,
@@ -117,7 +110,6 @@ pub async fn auth_refresh(
     accounts: None,
   })
 }
-
 #[tauri::command]
 pub async fn auth_disconnect(
   state: State<'_, AppState>,

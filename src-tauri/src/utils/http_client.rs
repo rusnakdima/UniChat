@@ -1,9 +1,7 @@
 //! Shared HTTP client for outbound API calls (connection pooling, fewer TLS handshakes).
-
 use crate::constants::KICK_USER_AGENT;
 use once_cell::sync::Lazy;
 use reqwest::Client;
-
 static HTTP: Lazy<Client> = Lazy::new(|| {
   Client::builder()
     .user_agent(KICK_USER_AGENT)
@@ -12,7 +10,6 @@ static HTTP: Lazy<Client> = Lazy::new(|| {
     .build()
     .expect("reqwest Client build")
 });
-
 pub fn shared_client() -> Client {
   HTTP.clone()
 }

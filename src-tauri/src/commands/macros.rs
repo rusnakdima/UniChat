@@ -16,12 +16,10 @@ macro_rules! crud_get_by_id {
         .unwrap_or_else(|| {
           crate::entities::response_entity::Response::error("Not found".to_string())
         });
-
       Ok(result)
     }
   };
 }
-
 #[macro_export]
 macro_rules! crud_get_many {
   ($route:ident, $table:expr) => {
@@ -35,12 +33,10 @@ macro_rules! crud_get_many {
       sort_asc: Option<bool>,
     ) -> Result<crate::entities::response_entity::Response, String> {
       use nosql_orm::query::Filter;
-
       let filter_obj = filter
         .as_ref()
         .map(|f| Filter::from_json(f).map_err(|e| e.to_string()))
         .transpose()?;
-
       let docs = state
         .data
         .json_provider
@@ -54,7 +50,6 @@ macro_rules! crud_get_many {
         )
         .await
         .map_err(|e| e.to_string())?;
-
       Ok(
         crate::entities::response_entity::Response::success_with_data(
           &format!("Found {} items", docs.len()),
@@ -64,7 +59,6 @@ macro_rules! crud_get_many {
     }
   };
 }
-
 #[macro_export]
 macro_rules! crud_create {
   ($route:ident, $table:expr) => {
@@ -79,12 +73,10 @@ macro_rules! crud_create {
         .insert($table, data)
         .await
         .map_err(|e| e.to_string())?;
-
       Ok(crate::entities::response_entity::Response::success_with_data("Created", doc))
     }
   };
 }
-
 #[macro_export]
 macro_rules! crud_update {
   ($route:ident, $table:expr) => {
@@ -100,12 +92,10 @@ macro_rules! crud_update {
         .update($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-
       Ok(crate::entities::response_entity::Response::success_with_data("Updated", doc))
     }
   };
 }
-
 #[macro_export]
 macro_rules! crud_patch {
   ($route:ident, $table:expr) => {
@@ -121,12 +111,10 @@ macro_rules! crud_patch {
         .patch($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-
       Ok(crate::entities::response_entity::Response::success_with_data("Patched", doc))
     }
   };
 }
-
 #[macro_export]
 macro_rules! crud_delete {
   ($route:ident, $table:expr) => {
@@ -141,7 +129,6 @@ macro_rules! crud_delete {
         .delete($table, &id)
         .await
         .map_err(|e| e.to_string())?;
-
       Ok(crate::entities::response_entity::Response::success_with_data(
         "Deleted",
         serde_json::json!({ "id": id }),

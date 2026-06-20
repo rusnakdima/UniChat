@@ -1,6 +1,5 @@
 use crate::models::platform_type_model::PlatformTypeModel;
 use crate::utils::config_helper::AppConfig;
-
 #[derive(Clone)]
 pub struct OAuthProviderConfig {
   pub client_id: String,
@@ -12,7 +11,6 @@ pub struct OAuthProviderConfig {
   pub scopes: Vec<String>,
   pub redirect_uri: String,
 }
-
 pub fn get_oauth_provider_config(
   platform: &PlatformTypeModel,
   config: &AppConfig,
@@ -26,7 +24,6 @@ pub fn get_oauth_provider_config(
           "Twitch OAuth not configured. Please set TWITCH_CLIENT_ID in your .env file or environment variables.".to_string()
         })?;
       let client_secret = config.twitch_client_secret.clone();
-
       Ok(OAuthProviderConfig {
         client_id,
         client_secret,
@@ -50,7 +47,6 @@ pub fn get_oauth_provider_config(
           "Kick OAuth not configured. Please set KICK_CLIENT_ID in your .env file or environment variables.".to_string()
         })?;
       let client_secret = config.kick_client_secret.clone();
-
       Ok(OAuthProviderConfig {
         client_id,
         client_secret,
@@ -79,7 +75,6 @@ pub fn get_oauth_provider_config(
           "YouTube OAuth not configured. Please set YOUTUBE_CLIENT_ID in your .env file or environment variables.".to_string()
         })?;
       let client_secret = config.youtube_client_secret.clone();
-
       Ok(OAuthProviderConfig {
         client_id,
         client_secret,

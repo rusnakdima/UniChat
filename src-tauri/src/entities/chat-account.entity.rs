@@ -1,10 +1,8 @@
 /* sys lib */
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-
 /* nosql_orm */
 use nosql_orm::{Model, Validate};
-
 #[derive(Debug, Clone, Serialize, Deserialize, Model, Validate)]
 #[table_name("chat_accounts")]
 #[soft_delete]
@@ -33,7 +31,6 @@ pub struct ChatAccountEntity {
   #[serde(default)]
   pub deleted_at: Option<DateTime<Utc>>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct ChatAccountCreateModel {
   #[validate(required)]
@@ -52,7 +49,6 @@ pub struct ChatAccountCreateModel {
   pub refresh_token: Option<String>,
   pub token_expires_at: Option<String>,
 }
-
 impl From<ChatAccountCreateModel> for ChatAccountEntity {
   fn from(create: ChatAccountCreateModel) -> Self {
     ChatAccountEntity {

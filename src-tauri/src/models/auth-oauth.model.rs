@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OAuthPendingSessionModel {
@@ -7,7 +6,6 @@ pub struct OAuthPendingSessionModel {
   pub code_verifier: String,
   pub created_at: i64,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OAuthTokenModel {

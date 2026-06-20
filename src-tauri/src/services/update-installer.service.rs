@@ -1,18 +1,15 @@
 use tauri::AppHandle;
 use tauri_plugin_shell::ShellExt;
-
 pub fn install_update(installer_path: &str, app_handle: &AppHandle) -> Result<bool, String> {
   let path = std::path::Path::new(installer_path);
   if !path.exists() {
     return Err("Installer file not found".to_string());
   }
-
   let extension = path
     .extension()
     .and_then(|e| e.to_str())
     .unwrap_or("")
     .to_lowercase();
-
   #[cfg(target_os = "windows")]
   {
     if extension == "msi" {
@@ -30,7 +27,6 @@ pub fn install_update(installer_path: &str, app_handle: &AppHandle) -> Result<bo
         .map_err(|e| format!("Failed to run installer: {}", e))?;
     }
   }
-
   #[cfg(target_os = "macos")]
   {
     let shell = app_handle.shell();
@@ -40,7 +36,6 @@ pub fn install_update(installer_path: &str, app_handle: &AppHandle) -> Result<bo
       .spawn()
       .map_err(|e| format!("Failed to open installer: {}", e))?;
   }
-
   #[cfg(target_os = "linux")]
   {
     let shell = app_handle.shell();
@@ -70,6 +65,5 @@ pub fn install_update(installer_path: &str, app_handle: &AppHandle) -> Result<bo
       return Err(format!("Unsupported installer format: {}", extension));
     }
   }
-
   Ok(true)
 }

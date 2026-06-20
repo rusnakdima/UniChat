@@ -1,8 +1,10 @@
 //! Overlay server router module
 //! Builds the Axum router for overlay HTTP and WebSocket endpoints
-
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
-
+use crate::commands::overlay_command::OverlayFullConfigModel;
+use crate::models::overlay_message_model::OverlayMessageModel;
+use crate::services::overlay_server::overlay_helpers::filter_and_sort_messages;
+use crate::services::overlay_server::overlay_subscriber_manager::OverlayServerState;
+use crate::services::overlay_server::overlay_ws_handlers::{handle_overlay_ws, OverlayWsQuery};
 use axum::{
   extract::{Path, Query, State, WebSocketUpgrade},
   response::Html,
@@ -11,15 +13,9 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::json;
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
-
-use crate::commands::overlay_command::OverlayFullConfigModel;
-use crate::models::overlay_message_model::OverlayMessageModel;
-use crate::services::overlay_server::overlay_helpers::filter_and_sort_messages;
-use crate::services::overlay_server::overlay_subscriber_manager::OverlayServerState;
-use crate::services::overlay_server::overlay_ws_handlers::{handle_overlay_ws, OverlayWsQuery};
-
 /// Query parameters for get_overlay_messages endpoint
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,13 +23,11 @@ pub struct GetOverlayMessagesQuery {
   pub limit: Option<u32>,
   pub channel_ids: Option<Vec<String>>,
 }
-
 #[derive(Clone)]
 pub struct OverlayRouterState {
   pub overlay_configs: Arc<RwLock<HashMap<String, OverlayFullConfigModel>>>,
   pub overlay_messages: Arc<RwLock<HashMap<String, Vec<OverlayMessageModel>>>>,
 }
-
 /// Serve the overlay index.html with transparent background support for OBS
 async fn serve_overlay_index(dist_dir: State<Arc<PathBuf>>) -> Html<String> {
   let index_path = dist_dir.join("index.html");
@@ -46,11 +40,9 @@ async fn serve_overlay_index(dist_dir: State<Arc<PathBuf>>) -> Html<String> {
   app-root { background: transparent !important; }
   app-overlay-view { background: transparent !important; }
 </style>"#;
-
       if let Some(head_end) = html.find("</head>") {
         html.insert_str(head_end, transparent_css);
       }
-
       Html(html)
     }
     Err(_) => Html(format!(
@@ -59,7 +51,6 @@ async fn serve_overlay_index(dist_dir: State<Arc<PathBuf>>) -> Html<String> {
     )),
   }
 }
-
 async fn get_overlay_config(
   Path(widget_id): Path<String>,
   State(state): State<OverlayRouterState>,
@@ -81,7 +72,6 @@ async fn get_overlay_config(
     Json(json!(null))
   }
 }
-
 async fn get_overlay_messages(
   Path(widget_id): Path<String>,
   Query(query): Query<GetOverlayMessagesQuery>,
@@ -91,9 +81,7 @@ async fn get_overlay_messages(
   let Some(widget_messages) = messages.get(&widget_id) else {
     return Json(Vec::new());
   };
-
   let result = filter_and_sort_messages(widget_messages, query.channel_ids.as_ref(), query.limit);
-
   let json_result: Vec<serde_json::Value> = result
     .into_iter()
     .map(|msg| {
@@ -111,10 +99,8 @@ async fn get_overlay_messages(
       })
     })
     .collect();
-
   Json(json_result)
 }
-
 pub fn build_overlay_router(
   dist_dir: PathBuf,
   state: OverlayServerState,
@@ -122,7 +108,6 @@ pub fn build_overlay_router(
   overlay_messages: Arc<RwLock<HashMap<String, Vec<OverlayMessageModel>>>>,
 ) -> Router {
   let serve_dir = ServeDir::new(dist_dir.clone()).append_index_html_on_directories(false);
-
   let ws_state = state.clone();
   let overlay_dist = dist_dir.clone();
   let router_state = OverlayRouterState {
@@ -130,7 +115,6 @@ pub fn build_overlay_router(
     overlay_messages,
   };
   let router_state_for_ws = router_state.clone();
-
   Router::new()
     .route(
       "/ws/overlay",

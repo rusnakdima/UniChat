@@ -1,17 +1,13 @@
 //! Overlay subscriber management module
 //! Handles WebSocket subscriber lifecycle and message broadcasting
-
+use crate::models::overlay_message_model::{OverlayMessageModel, OverlayWidgetFilterModel};
 use axum::extract::ws::Message;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc;
-
-use crate::models::overlay_message_model::{OverlayMessageModel, OverlayWidgetFilterModel};
-
 /// Build a channel reference string for filtering
 pub(crate) fn build_channel_ref(platform: &str, source_channel_id: &str) -> String {
   format!("{platform}:{source_channel_id}")
 }
-
 /// Represents a connected overlay subscriber (OBS browser source)
 #[derive(Clone, Debug)]
 pub struct OverlaySubscriber {
@@ -20,13 +16,11 @@ pub struct OverlaySubscriber {
   pub channel_ids: Arc<tokio::sync::RwLock<Option<Vec<String>>>>,
   pub tx: mpsc::UnboundedSender<Message>,
 }
-
 /// Server state managing all overlay subscribers
 #[derive(Clone, Debug, Default)]
 pub struct OverlayServerState {
   subscribers: Arc<tokio::sync::Mutex<HashMap<String, Vec<OverlaySubscriber>>>>,
 }
-
 impl OverlayServerState {
   /// Create a new overlay server state
   pub fn new() -> Self {
@@ -34,7 +28,6 @@ impl OverlayServerState {
       subscribers: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
     }
   }
-
   /// Add a new overlay subscriber
   pub async fn add_subscriber(
     &self,
@@ -51,7 +44,6 @@ impl OverlayServerState {
       .or_insert_with(Vec::new)
       .push(subscriber);
   }
-
   /// Remove a subscriber by widget ID and subscriber ID
   pub async fn remove_subscriber(&self, widget_id: &str, subscriber_id: u64) {
     let mut map = self.subscribers.lock().await;
@@ -59,7 +51,6 @@ impl OverlayServerState {
       vec.retain(|s| s.id != subscriber_id);
     }
   }
-
   /// Broadcast a message to all subscribers (filtered by widget config)
   pub async fn broadcast_message(&self, message: OverlayMessageModel) {
     let out_json = crate::models::overlay_message_model::OverlayWsOutgoingModel {
@@ -68,14 +59,11 @@ impl OverlayServerState {
     };
     let text = serde_json::to_string(&out_json)
       .unwrap_or_else(|_| "{\"type\":\"overlayMessage\"}".to_string());
-
     let snapshot: Vec<OverlaySubscriber> = {
       let map = self.subscribers.lock().await;
       map.values().flat_map(|vec| vec.clone()).collect()
     };
-
     let message_channel_ref = build_channel_ref(&message.platform, &message.source_channel_id);
-
     for sub in snapshot {
       if !self.should_broadcast_to_subscriber(&sub, &message, &message_channel_ref) {
         continue;
@@ -83,7 +71,6 @@ impl OverlayServerState {
       let _ = sub.tx.send(Message::Text(text.clone()));
     }
   }
-
   fn should_broadcast_to_subscriber(
     &self,
     sub: &OverlaySubscriber,
@@ -93,14 +80,12 @@ impl OverlayServerState {
     if !self.passes_filter(sub, message) {
       return false;
     }
-
     let channel_ids = sub.channel_ids.blocking_read();
     match &*channel_ids {
       None => true,
       Some(ids) => ids.iter().any(|id| id.as_str() == message_channel_ref),
     }
   }
-
   fn passes_filter(&self, sub: &OverlaySubscriber, message: &OverlayMessageModel) -> bool {
     let filter = sub.filter.blocking_read();
     match &*filter {
@@ -109,7 +94,6 @@ impl OverlayServerState {
     }
   }
 }
-
 impl Default for OverlaySubscriber {
   fn default() -> Self {
     Self {

@@ -1,7 +1,5 @@
 //! Shared HTTP error handling and URL building utilities.
-
 use reqwest::StatusCode;
-
 /// Build fallback URLs by prepending base to each path.
 pub fn build_fallback_urls(base: &str, paths: &[&str]) -> Vec<String> {
   paths
@@ -9,7 +7,6 @@ pub fn build_fallback_urls(base: &str, paths: &[&str]) -> Vec<String> {
     .map(|path| format!("{}{}", base, path))
     .collect()
 }
-
 /// Handle common HTTP error cases and return a user-friendly error message.
 ///
 /// Maps status codes to appropriate error messages:

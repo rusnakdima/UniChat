@@ -1,7 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use crate::models::platform_type_model::PlatformTypeModel;
-
+use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum AuthStatusModel {
@@ -10,7 +8,6 @@ pub enum AuthStatusModel {
   TokenExpired,
   Revoked,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthAccountModel {
@@ -25,7 +22,6 @@ pub struct AuthAccountModel {
   pub token_expires_at: Option<String>,
   pub authorized_at: String,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthCommandResultModel {

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitHubRelease {
   pub tag_name: String,
@@ -7,7 +6,6 @@ pub struct GitHubRelease {
   pub body: Option<String>,
   pub assets: Vec<GitHubAsset>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitHubAsset {
   pub id: u64,
@@ -16,7 +14,6 @@ pub struct GitHubAsset {
   pub size: u64,
   pub content_type: String,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateInfo {
   pub current_version: String,
@@ -26,7 +23,6 @@ pub struct UpdateInfo {
   pub asset_size: u64,
   pub release_notes: Option<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadProgress {
   pub bytes_downloaded: u64,

@@ -2,14 +2,11 @@ pub mod commands;
 mod constants;
 pub mod entities;
 pub mod errors;
+pub mod loging;
 pub mod models;
 pub mod repositories;
 pub mod services;
 pub mod utils;
-
-use std::sync::Arc;
-use tauri::Manager;
-
 use crate::commands::auth_provider_command::{
   auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
   auth_validate,
@@ -33,6 +30,7 @@ use crate::commands::chat_message_command::{
   create_chat_message, delete_chat_message, delete_chat_messages_by_channel, get_chat_message,
   get_chat_messages, get_chat_messages_by_channel, patch_chat_message, update_chat_message,
 };
+use crate::commands::crud_command::crud_execute;
 use crate::commands::custom_emote_command::{
   create_custom_emote, delete_custom_emote, get_custom_emote, get_custom_emotes,
   get_custom_emotes_by_platform, patch_custom_emote, update_custom_emote,
@@ -43,7 +41,6 @@ use crate::commands::dashboard_preferences_command::{
   update_dashboard_preferences,
 };
 use crate::commands::icons_command::{twitch_fetch_channel_icons, twitch_fetch_global_icons};
-
 use crate::commands::overlay_command::{
   emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
   init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
@@ -64,22 +61,15 @@ use crate::entities::custom_emote_entity::CustomEmoteEntity;
 use crate::entities::dashboard_preferences_entity::DashboardPreferencesEntity;
 use crate::repositories::data_repository::DataProvider;
 use crate::services::auth::AccountService;
+use crate::services::crud_service::CrudService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
 use crate::utils::config_helper::{AppConfig, SharedConfig};
 use nosql_orm::providers::JsonProvider;
 use nosql_orm::relations::register_relations_for_entity;
+use std::sync::Arc;
 use tauri::Emitter;
+use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
-
-#[macro_export]
-macro_rules! log_info { ($($arg:tt)*) => { log::info!($($arg)*) }; }
-#[macro_export]
-macro_rules! log_error { ($($arg:tt)*) => { log::error!($($arg)*) }; }
-#[macro_export]
-macro_rules! log_debug { ($($arg:tt)*) => { log::debug!($($arg)*) }; }
-#[macro_export]
-macro_rules! log_warn { ($($arg:tt)*) => { log::warn!($($arg)*) }; }
-
 pub struct AppState {
   pub config: SharedConfig,
   pub account_service: Arc<AccountService>,
@@ -87,11 +77,10 @@ pub struct AppState {
   pub data: DataState,
   pub storage: StorageState,
 }
-
 pub struct DataState {
   pub json_provider: DataProvider,
+  pub crud_service: Arc<CrudService>,
 }
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   register_relations_for_entity::<ChatMessageEntity>();
@@ -99,7 +88,6 @@ pub fn run() {
   register_relations_for_entity::<ChatAccountEntity>();
   register_relations_for_entity::<DashboardPreferencesEntity>();
   register_relations_for_entity::<CustomEmoteEntity>();
-
   let builder = tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_deep_link::init())
@@ -111,40 +99,35 @@ pub fn run() {
         .validate()
         .map_err(|e| log_error!("Config validation failed: {}", e))
         .ok();
-
       let frontend_dist_dir = resolve_frontend_dist_dir(app);
       let overlay_server = Arc::new(OverlayServerService::new(frontend_dist_dir));
-
       let overlay_server_clone = overlay_server.clone();
       tauri::async_runtime::spawn(async move {
         let _ = overlay_server_clone.start(OVERLAY_SERVER_PORT).await;
       });
-
       let account_service = Arc::new(AccountService::new_with_config(config.clone()));
       let account_service_clone = account_service.clone();
-
       let app_data_dir = app
         .path()
         .app_data_dir()
         .expect("Failed to get app data directory");
       let json_db_path = app_data_dir.join("unichat_db");
       std::fs::create_dir_all(&json_db_path).ok();
-
       let json_provider = tauri::async_runtime::block_on(JsonProvider::new(&json_db_path))
         .expect("Failed to create JSON provider");
-
+      let json_provider_clone = json_provider.clone();
       let data_provider = DataProvider::Json(Arc::new(json_provider));
-
+      let crud_service = Arc::new(CrudService::new(json_provider_clone));
       app.manage(AppState {
         config: config.clone(),
         account_service,
         overlay_server_service: overlay_server,
         data: DataState {
           json_provider: data_provider,
+          crud_service,
         },
         storage: StorageState::new(),
       });
-
       let app_handle = app.handle().clone();
       app.deep_link().on_open_url(move |event| {
         let urls = event.urls();
@@ -153,14 +136,12 @@ pub fn run() {
             let url_string = url.to_string();
             let account_service = account_service_clone.clone();
             let app_handle = app_handle.clone();
-
             tauri::async_runtime::spawn(async move {
               let platforms = vec![
                 crate::models::platform_type_model::PlatformTypeModel::Twitch,
                 crate::models::platform_type_model::PlatformTypeModel::Kick,
                 crate::models::platform_type_model::PlatformTypeModel::Youtube,
               ];
-
               for platform in platforms {
                 if let Ok(account) = account_service
                   .complete_auth(platform.clone(), url_string.clone())
@@ -170,14 +151,12 @@ pub fn run() {
                   return;
                 }
               }
-
               let error_msg = "OAuth callback failed for all platforms";
               let _ = app_handle.emit("oauth-error", error_msg);
             });
           }
         }
       });
-
       Ok(())
     })
     .on_window_event(|_window, event| match event {
@@ -186,6 +165,7 @@ pub fn run() {
       _ => {}
     })
     .invoke_handler(tauri::generate_handler![
+      crud_execute,
       auth_start,
       auth_await_callback,
       auth_complete,
@@ -264,13 +244,10 @@ pub fn run() {
       count_storage,
       exists_storage,
     ]);
-
   if let Err(e) = builder.run(tauri::generate_context!()) {
-    log_error!("Failed to run tauri application: {}", e);
     std::process::exit(1);
   }
 }
-
 #[allow(unused)]
 fn resolve_frontend_dist_dir(app: &tauri::App) -> std::path::PathBuf {
   #[cfg(debug_assertions)]
@@ -289,7 +266,6 @@ fn resolve_frontend_dist_dir(app: &tauri::App) -> std::path::PathBuf {
     }
     cwd.join("dist/unichat/browser")
   }
-
   #[cfg(not(debug_assertions))]
   {
     if let Ok(resource_dir) = app.path().resource_dir() {
@@ -298,14 +274,12 @@ fn resolve_frontend_dist_dir(app: &tauri::App) -> std::path::PathBuf {
         return frontend_dist;
       }
     }
-
     if let Ok(exe_path) = std::env::current_exe() {
       if let Some(exe_dir) = exe_path.parent() {
         let fallback = exe_dir.join("dist").join("unichat").join("browser");
         if fallback.exists() && fallback.join("index.html").exists() {
           return fallback;
         }
-
         if let Some(parent) = exe_dir.parent() {
           let alt_fallback = parent.join("dist").join("unichat").join("browser");
           if alt_fallback.exists() && alt_fallback.join("index.html").exists() {
@@ -314,7 +288,6 @@ fn resolve_frontend_dist_dir(app: &tauri::App) -> std::path::PathBuf {
         }
       }
     }
-
     let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     cwd.join("dist").join("unichat").join("browser")
   }

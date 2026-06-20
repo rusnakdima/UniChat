@@ -1,12 +1,10 @@
 use serde::{Deserialize, Serialize};
-
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub enum OverlayWidgetFilterModel {
   All,
   Supporters,
 }
-
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatMessageEmoteModel {
@@ -17,7 +15,6 @@ pub struct ChatMessageEmoteModel {
   pub end: u32,
   pub url: String,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceChatMessageModel {
@@ -32,7 +29,6 @@ pub struct SourceChatMessageModel {
   pub channel_image_url: Option<String>,
   pub emotes: Option<Vec<ChatMessageEmoteModel>>,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverlayMessageModel {
@@ -47,7 +43,6 @@ pub struct OverlayMessageModel {
   pub channel_image_url: Option<String>, // Channel profile image for multi-channel overlays
   pub emotes: Option<Vec<ChatMessageEmoteModel>>,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverlayWsSubscribeModel {
@@ -55,7 +50,6 @@ pub struct OverlayWsSubscribeModel {
   pub filter: Option<OverlayWidgetFilterModel>,
   pub channel_ids: Option<Vec<String>>,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverlayWsIncomingModel {
@@ -64,7 +58,6 @@ pub struct OverlayWsIncomingModel {
   pub message: Option<SourceChatMessageModel>,
   pub subscribe: Option<OverlayWsSubscribeModel>,
 }
-
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverlayWsOutgoingModel {

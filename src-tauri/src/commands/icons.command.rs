@@ -5,40 +5,33 @@ use crate::utils::http_client::shared_client;
 use crate::AppState;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-
 // ---------- 7TV ----------
 #[derive(Debug, Deserialize)]
 struct SevenTvHost {
   url: Option<String>,
 }
-
 #[derive(Debug, Deserialize)]
 struct SevenTvEmoteData {
   host: Option<SevenTvHost>,
 }
-
 #[derive(Debug, Deserialize)]
 struct SevenTvEmoteRow {
   id: String,
   name: String,
   data: Option<SevenTvEmoteData>,
 }
-
 #[derive(Debug, Deserialize)]
 struct SevenTvGlobalResponse {
   emotes: Option<Vec<SevenTvEmoteRow>>,
 }
-
 #[derive(Debug, Deserialize)]
 struct SevenTvChannelResponse {
   emote_set: Option<SevenTvEmoteSet>,
 }
-
 #[derive(Debug, Deserialize)]
 struct SevenTvEmoteSet {
   emotes: Option<Vec<SevenTvEmoteRow>>,
 }
-
 // ---------- Twitch badges Helix ----------
 #[derive(Debug, Deserialize)]
 struct HelixBadgeVersionRow {
@@ -46,18 +39,15 @@ struct HelixBadgeVersionRow {
   image_url_1x: Option<String>,
   title: Option<String>,
 }
-
 #[derive(Debug, Deserialize)]
 struct HelixBadgeSetRow {
   set_id: String,
   versions: Vec<HelixBadgeVersionRow>,
 }
-
 #[derive(Debug, Deserialize)]
 struct HelixBadgeListResponse {
   data: Option<Vec<HelixBadgeSetRow>>,
 }
-
 // ---------- Public response models ----------
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -65,7 +55,6 @@ pub struct SevenTvEmoteIcon {
   pub id: String,
   pub url: String,
 }
-
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TwitchBadgeIcon {
@@ -73,20 +62,17 @@ pub struct TwitchBadgeIcon {
   pub label: String,
   pub url: String,
 }
-
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IconsFetchResponseModel {
   pub emotes: HashMap<String, SevenTvEmoteIcon>, // key: emote name/code
   pub badges: HashMap<String, TwitchBadgeIcon>,  // key: `${badgeKey}/${badgeVersion}`
 }
-
 fn build_seven_tv_emote_file_url(host_url: &Option<String>) -> Option<String> {
   let t = host_url.as_deref()?.trim();
   if t.is_empty() {
     return None;
   }
-
   // 7TV host url is typically `//cdn.7tv.app/emote/{id}`.
   let base: String = if t.starts_with("https://") || t.starts_with("http://") {
     // remove trailing slashes
@@ -100,10 +86,8 @@ fn build_seven_tv_emote_file_url(host_url: &Option<String>) -> Option<String> {
   } else {
     return None;
   };
-
   Some(format!("{base}/1x.webp"))
 }
-
 fn build_emote_map(rows: &[SevenTvEmoteRow]) -> HashMap<String, SevenTvEmoteIcon> {
   let mut map = HashMap::new();
   for row in rows {
@@ -128,7 +112,6 @@ fn build_emote_map(rows: &[SevenTvEmoteRow]) -> HashMap<String, SevenTvEmoteIcon
   }
   map
 }
-
 fn build_badge_map(payload: HelixBadgeListResponse) -> HashMap<String, TwitchBadgeIcon> {
   let mut map = HashMap::new();
   for set_row in payload.data.unwrap_or_default() {
@@ -150,7 +133,6 @@ fn build_badge_map(payload: HelixBadgeListResponse) -> HashMap<String, TwitchBad
   }
   map
 }
-
 // ---------- Commands ----------
 #[tauri::command]
 pub async fn twitch_fetch_global_icons(
@@ -158,19 +140,14 @@ pub async fn twitch_fetch_global_icons(
 ) -> Result<IconsFetchResponseModel, String> {
   let (client_id, client_secret) = twitch_client_credentials(&state.config)?;
   let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
-
   let client = shared_client();
-
   let badges_fut = client
     .get("https://api.twitch.tv/helix/chat/badges/global")
     .header("Client-Id", client_id)
     .header("Authorization", format!("Bearer {token}"))
     .send();
-
   let emotes_fut = client.get("https://7tv.io/v3/emote-sets/global").send();
-
   let (badges_res, emotes_res) = tokio::join!(badges_fut, emotes_fut);
-
   let badges = badges_res
     .map_err(|e| e.to_string())?
     .json::<HelixBadgeListResponse>()
@@ -181,13 +158,11 @@ pub async fn twitch_fetch_global_icons(
     .json::<SevenTvGlobalResponse>()
     .await
     .map_err(|e| e.to_string())?;
-
   Ok(IconsFetchResponseModel {
     emotes: build_emote_map(&emotes.emotes.unwrap_or_default()),
     badges: build_badge_map(badges),
   })
 }
-
 #[tauri::command]
 pub async fn twitch_fetch_channel_icons(
   state: tauri::State<'_, AppState>,
@@ -196,25 +171,19 @@ pub async fn twitch_fetch_channel_icons(
   if room_id.trim().is_empty() {
     return Err("room_id required".to_string());
   }
-
   let (client_id, client_secret) = twitch_client_credentials(&state.config)?;
   let token = twitch_app_access_token(&client_id, client_secret.as_deref()).await?;
-
   let client = shared_client();
-
   let badges_fut = client
     .get("https://api.twitch.tv/helix/chat/badges")
     .query(&[("broadcaster_id", room_id.as_str())])
     .header("Client-Id", client_id)
     .header("Authorization", format!("Bearer {token}"))
     .send();
-
   let emotes_fut = client
     .get(format!("https://7tv.io/v3/users/twitch/{room_id}"))
     .send();
-
   let (badges_res, emotes_res) = tokio::join!(badges_fut, emotes_fut);
-
   let badges = badges_res
     .map_err(|e| e.to_string())?
     .json::<HelixBadgeListResponse>()
@@ -225,9 +194,7 @@ pub async fn twitch_fetch_channel_icons(
     .json::<SevenTvChannelResponse>()
     .await
     .map_err(|e| e.to_string())?;
-
   let emote_rows = emotes.emote_set.and_then(|s| s.emotes).unwrap_or_default();
-
   Ok(IconsFetchResponseModel {
     emotes: build_emote_map(&emote_rows),
     badges: build_badge_map(badges),

@@ -1,7 +1,5 @@
-use regex::Regex;
-
 use crate::constants::MAX_LEN;
-
+use regex::Regex;
 /// Sanitize chat text specifically for overlay rendering.
 ///
 /// Order matters: strip URLs BEFORE escaping HTML to prevent entity reconstruction attacks.
@@ -11,7 +9,6 @@ pub fn sanitize_for_overlay(text: &str) -> String {
   let trimmed = escaped.trim();
   cap_string(trimmed, MAX_LEN)
 }
-
 /// Escape HTML special characters to prevent XSS in overlay rendering
 /// Optimized to count required escapes first to minimize allocations
 pub fn escape_html(input: &str) -> String {
@@ -25,12 +22,10 @@ pub fn escape_html(input: &str) -> String {
       _ => {}
     }
   }
-
   // If no escaping needed, return original
   if extra_chars == 0 {
     return input.to_string();
   }
-
   // Second pass: build output with exact capacity
   let mut out = String::with_capacity(input.len() + extra_chars);
   for ch in input.chars() {
@@ -45,7 +40,6 @@ pub fn escape_html(input: &str) -> String {
   }
   out
 }
-
 /// Strip URLs from text to prevent spam in chat overlays
 /// Handles various URL patterns including protocol-relative and edge cases
 pub fn strip_urls(text: &str) -> String {
@@ -55,7 +49,6 @@ pub fn strip_urls(text: &str) -> String {
   .unwrap();
   re.replace_all(text, "").to_string()
 }
-
 /// Cap string to maximum length, preserving UTF-8 character boundaries
 pub fn cap_string(s: &str, max_len: usize) -> String {
   if s.len() <= max_len {

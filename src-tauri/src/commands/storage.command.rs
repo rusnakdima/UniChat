@@ -4,11 +4,9 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::RwLock;
 use tauri::State;
-
 pub struct StorageState {
   data: RwLock<HashMap<String, Value>>,
 }
-
 impl StorageState {
   pub fn new() -> Self {
     Self {
@@ -16,7 +14,6 @@ impl StorageState {
     }
   }
 }
-
 #[tauri::command]
 pub async fn storage_get(state: State<'_, StorageState>, key: String) -> Result<Response, String> {
   let data = state.data.read().map_err(|e| e.to_string())?;
@@ -25,7 +22,6 @@ pub async fn storage_get(state: State<'_, StorageState>, key: String) -> Result<
     None => Ok(Response::error("Key not found".to_string())),
   }
 }
-
 #[tauri::command]
 pub async fn storage_set(
   state: State<'_, StorageState>,
@@ -39,7 +35,6 @@ pub async fn storage_set(
     serde_json::json!({ "key": key, "value": value }),
   ))
 }
-
 #[tauri::command]
 pub async fn storage_remove(
   state: State<'_, StorageState>,
@@ -52,7 +47,6 @@ pub async fn storage_remove(
     serde_json::json!({ "key": key }),
   ))
 }
-
 #[tauri::command]
 pub async fn storage_clear(state: State<'_, StorageState>) -> Result<Response, String> {
   let mut data = state.data.write().map_err(|e| e.to_string())?;
@@ -62,7 +56,6 @@ pub async fn storage_clear(state: State<'_, StorageState>) -> Result<Response, S
     serde_json::json!({}),
   ))
 }
-
 #[tauri::command]
 pub async fn storage_keys(state: State<'_, StorageState>) -> Result<Response, String> {
   let data = state.data.read().map_err(|e| e.to_string())?;
@@ -72,7 +65,6 @@ pub async fn storage_keys(state: State<'_, StorageState>) -> Result<Response, St
     serde_json::json!({ "keys": keys }),
   ))
 }
-
 #[tauri::command]
 pub async fn query_storage(
   state: tauri::State<'_, crate::AppState>,
@@ -87,9 +79,7 @@ pub async fn query_storage(
     .as_ref()
     .map(|f| Filter::from_json(f).map_err(|e| e.to_string()))
     .transpose()?;
-
   let sort_asc = order_direction.as_deref().unwrap_or("desc") == "asc";
-
   let docs = state
     .data
     .json_provider
@@ -103,16 +93,13 @@ pub async fn query_storage(
     )
     .await
     .map_err(|e| e.to_string())?;
-
   let total = state
     .data
     .json_provider
     .count(&entity_type, filter_obj.as_ref())
     .await
     .map_err(|e| e.to_string())?;
-
   let has_more = (skip.unwrap_or(0) + docs.len() as u64) < total;
-
   Ok(Response::success_with_data(
     &format!("Found {} items", docs.len()),
     serde_json::json!({
@@ -122,7 +109,6 @@ pub async fn query_storage(
     }),
   ))
 }
-
 #[tauri::command]
 pub async fn count_storage(
   state: tauri::State<'_, crate::AppState>,
@@ -133,20 +119,17 @@ pub async fn count_storage(
     .as_ref()
     .map(|f| Filter::from_json(f).map_err(|e| e.to_string()))
     .transpose()?;
-
   let count = state
     .data
     .json_provider
     .count(&entity_type, filter_obj.as_ref())
     .await
     .map_err(|e| e.to_string())?;
-
   Ok(Response::success_with_data(
     &format!("Count: {}", count),
     serde_json::json!({ "count": count }),
   ))
 }
-
 #[tauri::command]
 pub async fn exists_storage(
   state: tauri::State<'_, crate::AppState>,
@@ -160,7 +143,6 @@ pub async fn exists_storage(
     .await
     .map_err(|e| e.to_string())?
     .is_some();
-
   Ok(Response::success_with_data(
     if exists { "Exists" } else { "Not found" },
     serde_json::json!({ "exists": exists }),

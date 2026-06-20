@@ -8,7 +8,6 @@ pub mod update_installer;
 pub mod update_models;
 #[path = "update-platform.service.rs"]
 pub mod update_platform;
-
 pub use update_api::{check_for_update, find_platform_asset, has_matching_extension};
 pub use update_downloader::{download_update_with_progress, get_temp_download_path};
 pub use update_installer::install_update;

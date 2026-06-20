@@ -3,19 +3,16 @@ use crate::utils::config_helper::AppConfig;
 use crate::utils::http_client::shared_client;
 use crate::utils::oauth_config_helper::get_oauth_provider_config;
 use serde::Deserialize;
-
 #[derive(Deserialize)]
 struct TwitchTokenBody {
   access_token: String,
 }
-
 /// Get Twitch OAuth client credentials from configuration
 /// Returns (client_id, client_secret)
 pub fn twitch_client_credentials(config: &AppConfig) -> Result<(String, Option<String>), String> {
   let cfg = get_oauth_provider_config(&PlatformTypeModel::Twitch, config)?;
   Ok((cfg.client_id, cfg.client_secret))
 }
-
 /// Exchange client credentials for an app access token
 /// Used for API calls that don't require user authentication
 pub async fn twitch_app_access_token(
@@ -23,7 +20,6 @@ pub async fn twitch_app_access_token(
   client_secret: Option<&str>,
 ) -> Result<String, String> {
   let client = shared_client();
-
   let form = if let Some(secret) = client_secret {
     vec![
       ("client_id", client_id),
@@ -33,25 +29,21 @@ pub async fn twitch_app_access_token(
   } else {
     return Err("client_secret required for Twitch app access token".to_string());
   };
-
   let response = client
     .post("https://id.twitch.tv/oauth2/token")
     .form(&form)
     .send()
     .await
     .map_err(|e| format!("token request failed: {e}"))?;
-
   if !response.status().is_success() {
     return Err(format!("Twitch token HTTP {}", response.status()));
   }
-
   let body: TwitchTokenBody = response
     .json()
     .await
     .map_err(|e| format!("token response parse failed: {e}"))?;
   Ok(body.access_token)
 }
-
 /// Normalize Twitch CDN URL to use HTTPS
 /// Handles various URL formats from Twitch API responses
 pub fn normalize_twitch_cdn_url(url: &Option<String>) -> Option<String> {

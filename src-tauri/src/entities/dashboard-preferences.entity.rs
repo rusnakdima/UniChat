@@ -1,9 +1,7 @@
 /* sys lib */
 use serde::{Deserialize, Serialize};
-
 /* nosql_orm */
 use nosql_orm::{Model, Validate};
-
 #[derive(Debug, Clone, Serialize, Deserialize, Model, Validate)]
 #[table_name("dashboard_preferences")]
 pub struct DashboardPreferencesEntity {
@@ -19,7 +17,6 @@ pub struct DashboardPreferencesEntity {
   #[serde(default)]
   pub mixed_enabled_channel_ids: Vec<String>,
 }
-
 impl Default for DashboardPreferencesEntity {
   fn default() -> Self {
     DashboardPreferencesEntity {
@@ -40,7 +37,6 @@ impl Default for DashboardPreferencesEntity {
     }
   }
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct DashboardPreferencesUpdateModel {
   #[serde(default)]

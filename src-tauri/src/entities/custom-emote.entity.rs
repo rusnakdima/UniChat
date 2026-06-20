@@ -1,10 +1,8 @@
 /* sys lib */
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-
 /* nosql_orm */
 use nosql_orm::{Model, Validate};
-
 #[derive(Debug, Clone, Serialize, Deserialize, Model, Validate)]
 #[table_name("custom_emotes")]
 #[soft_delete]
@@ -26,7 +24,6 @@ pub struct CustomEmoteEntity {
   #[serde(default)]
   pub deleted_at: Option<DateTime<Utc>>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CustomEmoteCreateModel {
   #[validate(required)]
@@ -39,7 +36,6 @@ pub struct CustomEmoteCreateModel {
   #[serde(default)]
   pub emote_type: Option<String>,
 }
-
 impl From<CustomEmoteCreateModel> for CustomEmoteEntity {
   fn from(create: CustomEmoteCreateModel) -> Self {
     CustomEmoteEntity {

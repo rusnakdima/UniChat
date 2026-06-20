@@ -4,14 +4,12 @@ use crate::crud_get_by_id;
 use crate::crud_get_many;
 use crate::crud_patch;
 use crate::crud_update;
-
 crud_get_by_id!(get_chat_account, "chat_accounts");
 crud_get_many!(get_chat_accounts, "chat_accounts");
 crud_create!(create_chat_account, "chat_accounts");
 crud_update!(update_chat_account, "chat_accounts");
 crud_patch!(patch_chat_account, "chat_accounts");
 crud_delete!(delete_chat_account, "chat_accounts");
-
 #[tauri::command]
 pub async fn get_chat_account_by_platform_and_user(
   state: tauri::State<'_, crate::AppState>,
@@ -20,14 +18,11 @@ pub async fn get_chat_account_by_platform_and_user(
 ) -> Result<crate::entities::response_entity::Response, String> {
   use crate::entities::response_entity::Response;
   use nosql_orm::query::Filter;
-
   let filter = serde_json::json!({
     "platform": platform,
     "user_id": user_id
   });
-
   let filter_obj = Filter::from_json(&filter).map_err(|e| e.to_string())?;
-
   let docs = state
     .data
     .json_provider
@@ -41,7 +36,6 @@ pub async fn get_chat_account_by_platform_and_user(
     )
     .await
     .map_err(|e| e.to_string())?;
-
   Ok(
     docs
       .first()
@@ -49,7 +43,6 @@ pub async fn get_chat_account_by_platform_and_user(
       .unwrap_or_else(|| Response::error("Account not found")),
   )
 }
-
 #[tauri::command]
 pub async fn get_chat_accounts_by_platform(
   state: tauri::State<'_, crate::AppState>,
@@ -57,13 +50,10 @@ pub async fn get_chat_accounts_by_platform(
 ) -> Result<crate::entities::response_entity::Response, String> {
   use crate::entities::response_entity::Response;
   use nosql_orm::query::Filter;
-
   let filter = serde_json::json!({
     "platform": platform
   });
-
   let filter_obj = Filter::from_json(&filter).map_err(|e| e.to_string())?;
-
   let docs = state
     .data
     .json_provider
@@ -77,7 +67,6 @@ pub async fn get_chat_accounts_by_platform(
     )
     .await
     .map_err(|e| e.to_string())?;
-
   Ok(Response::success_with_data(
     &format!("Found {} accounts", docs.len()),
     serde_json::json!(docs),
