@@ -50,6 +50,10 @@ use crate::commands::storage_command::{
   count_storage, exists_storage, query_storage, storage_clear, storage_get, storage_keys,
   storage_remove, storage_set,
 };
+use crate::commands::twitch_irc_command::{
+  twitch_irc_is_connected, twitch_irc_join_channel, twitch_irc_leave_channel,
+  twitch_irc_send_message,
+};
 use crate::commands::update_command::{
   check_for_update, download_update, get_current_version, install_update,
 };
@@ -66,6 +70,7 @@ use crate::services::overlay_server::overlay_server_service::OverlayServerServic
 use crate::utils::config_helper::{AppConfig, SharedConfig};
 use nosql_orm::providers::JsonProvider;
 use nosql_orm::relations::register_relations_for_entity;
+use services::twitch_irc::TwitchIrcService;
 use std::sync::Arc;
 use tauri::Emitter;
 use tauri::Manager;
@@ -74,6 +79,7 @@ pub struct AppState {
   pub config: SharedConfig,
   pub account_service: Arc<AccountService>,
   pub overlay_server_service: Arc<OverlayServerService>,
+  pub twitch_irc_service: Arc<TwitchIrcService>,
   pub data: DataState,
   pub storage: StorageState,
 }
@@ -118,10 +124,12 @@ pub fn run() {
       let json_provider_clone = json_provider.clone();
       let data_provider = DataProvider::Json(Arc::new(json_provider));
       let crud_service = Arc::new(CrudService::new(json_provider_clone));
+      let twitch_irc_service = Arc::new(TwitchIrcService::new(app.handle().clone()));
       app.manage(AppState {
         config: config.clone(),
         account_service,
         overlay_server_service: overlay_server,
+        twitch_irc_service: twitch_irc_service.clone(),
         data: DataState {
           json_provider: data_provider,
           crud_service,
@@ -194,6 +202,10 @@ pub fn run() {
       kick_send_chat_message,
       kick_delete_chat_message,
       youtube_fetch_channel_info_by_api_key,
+      twitch_irc_join_channel,
+      twitch_irc_leave_channel,
+      twitch_irc_send_message,
+      twitch_irc_is_connected,
       check_for_update,
       download_update,
       install_update,

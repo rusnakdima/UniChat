@@ -24,5 +24,7 @@ pub mod macros;
 pub mod overlay_command;
 #[path = "storage.command.rs"]
 pub mod storage_command;
+#[path = "twitch_irc.command.rs"]
+pub mod twitch_irc_command;
 #[path = "update.command.rs"]
 pub mod update_command;
