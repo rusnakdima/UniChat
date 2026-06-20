@@ -100,7 +100,9 @@ export class ChannelFilterDropdownComponent implements AfterViewInit {
   }
 
   selectAll(): void {
-    const allRefs = this.channels.filter((ch) => ch.isVisible).map((ch) => this.channelRefFor(ch));
+    const allRefs = this.channelsSignal()
+      .filter((ch) => ch.isVisible)
+      .map((ch) => this.channelRefFor(ch));
     this.enabledChannelIdsChange.emit(new Set(allRefs));
   }
 

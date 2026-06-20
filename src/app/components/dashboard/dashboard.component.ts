@@ -332,7 +332,12 @@ export class DashboardComponent {
       }
       // Only send if platform is authorized for this channel
       if (this.authorizationService.isAuthorized(channel.platform)) {
-        void this.chatStateService.sendOutgoingChatMessage(text);
+        this.chatStateService.addOutgoingMessage(text, channel.platform, channel.channelId);
+        void this.chatStateService.sendOutgoingChatMessage(
+          text,
+          channel.platform,
+          channel.channelId
+        );
       }
     }
 
