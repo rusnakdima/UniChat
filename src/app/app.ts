@@ -7,6 +7,7 @@ import { ThemeService } from "@services/core/theme.service";
 import { MemoryManagementService } from "@services/core/memory-management.service";
 import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 import { AuthorizationService } from "@services/features/authorization.service";
+import { ConnectionManagerService } from "@services/core/connection-manager.service";
 
 /* components */
 import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal.component";
@@ -23,6 +24,7 @@ export class App {
   private readonly memoryService = inject(MemoryManagementService);
   private readonly channelImagePreloader = inject(ChannelImagePreloaderService);
   private readonly authService = inject(AuthorizationService);
+  private readonly connectionManager = inject(ConnectionManagerService);
 
   readonly isOverlay = signal<boolean>(this.checkIsOverlay());
 

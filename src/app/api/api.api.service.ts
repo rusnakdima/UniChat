@@ -63,8 +63,14 @@ export class TauriApiService {
     return this.invoke<boolean>("kick_delete_chat_message", args);
   }
 
-  async kickFetchChatroomId(args: { channelSlug: string; accessToken: string | null }) {
-    return this.invoke("kick_fetch_chatroom_id", args);
+  async kickFetchChatroomId(args: {
+    channelSlug: string;
+    accessToken: string | null;
+  }): Promise<{ chatroomId: number; broadcasterUserId: number }> {
+    return this.invoke<{ chatroomId: number; broadcasterUserId: number }>(
+      "kick_fetch_chatroom_id",
+      args
+    );
   }
 
   async kickFetchChannelInfo(args: { channelSlug: string }) {
@@ -108,6 +114,31 @@ export class TauriApiService {
 
   async youtubeFetchChannelInfoByApiKey(args: { channel_name: string; api_key: string }) {
     return this.invoke("youtube_fetch_channel_info_by_api_key", args);
+  }
+
+  async twitchIrcJoinChannel(args: {
+    channelId: string;
+    channelName: string;
+    username: string;
+    oauthToken: string;
+  }): Promise<void> {
+    return this.invoke("twitch_irc_join_channel", args);
+  }
+
+  async twitchIrcLeaveChannel(args: { channelId: string; channelName: string }): Promise<void> {
+    return this.invoke("twitch_irc_leave_channel", args);
+  }
+
+  async twitchIrcSendMessage(args: {
+    channelId: string;
+    channelName: string;
+    message: string;
+  }): Promise<void> {
+    return this.invoke("twitch_irc_send_message", args);
+  }
+
+  async twitchIrcIsConnected(args: { channelId: string; channelName: string }): Promise<boolean> {
+    return this.invoke<boolean>("twitch_irc_is_connected", args);
   }
 
   async authValidate(args: { platform: string }) {
