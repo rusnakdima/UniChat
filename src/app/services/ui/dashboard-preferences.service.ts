@@ -100,4 +100,18 @@ export class DashboardPreferencesService {
       return next;
     });
   }
+  cleanMixedEnabledChannelIds(validRefs: Set<string>): void {
+    this._prefs.update((p) => {
+      const validLower = new Set(Array.from(validRefs).map((r) => r.toLowerCase()));
+      const cleaned = new Set(
+        Array.from(p.mixedEnabledChannelIds).filter((ref) => validLower.has(ref.toLowerCase()))
+      );
+      if (cleaned.size !== p.mixedEnabledChannelIds.size) {
+        const next = { ...p, mixedEnabledChannelIds: cleaned };
+        saveToStorage(next);
+        return next;
+      }
+      return p;
+    });
+  }
 }

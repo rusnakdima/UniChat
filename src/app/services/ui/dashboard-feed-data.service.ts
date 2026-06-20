@@ -17,11 +17,15 @@ export class DashboardFeedDataService {
   readonly feedItems: Signal<ChatMessage[]> = computed(() => {
     const all = this._items();
     const enabled = this.prefs.preferences().mixedEnabledChannelIds;
-    if (enabled.size === 0) return [];
+    if (enabled.size === 0) return all;
 
     return all.filter((msg) => {
       const ref = buildChannelRef(msg.platform, msg.sourceChannelId);
-      return enabled.has(ref);
+      const refLower = ref.toLowerCase();
+      for (const e of enabled) {
+        if (e.toLowerCase() === refLower) return true;
+      }
+      return false;
     });
   });
 
@@ -43,13 +47,29 @@ export class DashboardFeedDataService {
   }
 
   addMessage(message: ChatMessage): void {
+    console.log(`[FeedData] addMessage called:`, {
+      id: message.id,
+      platform: message.platform,
+      sourceChannelId: message.sourceChannelId,
+      author: message.author,
+      text: message.text.substring(0, 50),
+    });
     this._items.update((items) => {
       const maxItems = 1000;
       const updated = [...items, message];
+      console.log(`[FeedData] _items now has ${updated.length} messages`);
       if (updated.length > maxItems) {
         return updated.slice(-maxItems);
       }
       return updated;
     });
+    const enabled = this.prefs.preferences().mixedEnabledChannelIds;
+    const ref = buildChannelRef(message.platform, message.sourceChannelId);
+    console.log(
+      `[FeedData] Checking if ${ref} (lower: ${ref.toLowerCase()}) is in enabled:`,
+      Array.from(enabled).map((e) => e.toLowerCase()),
+      "result:",
+      enabled.has(ref) || Array.from(enabled).some((e) => e.toLowerCase() === ref.toLowerCase())
+    );
   }
 }
