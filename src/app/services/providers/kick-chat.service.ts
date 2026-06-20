@@ -5,7 +5,10 @@ import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.servi
 import { ChatMessage } from "@entities/chat.model";
 import { buildChannelRef } from "@utils/channel-ref.util";
 
-const POLL_INTERVAL_MS = 5000;
+const PUSHER_WS_URL =
+  "wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0";
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_MAX_DELAY_MS = 30000;
 
 interface KickMessageData {
   id: string;
@@ -22,31 +25,31 @@ interface KickMessageData {
   created_at: string;
 }
 
+interface PusherMessage {
+  event: string;
+  channel: string;
+  data: string;
+}
+
 @Injectable({ providedIn: "root" })
 export class KickChatService implements OnDestroy {
   private readonly api = inject(TauriApiService);
   private readonly storage = inject(UnifiedStorageService);
   private readonly feed = inject(DashboardFeedDataService);
 
-  private activePollers = new Map<
-    string,
-    {
-      channelSlug: string;
-      chatroomId: number;
-      timer: ReturnType<typeof setInterval>;
-      seenIds: Set<string>;
-      lastMessageTime: string;
-    }
-  >();
+  private socketByChannel = new Map<string, WebSocket>();
+  private channelInfoByChannel = new Map<string, { chatroomId: number; channelSlug: string }>();
+  private reconnectTimerByChannel = new Map<string, number>();
+  private seenMessageIds = new Set<string>();
 
   get connectedChannels(): string[] {
-    return Array.from(this.activePollers.keys());
+    return Array.from(this.socketByChannel.keys());
   }
 
   async connect(channelName: string): Promise<void> {
     const channelSlug = channelName.toLowerCase();
-    if (this.activePollers.has(channelSlug)) {
-      console.log(`[KickChat] Already polling ${channelName}`);
+    if (this.socketByChannel.has(channelSlug)) {
+      console.log(`[KickChat] Already connected to ${channelName}`);
       return;
     }
 
@@ -62,40 +65,41 @@ export class KickChatService implements OnDestroy {
         return;
       }
 
-      const poller = {
-        channelSlug,
-        chatroomId,
-        timer: null as unknown as ReturnType<typeof setInterval>,
-        seenIds: new Set<string>(),
-        lastMessageTime: new Date().toISOString(),
-      };
-
-      poller.timer = setInterval(() => this.pollMessages(poller), POLL_INTERVAL_MS);
-      this.activePollers.set(channelSlug, poller);
-      console.log(`[KickChat] Started polling ${channelName} (chatroom: ${chatroomId})`);
-
-      await this.pollMessages(poller);
+      this.channelInfoByChannel.set(channelSlug, { chatroomId, channelSlug });
+      this.openSocket(channelSlug, chatroomId);
     } catch (error) {
       console.error(`[KickChat] Failed to connect to ${channelName}:`, error);
     }
   }
 
   disconnect(): void {
-    for (const [slug, poller] of this.activePollers) {
-      clearInterval(poller.timer);
-      console.log(`[KickChat] Stopped polling ${slug}`);
+    for (const [slug, socket] of this.socketByChannel) {
+      socket.close();
+      console.log(`[KickChat] Disconnected socket for ${slug}`);
     }
-    this.activePollers.clear();
+    this.socketByChannel.clear();
+    this.channelInfoByChannel.clear();
+    for (const timer of this.reconnectTimerByChannel.values()) {
+      window.clearTimeout(timer);
+    }
+    this.reconnectTimerByChannel.clear();
+    this.seenMessageIds.clear();
   }
 
   disconnectChannel(channelName: string): void {
     const slug = channelName.toLowerCase();
-    const poller = this.activePollers.get(slug);
-    if (poller) {
-      clearInterval(poller.timer);
-      this.activePollers.delete(slug);
-      console.log(`[KickChat] Stopped polling ${channelName}`);
+    const socket = this.socketByChannel.get(slug);
+    if (socket) {
+      socket.close();
+      this.socketByChannel.delete(slug);
     }
+    this.channelInfoByChannel.delete(slug);
+    const timer = this.reconnectTimerByChannel.get(slug);
+    if (timer !== undefined) {
+      window.clearTimeout(timer);
+      this.reconnectTimerByChannel.delete(slug);
+    }
+    console.log(`[KickChat] Disconnected channel ${channelName}`);
   }
 
   async sendMessage(text: string): Promise<void> {
@@ -120,47 +124,147 @@ export class KickChatService implements OnDestroy {
       }));
   }
 
-  private async pollMessages(poller: {
-    channelSlug: string;
-    chatroomId: number;
-    seenIds: Set<string>;
-    lastMessageTime: string;
-  }): Promise<void> {
-    try {
-      const raw = await this.api.invoke<string>("kick_fetch_recent_messages", {
-        channelSlug: poller.channelSlug,
-        chatroomId: poller.chatroomId,
-      });
+  private openSocket(channelSlug: string, chatroomId: number): void {
+    console.log(`[KickChat] Opening WebSocket for ${channelSlug}, chatroomId: ${chatroomId}`);
 
-      let messages: KickMessageData[] = [];
-      try {
-        const parsed = JSON.parse(raw);
-        messages = Array.isArray(parsed) ? parsed : parsed.data || [];
-      } catch {
+    const socket = new WebSocket(PUSHER_WS_URL);
+    this.socketByChannel.set(channelSlug, socket);
+
+    socket.addEventListener("open", () => {
+      console.log(
+        `[KickChat] WebSocket opened for ${channelSlug}, subscribing to chatrooms.${chatroomId}.v2`
+      );
+      socket.send(
+        JSON.stringify({
+          event: "pusher:subscribe",
+          data: {
+            channel: `chatrooms.${chatroomId}.v2`,
+          },
+        })
+      );
+    });
+
+    socket.addEventListener("message", (event) => {
+      const data = String(event.data ?? "");
+      this.handleSocketMessage(channelSlug, data);
+    });
+
+    socket.addEventListener("error", (event) => {
+      console.error(`[KickChat] WebSocket error for ${channelSlug}:`, event);
+    });
+
+    socket.addEventListener("close", (event) => {
+      console.log(
+        `[KickChat] WebSocket closed for ${channelSlug}, code: ${event.code}, reason: ${event.reason}`
+      );
+      this.socketByChannel.delete(channelSlug);
+      if (this.channelInfoByChannel.has(channelSlug)) {
+        this.scheduleReconnect(channelSlug);
+      }
+    });
+  }
+
+  private handleSocketMessage(channelSlug: string, data: string): void {
+    try {
+      const pusherMsg: PusherMessage = JSON.parse(data);
+
+      if (pusherMsg.event === "pusher:subscription_succeeded") {
+        console.log(`[KickChat] Subscribed to channel ${channelSlug}`);
         return;
       }
 
-      for (const msg of messages) {
-        if (poller.seenIds.has(msg.id)) continue;
-        poller.seenIds.add(msg.id);
-
-        if (msg.created_at && msg.created_at <= poller.lastMessageTime) continue;
-
-        const message = this.toChatMessage(msg, poller.channelSlug);
-        const storageKey = buildChannelRef("kick", poller.channelSlug);
-        this.storage.addMessage(storageKey, message);
-        this.feed.addMessage(message);
+      if (pusherMsg.event === "pusher:subscription_error") {
+        console.error(`[KickChat] Subscription error for ${channelSlug}:`, data);
+        return;
       }
 
-      if (messages.length > 0) {
-        const lastMsg = messages[messages.length - 1];
-        if (lastMsg.created_at) {
-          poller.lastMessageTime = lastMsg.created_at;
+      if (pusherMsg.event === "App\\Events\\ChatMessageEvent") {
+        const messageData =
+          typeof pusherMsg.data === "string" ? JSON.parse(pusherMsg.data) : pusherMsg.data;
+        this.handleChatMessage(channelSlug, messageData);
+      }
+    } catch (e) {
+      console.error(`[KickChat] Failed to parse message for ${channelSlug}:`, e);
+    }
+  }
+
+  private handleChatMessage(channelSlug: string, data: any): void {
+    console.log(
+      `[KickChat] Raw message data for ${channelSlug}:`,
+      JSON.stringify(data).substring(0, 500)
+    );
+    const msg = data.message || data;
+    console.log(`[KickChat] Parsed msg:`, JSON.stringify(msg).substring(0, 500));
+    const msgId = String(msg.id);
+
+    if (this.seenMessageIds.has(msgId)) {
+      return;
+    }
+    this.seenMessageIds.add(msgId);
+
+    if (this.seenMessageIds.size > 10000) {
+      const entriesToDelete = this.seenMessageIds.size - 5000;
+      const iter = this.seenMessageIds.values();
+      for (let i = 0; i < entriesToDelete; i++) {
+        const next = iter.next().value;
+        if (next !== undefined) {
+          this.seenMessageIds.delete(next);
         }
       }
-    } catch (error) {
-      console.debug(`[KickChat] Poll error for ${poller.channelSlug}:`, error);
     }
+
+    const kickMsg: KickMessageData = {
+      id: msgId,
+      content: msg.content || msg.message?.content || "",
+      sender: {
+        id: msg.sender?.id || 0,
+        username: msg.sender?.username || "unknown",
+        slug: msg.sender?.slug || "",
+        identity: {
+          color: msg.sender?.identity?.color || "#ffffff",
+          badges: msg.sender?.identity?.badges || [],
+        },
+      },
+      created_at: msg.created_at || new Date().toISOString(),
+    };
+
+    const message = this.toChatMessage(kickMsg, channelSlug);
+    console.log(
+      `[KickChat] Received message ${message.id} from ${message.author}: ${message.text.substring(0, 50)}`
+    );
+
+    const storageKey = buildChannelRef("kick", channelSlug);
+    this.storage.addMessage(storageKey, message);
+    this.feed.addMessage(message);
+  }
+
+  private scheduleReconnect(channelSlug: string): void {
+    const existingTimer = this.reconnectTimerByChannel.get(channelSlug);
+    if (existingTimer !== undefined) {
+      return;
+    }
+
+    const channelInfo = this.channelInfoByChannel.get(channelSlug);
+    if (!channelInfo) {
+      return;
+    }
+
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * Math.pow(2, this.reconnectTimerByChannel.size),
+      RECONNECT_MAX_DELAY_MS
+    );
+
+    console.log(`[KickChat] Scheduling reconnect for ${channelSlug} in ${delay}ms`);
+
+    const timer = window.setTimeout(() => {
+      this.reconnectTimerByChannel.delete(channelSlug);
+      if (this.channelInfoByChannel.has(channelSlug)) {
+        console.log(`[KickChat] Reconnecting to ${channelSlug}`);
+        this.openSocket(channelSlug, channelInfo.chatroomId);
+      }
+    }, delay);
+
+    this.reconnectTimerByChannel.set(channelSlug, timer);
   }
 
   private toChatMessage(msg: KickMessageData, channelSlug: string): ChatMessage {

@@ -103,11 +103,15 @@ export class AuthorizationService {
       if (result?.accounts) {
         const mapped: PlatformAccount[] = result.accounts.map((a: any) => ({
           id: a.id,
-          platform: a.platform,
+          platform: (a.platform as string).toLowerCase() as PlatformType,
           username: a.username,
           userId: a.userId || a.user_id,
           avatarUrl: a.avatarUrl || a.avatar_url || "",
-          isConnected: a.authStatus === "authorized" || a.auth_status === "authorized",
+          isConnected:
+            a.authStatus === "Authorized" ||
+            a.authStatus === "authorized" ||
+            a.auth_status === "Authorized" ||
+            a.auth_status === "authorized",
           authStatus: a.authStatus || a.auth_status,
           accessToken: a.accessToken || a.access_token,
           authorizedAt: a.authorizedAt || a.authorized_at,
@@ -147,5 +151,16 @@ export class AuthorizationService {
   }
   getPrimaryAccount(platform: string): PlatformAccount | undefined {
     return this._accounts().find((a) => a.platform === platform);
+  }
+
+  async loadAllAccountStatuses(): Promise<void> {
+    const platforms: PlatformType[] = ["twitch", "kick", "youtube"];
+    for (const platform of platforms) {
+      try {
+        await this.loadAccountStatus(platform);
+      } catch (error) {
+        console.error(`[AUTH] Failed to load ${platform} account status:`, error);
+      }
+    }
   }
 }

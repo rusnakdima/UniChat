@@ -144,7 +144,12 @@ export class TwitchChatService implements OnDestroy {
   }
 
   private handleIncomingMessage(msg: TwitchIrcMessage): void {
-    if (this.seenMessageIds.has(msg.id)) return;
+    console.log(`[TwitchChat] Received message:`, msg);
+
+    if (this.seenMessageIds.has(msg.id)) {
+      console.log(`[TwitchChat] Skipping duplicate message ${msg.id}`);
+      return;
+    }
     this.seenMessageIds.add(msg.id);
 
     const emotes: ChatMessageEmote[] = (msg.emotes || []).map((e) => ({
@@ -187,9 +192,15 @@ export class TwitchChatService implements OnDestroy {
       receivedAt: Date.now(),
     };
 
+    console.log(
+      `[TwitchChat] Adding message ${message.id} from ${message.author} on channel ${message.sourceChannelId}: ${message.text.substring(0, 50)}`
+    );
+
     const storageKey = buildChannelRef("twitch", msg.channelId);
     this.storage.addMessage(storageKey, message);
     this.feed.addMessage(message);
+
+    console.log(`[TwitchChat] Message added to feed for channel ${storageKey}`);
   }
 
   loadChannelHistory(channelId: string, limit: number): Promise<never[]> {
