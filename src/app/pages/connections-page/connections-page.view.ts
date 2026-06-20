@@ -87,17 +87,18 @@ export class ConnectionsPageView {
   getPlatformColor(platform: PlatformType): string {
     switch (platform) {
       case "twitch":
-        return "text-[#9146ff]";
+        return "text-twitch";
       case "kick":
-        return "text-[#53fc18]";
+        return "text-kick";
       case "youtube":
-        return "text-[#ff0000]";
+        return "text-youtube";
       default:
         return "";
     }
   }
 
   authorize(platform: PlatformType): void {
+    console.log("[CONNECTIONS] authorize() called with platform:", platform);
     void this.authorizationService.authorize(platform);
   }
 
@@ -116,11 +117,11 @@ export class ConnectionsPageView {
   getPlatformBorderClass(platform: PlatformType): string {
     switch (platform) {
       case "twitch":
-        return "border-l-[#9146ff]";
+        return "platform-twitch";
       case "kick":
-        return "border-l-[#53fc18]";
+        return "platform-kick";
       case "youtube":
-        return "border-l-[#ff0000]";
+        return "platform-youtube";
       default:
         return "";
     }
@@ -142,11 +143,11 @@ export class ConnectionsPageView {
   getConnectButtonClass(platform: PlatformType): string {
     switch (platform) {
       case "twitch":
-        return "bg-[#9146ff] text-white";
+        return "bg-twitch text-white";
       case "kick":
-        return "bg-[#53fc18] text-black";
+        return "bg-kick text-black";
       case "youtube":
-        return "bg-[#ff0000] text-white";
+        return "bg-youtube text-white";
       default:
         return "bg-indigo-600 text-white";
     }
