@@ -80,6 +80,7 @@ pub struct KickEmoteInfo {
 pub async fn kick_fetch_recent_messages(
   channel_slug: String,
   chatroom_id: i64,
+  access_token: Option<String>,
 ) -> Result<String, String> {
   log_info!(
     "Fetching recent messages for chatroom: {} (channel: {})",
@@ -91,23 +92,40 @@ pub async fn kick_fetch_recent_messages(
     "https://api.kick.com/public/v1/chatrooms/{}/messages",
     chatroom_id
   );
-  let response = client
-    .get(&url)
-    .header("Accept", "application/json")
-    .send()
-    .await;
+  log_info!("[Kick API] Trying primary endpoint: {}", url);
+  let mut request = client.get(&url).header("Accept", "application/json");
+  if let Some(ref token) = access_token {
+    request = request.header("Authorization", format!("Bearer {}", token));
+    log_info!("[Kick API] Using Bearer token for auth");
+  }
+  let response = request.send().await;
   if let Ok(response) = response {
+    log_info!("[Kick API] Primary response status: {}", response.status());
     if response.status().is_success() {
       if let Ok(body) = response.text().await {
+        log_info!(
+          "[Kick API] Primary response body length: {}, content: {}",
+          body.len(),
+          body
+        );
         if !body.trim().is_empty() {
-          log_debug!(
+          log_info!(
             "Fetched messages from primary endpoint for chatroom {}",
             chatroom_id
           );
           return Ok(body);
+        } else {
+          log_info!("[Kick API] Primary response body is empty or whitespace");
         }
       }
+    } else {
+      log_info!(
+        "[Kick API] Primary endpoint returned status: {}",
+        response.status()
+      );
     }
+  } else {
+    log_info!("[Kick API] Primary endpoint request failed");
   }
   let base = "https://kick.com";
   let paths = [
@@ -116,16 +134,19 @@ pub async fn kick_fetch_recent_messages(
     &format!("/api/v2/channels/{}/messages", channel_slug)[..],
   ];
   let urls = build_fallback_urls(base, &paths);
-  for url in urls {
+  for (i, url) in urls.iter().enumerate() {
+    log_info!("[Kick API] Trying fallback {}: {}", i, url);
     let response = client
-      .get(&url)
+      .get(url)
       .header("Accept", "application/json, text/plain, */*")
       .header("Referer", format!("https://kick.com/{}", channel_slug))
       .send()
       .await;
     let Ok(response) = response else {
+      log_info!("[Kick API] Fallback {} request failed", i);
       continue;
     };
+    log_info!("[Kick API] Fallback {} status: {}", i, response.status());
     if !response.status().is_success() {
       continue;
     }
@@ -133,15 +154,22 @@ pub async fn kick_fetch_recent_messages(
       .text()
       .await
       .map_err(|e| format!("Failed to read response: {}", e))?;
+    log_info!(
+      "[Kick API] Fallback {} body length: {}, content: {}",
+      i,
+      body.len(),
+      body
+    );
     if !body.trim().is_empty() {
-      log_debug!(
-        "Fetched messages from fallback endpoint for chatroom {}",
+      log_info!(
+        "Fetched messages from fallback endpoint {} for chatroom {}",
+        i,
         chatroom_id
       );
       return Ok(body);
     }
   }
-  log_debug!(
+  log_info!(
     "No messages found for chatroom {}, returning empty array",
     chatroom_id
   );
