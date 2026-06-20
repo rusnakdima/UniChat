@@ -91,7 +91,7 @@ impl TwitchIrcService {
     let channel_id_clone = channel_id.clone();
     let channel_name_clone = channel_name.clone();
 
-    let (tx, _rx) = mpsc::channel::<String>(100);
+    let (tx, mut rx) = mpsc::channel::<String>(100);
 
     {
       let mut connections_write = connections.write().await;
@@ -106,10 +106,13 @@ impl TwitchIrcService {
     }
 
     tokio::spawn(async move {
-      let (ws_stream, _) = match connect_async("wss://irc.chat.twitch.tv:443").await {
+      let cleanup_key = format!("{}:{}", channel_id_clone, channel_name_clone);
+
+      let (ws_stream, _) = match connect_async("wss://irc-ws.chat.twitch.tv:443").await {
         Ok(s) => s,
         Err(e) => {
           log_error!("WebSocket connection failed: {}", e);
+          connections.write().await.remove(&cleanup_key);
           return;
         }
       };
@@ -119,58 +122,84 @@ impl TwitchIrcService {
       let cap_req = "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n";
       if let Err(e) = write.send(Message::Text(cap_req.to_string())).await {
         log_error!("Failed to send CAP request: {}", e);
+        connections.write().await.remove(&cleanup_key);
         return;
       }
 
       let pass_req = format!("PASS oauth:{}\r\n", oauth_token);
       if let Err(e) = write.send(Message::Text(pass_req)).await {
         log_error!("Failed to send PASS: {}", e);
+        connections.write().await.remove(&cleanup_key);
         return;
       }
 
       let nick_req = format!("NICK {}\r\n", username.to_lowercase());
       if let Err(e) = write.send(Message::Text(nick_req)).await {
         log_error!("Failed to send NICK: {}", e);
+        connections.write().await.remove(&cleanup_key);
         return;
       }
 
       let join_req = format!("JOIN #{}\r\n", channel_name.to_lowercase());
       if let Err(e) = write.send(Message::Text(join_req)).await {
         log_error!("Failed to send JOIN: {}", e);
+        connections.write().await.remove(&cleanup_key);
         return;
       }
 
       log_info!("Joined Twitch channel {}", channel_name_clone);
 
-      while let Some(msg) = read.next().await {
-        match msg {
-          Ok(Message::Text(text)) => {
-            let text_str = text.to_string();
-            if text_str.contains("PING") {
-              let pong = text_str.replace("PING", "PONG");
-              if write.send(Message::Text(pong)).await.is_err() {
+      loop {
+        tokio::select! {
+          msg = read.next() => {
+            match msg {
+              Some(Ok(Message::Text(text))) => {
+                let text_str = text.to_string();
+                if text_str.contains("PING") {
+                  let pong = text_str.replace("PING", "PONG");
+                  if write.send(Message::Text(pong)).await.is_err() {
+                    break;
+                  }
+                  continue;
+                }
+
+                if let Some(parsed) =
+                  parse_twitch_message(&text_str, &channel_id_clone, &channel_name_clone)
+                {
+                  if let Err(e) = app_handle.emit("twitch-message", &parsed) {
+                    log_error!("Failed to emit twitch message: {}", e);
+                  }
+                }
+              }
+              Some(Ok(Message::Close(_))) => {
+                log_warn!("WebSocket closed for channel {}", channel_name_clone);
                 break;
               }
-              continue;
+              Some(Err(e)) => {
+                log_error!("WebSocket error: {}", e);
+                break;
+              }
+              None => {
+                log_warn!("WebSocket stream ended for channel {}", channel_name_clone);
+                break;
+              }
+              _ => {}
             }
-
-            if let Some(msg) =
-              parse_twitch_message(&text_str, &channel_id_clone, &channel_name_clone)
-            {
-              if let Err(e) = app_handle.emit("twitch-message", &msg) {
-                log_error!("Failed to emit twitch message: {}", e);
+          }
+          outgoing = rx.recv() => {
+            match outgoing {
+              Some(text) => {
+                if write.send(Message::Text(text)).await.is_err() {
+                  log_error!("Failed to send outgoing message for channel {}", channel_name_clone);
+                  break;
+                }
+              }
+              None => {
+                log_warn!("Outgoing channel closed for {}", channel_name_clone);
+                break;
               }
             }
           }
-          Ok(Message::Close(_)) => {
-            log_warn!("WebSocket closed for channel {}", channel_name_clone);
-            break;
-          }
-          Err(e) => {
-            log_error!("WebSocket error: {}", e);
-            break;
-          }
-          _ => {}
         }
       }
 
