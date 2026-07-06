@@ -1,6 +1,6 @@
 /* sys lib */
 import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
-import { RouterOutlet } from "@angular/router";
+import { SchemaRouterService, SchemaRouteViewerComponent } from "@tauri-front/shared";
 
 /* services */
 import { ThemeService } from "@services/core/theme.service";
@@ -8,14 +8,12 @@ import { MemoryManagementService } from "@services/core/memory-management.servic
 import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ConnectionManagerService } from "@services/core/connection-manager.service";
-
-/* components */
-import { LinkPreviewModal } from "@components/link-preview-modal/link-preview-modal.component";
+import { SchemaService } from "@services/core/schema.service";
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [RouterOutlet, LinkPreviewModal],
+  imports: [SchemaRouteViewerComponent],
   templateUrl: "./app.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -25,6 +23,8 @@ export class App {
   private readonly channelImagePreloader = inject(ChannelImagePreloaderService);
   private readonly authService = inject(AuthorizationService);
   private readonly connectionManager = inject(ConnectionManagerService);
+  private readonly schemaService = inject(SchemaService);
+  private readonly schemaRouter = inject(SchemaRouterService);
 
   readonly isOverlay = signal<boolean>(this.checkIsOverlay());
 
@@ -32,12 +32,10 @@ export class App {
     if (typeof window === "undefined") {
       return false;
     }
-    // Check both pathname and query params for overlay context
     const pathname = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
     const widgetId = searchParams.get("widgetId");
 
-    // Overlay routes: /overlay or /overlay-management
     return pathname === "/overlay" || pathname === "/overlay-management" || !!widgetId;
   }
 
@@ -46,7 +44,11 @@ export class App {
     this.memoryService.startAutoPrune(60000);
     this.authService.startAutoRefresh();
     void this.authService.loadAllAccountStatuses();
-    // Preload channel images in background (non-blocking)
     void this.channelImagePreloader.preloadAllVisibleChannels();
+    void this.schemaService.loadSchema().then((loaded) => {
+      if (loaded) {
+        void this.schemaRouter.navigate("/dashboard");
+      }
+    });
   }
 }
