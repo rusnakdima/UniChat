@@ -45,6 +45,9 @@ use crate::commands::overlay_command::{
   emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
   init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
 };
+use crate::commands::schema_command::{
+  delete_schema, get_all_schemas, get_schema, save_schema, seed_schema_if_needed,
+};
 use crate::commands::storage_command::StorageState;
 use crate::commands::storage_command::{
   count_storage, exists_storage, query_storage, storage_clear, storage_get, storage_keys,
@@ -123,6 +126,13 @@ pub fn run() {
         .expect("Failed to create JSON provider");
       let json_provider_clone = json_provider.clone();
       let data_provider = DataProvider::Json(Arc::new(json_provider));
+
+      // Seed default schema if not already present
+      tauri::async_runtime::block_on(crate::commands::schema_command::seed_schema_if_needed(
+        &data_provider,
+      ))
+      .expect("Failed to seed default schema");
+
       let crud_service = Arc::new(CrudService::new(json_provider_clone));
       let twitch_irc_service = Arc::new(TwitchIrcService::new(app.handle().clone()));
       app.manage(AppState {
@@ -255,6 +265,10 @@ pub fn run() {
       query_storage,
       count_storage,
       exists_storage,
+      get_schema,
+      save_schema,
+      get_all_schemas,
+      delete_schema,
     ]);
   if let Err(e) = builder.run(tauri::generate_context!()) {
     std::process::exit(1);

@@ -11,3 +11,5 @@ pub mod custom_emote_entity;
 pub mod dashboard_preferences_entity;
 #[path = "response.entity.rs"]
 pub mod response_entity;
+#[path = "schema_entity.rs"]
+pub mod schema_entity;
