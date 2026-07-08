@@ -1,5 +1,5 @@
 import { Injectable, inject, OnDestroy } from "@angular/core";
-import { TauriApiService } from "@app/api/api.api.service";
+import { InvokeWrapperService } from "@tauri-front/shared";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
@@ -28,7 +28,7 @@ interface YouTubeMessageItem {
 
 @Injectable({ providedIn: "root" })
 export class YouTubeChatService implements OnDestroy {
-  private readonly api = inject(TauriApiService);
+  private readonly api = inject(InvokeWrapperService);
   private readonly auth = inject(AuthorizationService);
   private readonly storage = inject(UnifiedStorageService);
   private readonly feed = inject(DashboardFeedDataService);
@@ -70,7 +70,7 @@ export class YouTubeChatService implements OnDestroy {
 
     try {
       if (apiKey) {
-        const result = await this.api.youtubeFetchLiveVideoIdByApiKey({
+        const result = await this.api.invoke<string>("youtube_fetch_live_video_id_by_api_key", {
           channelName: videoId,
           apiKey,
         });
@@ -132,7 +132,7 @@ export class YouTubeChatService implements OnDestroy {
     apiKey: string
   ): Promise<void> {
     try {
-      const raw = await this.api.youtubeFetchChatMessages({
+      const raw = await this.api.invoke<string>("youtube_fetch_chat_messages", {
         videoId: poller.videoId,
         pageToken: poller.nextPageToken || undefined,
         apiKey: apiKey || undefined,

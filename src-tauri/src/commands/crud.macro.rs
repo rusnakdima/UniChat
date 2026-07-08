@@ -26,7 +26,7 @@ macro_rules! define_crud_routes {
                 .await
                 .map_err(|e| e.to_string())?;
             match result {
-                Some(data) => Ok(crate::utils::response::Response::success("Found", data)),
+                Some(data) => Ok(crate::utils::response::Response::success(data, "Found")),
                 None => Ok(crate::utils::response::Response::not_found(stringify!($prefix))),
             }
         }
@@ -46,7 +46,7 @@ macro_rules! define_crud_routes {
                 .$method_get_all($table, filter, skip, limit, sort_by, sort_asc.unwrap_or(true))
                 .await
                 .map_err(|e| e.to_string())?;
-            Ok(crate::utils::response::Response::success("Found", result))
+            Ok(crate::utils::response::Response::success(result, "Found"))
         }
 
         #[allow(dead_code)]
@@ -143,7 +143,7 @@ macro_rules! define_crud_routes_no_table {
                 .$method_get(&id)
                 .await
                 .map_err(|e| e.to_string())?;
-            Ok(crate::utils::response::Response::success("Found", result))
+            Ok(crate::utils::response::Response::success(result, "Found"))
         }
 
         #[allow(dead_code)]
@@ -157,7 +157,7 @@ macro_rules! define_crud_routes_no_table {
                 .$method_get_all(filter)
                 .await
                 .map_err(|e| e.to_string())?;
-            Ok(crate::utils::response::Response::success("Found", result))
+            Ok(crate::utils::response::Response::success(result, "Found"))
         }
 
         #[allow(dead_code)]

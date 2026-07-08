@@ -48,7 +48,7 @@ pub async fn get_schema(
     .await
     .map_err(|e| e.to_string())?;
   match data {
-    Some(schema) => Ok(Response::success("Schema found".to_string(), schema)),
+    Some(schema) => Ok(Response::success(schema, "Schema found")),
     None => Ok(Response::error("Schema not found".to_string())),
   }
 }
@@ -89,8 +89,8 @@ pub async fn save_schema(
       .await
       .map_err(|e| e.to_string())?;
     Ok(Response::success(
-      "Schema updated".to_string(),
       serde_json::json!({ "id": id }),
+      "Schema updated",
     ))
   } else {
     state
@@ -100,8 +100,8 @@ pub async fn save_schema(
       .await
       .map_err(|e| e.to_string())?;
     Ok(Response::success(
-      "Schema created".to_string(),
       serde_json::json!({ "id": id }),
+      "Schema created",
     ))
   }
 }
@@ -115,8 +115,8 @@ pub async fn get_all_schemas(state: tauri::State<'_, crate::AppState>) -> Result
     .await
     .map_err(|e| e.to_string())?;
   Ok(Response::success(
-    format!("Found {} schemas", schemas.len()),
     serde_json::json!({ "schemas": schemas }),
+    format!("Found {} schemas", schemas.len()),
   ))
 }
 
@@ -132,7 +132,7 @@ pub async fn delete_schema(
     .await
     .map_err(|e| e.to_string())?;
   Ok(Response::success(
-    "Schema deleted".to_string(),
     serde_json::json!({ "id": id }),
+    "Schema deleted",
   ))
 }

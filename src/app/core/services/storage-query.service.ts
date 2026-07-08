@@ -1,5 +1,5 @@
 import { Injectable, inject } from "@angular/core";
-import { TauriApiService } from "@app/api/api.api.service";
+import { InvokeWrapperService } from "@tauri-front/shared";
 
 export interface StorageQueryOptions {
   skip?: number;
@@ -18,7 +18,7 @@ export interface StorageQueryResult<T> {
   providedIn: "root",
 })
 export class StorageQueryService {
-  private readonly tauri = inject(TauriApiService);
+  private readonly tauri = inject(InvokeWrapperService);
 
   async query<T>(
     entityType: string,

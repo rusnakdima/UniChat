@@ -1,12 +1,12 @@
 import { Injectable, inject } from "@angular/core";
-import { TauriApiService } from "@app/api/api.api.service";
-import { EventBusService } from "@services/services.event-bus.service";
+import { InvokeWrapperService } from "@tauri-front/shared";
+import { EventBusService } from "@tauri-front/shared";
 
 @Injectable({
   providedIn: "root",
 })
 export class MainService {
-  private readonly api = inject(TauriApiService);
+  private readonly api = inject(InvokeWrapperService);
   private readonly eventBus = inject(EventBusService);
 
   private initialized = false;

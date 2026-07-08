@@ -1,6 +1,6 @@
 import { Injectable, inject, OnDestroy } from "@angular/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { TauriApiService } from "@app/api/api.api.service";
+import { InvokeWrapperService } from "@tauri-front/shared";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
@@ -26,7 +26,7 @@ interface TwitchIrcMessage {
 
 @Injectable({ providedIn: "root" })
 export class TwitchChatService implements OnDestroy {
-  private readonly api = inject(TauriApiService);
+  private readonly api = inject(InvokeWrapperService);
   private readonly auth = inject(AuthorizationService);
   private readonly storage = inject(UnifiedStorageService);
   private readonly feed = inject(DashboardFeedDataService);
@@ -55,7 +55,7 @@ export class TwitchChatService implements OnDestroy {
     }
 
     try {
-      await this.api.twitchIrcJoinChannel({
+      await this.api.invoke("twitch_irc_join_channel", {
         channelId,
         channelName,
         username: account.username,
@@ -77,7 +77,7 @@ export class TwitchChatService implements OnDestroy {
   async disconnect(): Promise<void> {
     for (const [key] of this.activeConnections) {
       try {
-        await this.api.twitchIrcLeaveChannel({
+        await this.api.invoke("twitch_irc_leave_channel", {
           channelId: key,
           channelName: key,
         });
@@ -99,7 +99,7 @@ export class TwitchChatService implements OnDestroy {
     if (!this.activeConnections.has(key)) return;
 
     try {
-      await this.api.twitchIrcLeaveChannel({ channelId: key, channelName });
+      await this.api.invoke("twitch_irc_leave_channel", { channelId: key, channelName });
       this.activeConnections.delete(key);
       console.log(`[TwitchChat] Disconnected from ${channelName}`);
     } catch (error) {
@@ -119,7 +119,7 @@ export class TwitchChatService implements OnDestroy {
         return;
       }
       try {
-        await this.api.twitchIrcSendMessage({
+        await this.api.invoke("twitch_irc_send_message", {
           channelId: key,
           channelName: key,
           message: text,
@@ -132,7 +132,7 @@ export class TwitchChatService implements OnDestroy {
 
     for (const [channelId] of this.activeConnections) {
       try {
-        await this.api.twitchIrcSendMessage({
+        await this.api.invoke("twitch_irc_send_message", {
           channelId,
           channelName: channelId,
           message: text,

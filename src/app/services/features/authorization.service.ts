@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject, effect } from "@angular/core";
 import { PlatformType } from "@entities/chat.model";
-import { TauriApiService } from "@app/api/api.api.service";
+import { InvokeWrapperService } from "@tauri-front/shared";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ChatListService } from "@services/data/chat-list.service";
 
@@ -20,7 +20,7 @@ export interface PlatformAccount {
 
 @Injectable({ providedIn: "root" })
 export class AuthorizationService {
-  private readonly api = inject(TauriApiService);
+  private readonly api = inject(InvokeWrapperService);
   private readonly chatList = inject(ChatListService);
   private _accounts = signal<PlatformAccount[]>(this.loadFromStorage());
   private _autoRefreshEnabled = false;
@@ -60,7 +60,7 @@ export class AuthorizationService {
     const account = this._accounts().find((a) => a.id === accountId);
     if (account) {
       try {
-        await this.api.authDisconnect({ platform: account.platform, accountId });
+        await this.api.invoke("auth_disconnect", { platform: account.platform, accountId });
       } catch (error) {
         console.error("[AUTH] Failed to disconnect account:", error);
       }
@@ -74,7 +74,7 @@ export class AuthorizationService {
     console.log("[AUTH] authorize() called for platform:", platform);
     try {
       console.log("[AUTH] Calling authStart...");
-      const result = (await this.api.authStart({ platform })) as {
+      const result = (await this.api.invoke("auth_start", { platform })) as {
         auth_url?: string;
         success?: boolean;
         authUrl?: string;
@@ -86,7 +86,7 @@ export class AuthorizationService {
         console.log("[AUTH] Opening URL:", authUrl);
         await openUrl(authUrl);
         console.log("[AUTH] URL opened, calling authAwaitCallback...");
-        await this.api.authAwaitCallback({ platform });
+        await this.api.invoke("auth_await_callback", { platform });
         console.log("[AUTH] authAwaitCallback done, loading account status...");
         await this.loadAccountStatus(platform);
         console.log("[AUTH] Done!");
@@ -99,7 +99,7 @@ export class AuthorizationService {
   }
   private async loadAccountStatus(platform: PlatformType): Promise<void> {
     try {
-      const result = (await this.api.authStatus({ platform })) as { accounts?: any[] };
+      const result = (await this.api.invoke("auth_status", { platform })) as { accounts?: any[] };
       if (result?.accounts) {
         const mapped: PlatformAccount[] = result.accounts.map((a: any) => ({
           id: a.id,

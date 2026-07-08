@@ -9,6 +9,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
+    "useDefineForClassFields": false,
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
@@ -27,7 +28,7 @@
       "@store/*": ["src/app/store/*"],
       "@pages/*": ["src/app/pages/*"],
       "@utils/*": ["src/app/utils/*"],
-      "@tauri-front/shared": ["../../Web/tauri-front-shared/projects/shared/dist"]
+      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/dist"]
     }
   },
   "angularCompilerOptions": {

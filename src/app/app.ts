@@ -1,9 +1,9 @@
 /* sys lib */
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from "@angular/core";
 import { SchemaRouterService, SchemaRouteViewerComponent } from "@tauri-front/shared";
 
 /* services */
-import { ThemeService } from "@services/core/theme.service";
+import { ThemeService } from "@tauri-front/shared";
 import { MemoryManagementService } from "@services/core/memory-management.service";
 import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 import { AuthorizationService } from "@services/features/authorization.service";
@@ -17,7 +17,7 @@ import { SchemaService } from "@services/core/schema.service";
   templateUrl: "./app.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {
+export class App implements OnInit {
   private readonly themeService = inject(ThemeService);
   private readonly memoryService = inject(MemoryManagementService);
   private readonly channelImagePreloader = inject(ChannelImagePreloaderService);
@@ -39,8 +39,8 @@ export class App {
     return pathname === "/overlay" || pathname === "/overlay-management" || !!widgetId;
   }
 
-  constructor() {
-    this.themeService.hydrateTheme();
+  ngOnInit(): void {
+    this.themeService.init();
     this.memoryService.startAutoPrune(60000);
     this.authService.startAutoRefresh();
     void this.authService.loadAllAccountStatuses();

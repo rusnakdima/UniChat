@@ -1,5 +1,5 @@
 import { Injectable, inject, OnDestroy } from "@angular/core";
-import { TauriApiService } from "@app/api/api.api.service";
+import { InvokeWrapperService } from "@tauri-front/shared";
 import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
 import { ChatMessage } from "@entities/chat.model";
@@ -33,7 +33,7 @@ interface PusherMessage {
 
 @Injectable({ providedIn: "root" })
 export class KickChatService implements OnDestroy {
-  private readonly api = inject(TauriApiService);
+  private readonly api = inject(InvokeWrapperService);
   private readonly storage = inject(UnifiedStorageService);
   private readonly feed = inject(DashboardFeedDataService);
 
@@ -54,7 +54,7 @@ export class KickChatService implements OnDestroy {
     }
 
     try {
-      const channelInfo = await this.api.kickFetchChatroomId({
+      const channelInfo = await this.api.invoke<{ chatroomId?: number }>("kick_fetch_chatroom_id", {
         channelSlug,
         accessToken: null,
       });
@@ -110,7 +110,7 @@ export class KickChatService implements OnDestroy {
     userId: string
   ): Promise<{ userId: string; username: string; avatarUrl: string; profile_pic_url?: string }> {
     return this.api
-      .kickFetchUserInfo({ username: userId })
+      .invoke("kick_fetch_user_info", { username: userId })
       .then((data: any) => ({
         userId: data?.id || userId,
         username: data?.username || userId,

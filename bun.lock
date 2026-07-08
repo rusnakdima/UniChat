@@ -17,7 +17,7 @@
         "@tauri-apps/api": "^2.10.1",
         "@tauri-apps/plugin-deep-link": "^2.4.8",
         "@tauri-apps/plugin-opener": "^2.5.3",
-        "@tauri-front/shared": "file:../../Web/tauri-front-shared/projects/shared",
+        "@tauri-front/shared": "file:../tauri-front-shared/projects/shared/dist",
         "dompurify": "^3.3.3",
         "flowbite": "^4.0.2",
         "rxjs": "~7.8.2",
@@ -489,7 +489,7 @@
 
     "@tauri-apps/plugin-opener": ["@tauri-apps/plugin-opener@2.5.3", "", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-CCcUltXMOfUEArbf3db3kCE7Ggy1ExBEBl51Ko2ODJ6GDYHRp1nSNlQm5uNCFY5k7/ufaK5Ib3Du/Zir19IYQQ=="],
 
-    "@tauri-front/shared": ["@tauri-front/shared@file:../../Web/tauri-front-shared/projects/shared", { "devDependencies": { "@angular/cdk": "^20.0.0", "@angular/common": "^20.0.0", "@angular/core": "^20.0.0", "@tauri-apps/api": "^2.11.1", "lit": "^3.0.0", "ng-packagr": "^20.3.2", "typescript": "^5.9.3" }, "peerDependencies": { "@angular/common": ">=17.0.0", "@angular/core": ">=17.0.0", "@tauri-apps/api": ">=2.0.0", "lit": "^3.0.0", "rxjs": ">=7.0.0" } }],
+    "@tauri-front/shared": ["@tauri-front/shared@file:../tauri-front-shared/projects/shared/dist", { "dependencies": { "tslib": "^2.3.0" }, "peerDependencies": { "@angular/common": ">=17.0.0", "@angular/core": ">=17.0.0", "@tauri-apps/api": ">=2.0.0", "lit": "^3.0.0", "rxjs": ">=7.0.0" } }],
 
     "@tufjs/canonical-json": ["@tufjs/canonical-json@2.0.0", "", {}, "sha512-yVtV8zsdo8qFHe+/3kw81dSLyF7D576A5cCFCi4X7B39tWT7SekaEFUnvnWJHz+9qO7qJTah1JbrDjWKqFtdWA=="],
 
@@ -1194,10 +1194,6 @@
     "@tailwindcss/oxide-wasm32-wasi/@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" }, "bundled": true }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
     "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
-
-    "@tauri-front/shared/@tauri-apps/api": ["@tauri-apps/api@2.11.1", "", {}, "sha512-M2FPuYND2m+wh5hfW9ZpSdxMPdEJovPBWwoHJmwUpysTYNHaOkVFN419m/K0LIgjb/7KU2vBgsUepJWugQCvAA=="],
-
-    "@tauri-front/shared/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "body-parser/iconv-lite": ["iconv-lite@0.7.2", "", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3.0.0" } }, "sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw=="],
 

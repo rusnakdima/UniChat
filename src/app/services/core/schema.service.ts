@@ -1,6 +1,5 @@
 import { Injectable, inject } from "@angular/core";
-import { TauriApiService } from "@app/api/api.api.service";
-import { SchemaRouterService } from "@tauri-front/shared";
+import { InvokeWrapperService, SchemaRouterService, UiSchema } from "@tauri-front/shared";
 import { Response } from "@entities/response.model";
 
 export interface SchemaResponse {
@@ -15,7 +14,7 @@ export interface SchemaResponse {
 
 @Injectable({ providedIn: "root" })
 export class SchemaService {
-  private readonly api = inject(TauriApiService);
+  private readonly api = inject(InvokeWrapperService);
   private readonly schemaRouter = inject(SchemaRouterService);
 
   async loadSchema(id: string = "unichat-schema"): Promise<boolean> {
@@ -23,9 +22,11 @@ export class SchemaService {
       const response = await this.api.invoke<Response<SchemaResponse>>("get_schema", { id });
       if (response?.data) {
         const schema = {
+          version: response.data.version || "1.0",
           pages: response.data.pages as Array<{ id: string; route?: string }>,
+          layouts: response.data.layouts as Array<{ id: string; type: string }>,
         };
-        this.schemaRouter.setSchema(schema);
+        this.schemaRouter.setSchema(schema as UiSchema);
         return true;
       }
       return false;
