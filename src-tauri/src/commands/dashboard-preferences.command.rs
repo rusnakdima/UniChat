@@ -35,7 +35,7 @@ pub async fn get_or_create_dashboard_preferences(
     .await
     .map_err(|e| e.to_string())?;
   if let Some(doc) = docs.first() {
-    return Ok(Response::success_with_data("Found", doc.clone()));
+    return Ok(Response::success_with_data(doc.clone(), "Found"));
   }
   let default_prefs = serde_json::json!({
     "id": user_id,
@@ -59,5 +59,5 @@ pub async fn get_or_create_dashboard_preferences(
     .insert("dashboard_preferences", default_prefs)
     .await
     .map_err(|e| e.to_string())?;
-  Ok(Response::success_with_data("Created", doc))
+  Ok(Response::success_with_data(doc, "Created"))
 }

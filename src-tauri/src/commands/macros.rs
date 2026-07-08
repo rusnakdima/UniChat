@@ -12,7 +12,7 @@ macro_rules! crud_get_by_id {
         .find_by_id($table, &id)
         .await
         .map_err(|e| e.to_string())?
-        .map(|doc| crate::entities::response_entity::Response::success_with_data("Found", doc))
+        .map(|doc| crate::entities::response_entity::Response::success_with_data(doc, "Found"))
         .unwrap_or_else(|| {
           crate::entities::response_entity::Response::error("Not found".to_string())
         });
@@ -52,8 +52,8 @@ macro_rules! crud_get_many {
         .map_err(|e| e.to_string())?;
       Ok(
         crate::entities::response_entity::Response::success_with_data(
-          &format!("Found {} items", docs.len()),
           serde_json::json!(docs),
+          &format!("Found {} items", docs.len()),
         ),
       )
     }
@@ -73,7 +73,7 @@ macro_rules! crud_create {
         .insert($table, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::entities::response_entity::Response::success_with_data("Created", doc))
+      Ok(crate::entities::response_entity::Response::success_with_data(doc, "Created"))
     }
   };
 }
@@ -92,7 +92,7 @@ macro_rules! crud_update {
         .update($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::entities::response_entity::Response::success_with_data("Updated", doc))
+      Ok(crate::entities::response_entity::Response::success_with_data(doc, "Updated"))
     }
   };
 }
@@ -111,7 +111,7 @@ macro_rules! crud_patch {
         .patch($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::entities::response_entity::Response::success_with_data("Patched", doc))
+      Ok(crate::entities::response_entity::Response::success_with_data(doc, "Patched"))
     }
   };
 }
@@ -130,8 +130,8 @@ macro_rules! crud_delete {
         .await
         .map_err(|e| e.to_string())?;
       Ok(crate::entities::response_entity::Response::success_with_data(
-        "Deleted",
         serde_json::json!({ "id": id }),
+        "Deleted",
       ))
     }
   };

@@ -39,7 +39,7 @@ pub async fn get_chat_channel_by_platform_and_id(
   Ok(
     docs
       .first()
-      .map(|doc| Response::success_with_data("Found", doc.clone()))
+      .map(|doc| Response::success_with_data(doc.clone(), "Found"))
       .unwrap_or_else(|| Response::error("Channel not found")),
   )
 }

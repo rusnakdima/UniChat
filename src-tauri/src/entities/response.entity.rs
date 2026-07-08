@@ -31,13 +31,13 @@ impl<T> Response<T> {
       data,
     }
   }
-  pub fn success(message: String, data: T) -> Self {
-    Response::new(Status::Success, message, data)
+  pub fn success(data: T, message: impl Into<String>) -> Self {
+    Response::new(Status::Success, message.into(), data)
   }
   pub fn success_data(data: T) -> Self {
     Response::new(Status::Success, String::new(), data)
   }
-  pub fn success_with_data(message: impl Into<String>, data: T) -> Self {
+  pub fn success_with_data(data: T, message: impl Into<String>) -> Self {
     Response::new(Status::Success, message.into(), data)
   }
   pub fn info(message: String, data: T) -> Self {
@@ -91,7 +91,7 @@ impl<T> Response<T> {
   }
 }
 impl Response<Value> {
-  pub fn success_with_id(message: &str, id: &str) -> Self {
-    Response::success(message.to_string(), json!({ "id": id }))
+  pub fn success_with_id(id: &str, message: &str) -> Self {
+    Response::success(json!({ "id": id }), message.to_string())
   }
 }

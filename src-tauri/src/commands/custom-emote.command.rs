@@ -43,7 +43,7 @@ pub async fn get_custom_emotes_by_platform(
     .await
     .map_err(|e| e.to_string())?;
   Ok(Response::success_with_data(
-    &format!("Found {} emotes", docs.len()),
     serde_json::json!(docs),
+    &format!("Found {} emotes", docs.len()),
   ))
 }

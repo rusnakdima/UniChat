@@ -39,7 +39,7 @@ pub async fn get_chat_account_by_platform_and_user(
   Ok(
     docs
       .first()
-      .map(|doc| Response::success_with_data("Found", doc.clone()))
+      .map(|doc| Response::success_with_data(doc.clone(), "Found"))
       .unwrap_or_else(|| Response::error("Account not found")),
   )
 }
@@ -68,7 +68,7 @@ pub async fn get_chat_accounts_by_platform(
     .await
     .map_err(|e| e.to_string())?;
   Ok(Response::success_with_data(
-    &format!("Found {} accounts", docs.len()),
     serde_json::json!(docs),
+    &format!("Found {} accounts", docs.len()),
   ))
 }

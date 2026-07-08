@@ -39,8 +39,8 @@ pub async fn get_chat_messages_by_channel(
     .await
     .map_err(|e| e.to_string())?;
   Ok(Response::success_with_data(
-    &format!("Found {} messages", docs.len()),
     serde_json::json!(docs),
+    &format!("Found {} messages", docs.len()),
   ))
 }
 #[tauri::command]
@@ -77,7 +77,7 @@ pub async fn delete_chat_messages_by_channel(
     }
   }
   Ok(Response::success_with_data(
-    &format!("Deleted {} messages", deleted_count),
     serde_json::json!({ "deleted_count": deleted_count }),
+    &format!("Deleted {} messages", deleted_count),
   ))
 }

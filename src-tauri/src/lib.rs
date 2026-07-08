@@ -7,6 +7,12 @@ pub mod models;
 pub mod repositories;
 pub mod services;
 pub mod utils;
+
+// tauri-shared re-exports
+pub use tauri_shared::get_ui_schema;
+pub use tauri_shared::save_ui_schema;
+pub use tauri_shared::Response;
+
 use crate::commands::auth_provider_command::{
   auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
   auth_validate,
@@ -124,8 +130,9 @@ pub fn run() {
       std::fs::create_dir_all(&json_db_path).ok();
       let json_provider = tauri::async_runtime::block_on(JsonProvider::new(&json_db_path))
         .expect("Failed to create JSON provider");
+      app.manage(json_provider.clone());
       let json_provider_clone = json_provider.clone();
-      let data_provider = DataProvider::Json(Arc::new(json_provider));
+      let data_provider = DataProvider::Json(Arc::new(json_provider.clone()));
 
       // Seed default schema if not already present
       tauri::async_runtime::block_on(crate::commands::schema_command::seed_schema_if_needed(
@@ -269,6 +276,8 @@ pub fn run() {
       save_schema,
       get_all_schemas,
       delete_schema,
+      tauri_shared::commands::schema_commands::get_ui_schema,
+      tauri_shared::commands::schema_commands::save_ui_schema,
     ]);
   if let Err(e) = builder.run(tauri::generate_context!()) {
     std::process::exit(1);

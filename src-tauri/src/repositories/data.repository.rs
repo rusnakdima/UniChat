@@ -61,6 +61,11 @@ impl DataProvider {
         .map_err(|e| AppError::Database(format!("Delete failed: {}", e))),
     }
   }
+  pub fn json_provider(&self) -> std::sync::Arc<JsonProvider> {
+    match self {
+      DataProvider::Json(p) => p.clone(),
+    }
+  }
   pub async fn count(&self, table: &str, filter: Option<&Filter>) -> Result<u64, AppError> {
     match self {
       DataProvider::Json(p) => DatabaseProvider::count(p.as_ref(), table, filter)
