@@ -12,6 +12,7 @@
     "useDefineForClassFields": false,
     "isolatedModules": true,
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
