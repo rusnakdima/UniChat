@@ -10,7 +10,7 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "useDefineForClassFields": false,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "importHelpers": true,
