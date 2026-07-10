@@ -5,17 +5,15 @@ macro_rules! crud_get_by_id {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       id: String,
-    ) -> Result<crate::entities::response_entity::Response, String> {
+    ) -> Result<crate::Response<serde_json::Value>, String> {
       let result = state
         .data
         .json_provider
         .find_by_id($table, &id)
         .await
         .map_err(|e| e.to_string())?
-        .map(|doc| crate::entities::response_entity::Response::success_with_data(doc, "Found"))
-        .unwrap_or_else(|| {
-          crate::entities::response_entity::Response::error("Not found".to_string())
-        });
+        .map(|doc| crate::Response::<serde_json::Value>::success(doc, Some("Found")))
+        .unwrap_or_else(|| crate::Response::<serde_json::Value>::not_found(stringify!($table)));
       Ok(result)
     }
   };
@@ -31,7 +29,7 @@ macro_rules! crud_get_many {
       limit: Option<u64>,
       sort_by: Option<String>,
       sort_asc: Option<bool>,
-    ) -> Result<crate::entities::response_entity::Response, String> {
+    ) -> Result<crate::Response<serde_json::Value>, String> {
       use nosql_orm::query::Filter;
       let filter_obj = filter
         .as_ref()
@@ -50,12 +48,10 @@ macro_rules! crud_get_many {
         )
         .await
         .map_err(|e| e.to_string())?;
-      Ok(
-        crate::entities::response_entity::Response::success_with_data(
-          serde_json::json!(docs),
-          &format!("Found {} items", docs.len()),
-        ),
-      )
+      Ok(crate::Response::<serde_json::Value>::success(
+        serde_json::json!(docs),
+        Some(&format!("Found {} items", docs.len())),
+      ))
     }
   };
 }
@@ -66,14 +62,17 @@ macro_rules! crud_create {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       data: serde_json::Value,
-    ) -> Result<crate::entities::response_entity::Response, String> {
+    ) -> Result<crate::Response<serde_json::Value>, String> {
       let doc = state
         .data
         .json_provider
         .insert($table, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::entities::response_entity::Response::success_with_data(doc, "Created"))
+      Ok(crate::Response::<serde_json::Value>::success(
+        doc,
+        Some("Created"),
+      ))
     }
   };
 }
@@ -85,14 +84,17 @@ macro_rules! crud_update {
       state: tauri::State<'_, crate::AppState>,
       id: String,
       data: serde_json::Value,
-    ) -> Result<crate::entities::response_entity::Response, String> {
+    ) -> Result<crate::Response<serde_json::Value>, String> {
       let doc = state
         .data
         .json_provider
         .update($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::entities::response_entity::Response::success_with_data(doc, "Updated"))
+      Ok(crate::Response::<serde_json::Value>::success(
+        doc,
+        Some("Updated"),
+      ))
     }
   };
 }
@@ -104,14 +106,17 @@ macro_rules! crud_patch {
       state: tauri::State<'_, crate::AppState>,
       id: String,
       data: serde_json::Value,
-    ) -> Result<crate::entities::response_entity::Response, String> {
+    ) -> Result<crate::Response<serde_json::Value>, String> {
       let doc = state
         .data
         .json_provider
         .patch($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::entities::response_entity::Response::success_with_data(doc, "Patched"))
+      Ok(crate::Response::<serde_json::Value>::success(
+        doc,
+        Some("Patched"),
+      ))
     }
   };
 }
@@ -122,16 +127,16 @@ macro_rules! crud_delete {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       id: String,
-    ) -> Result<crate::entities::response_entity::Response, String> {
+    ) -> Result<crate::Response<serde_json::Value>, String> {
       state
         .data
         .json_provider
         .delete($table, &id)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::entities::response_entity::Response::success_with_data(
+      Ok(crate::Response::<serde_json::Value>::success(
         serde_json::json!({ "id": id }),
-        "Deleted",
+        Some("Deleted"),
       ))
     }
   };

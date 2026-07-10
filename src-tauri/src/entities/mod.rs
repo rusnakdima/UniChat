@@ -9,7 +9,5 @@ pub mod chat_message_entity;
 pub mod custom_emote_entity;
 #[path = "dashboard-preferences.entity.rs"]
 pub mod dashboard_preferences_entity;
-#[path = "response.entity.rs"]
-pub mod response_entity;
 #[path = "schema_entity.rs"]
 pub mod schema_entity;

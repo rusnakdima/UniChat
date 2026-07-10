@@ -10,8 +10,8 @@ pub mod utils;
 
 // tauri-shared re-exports
 pub use tauri_shared::get_ui_schema;
+pub use tauri_shared::response::{Response, Status};
 pub use tauri_shared::save_ui_schema;
-pub use tauri_shared::Response;
 
 use crate::commands::auth_provider_command::{
   auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
@@ -74,7 +74,6 @@ use crate::entities::custom_emote_entity::CustomEmoteEntity;
 use crate::entities::dashboard_preferences_entity::DashboardPreferencesEntity;
 use crate::repositories::data_repository::DataProvider;
 use crate::services::auth::AccountService;
-use crate::services::crud_service::CrudService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
 use crate::utils::config_helper::{AppConfig, SharedConfig};
 use nosql_orm::providers::JsonProvider;
@@ -84,6 +83,7 @@ use std::sync::Arc;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
+use tauri_shared::crud::service::CrudService;
 pub struct AppState {
   pub config: SharedConfig,
   pub account_service: Arc<AccountService>,
@@ -140,7 +140,9 @@ pub fn run() {
       ))
       .expect("Failed to seed default schema");
 
-      let crud_service = Arc::new(CrudService::new(json_provider_clone));
+      let crud_service = Arc::new(tauri_shared::crud::service::CrudService::new(
+        json_provider_clone,
+      ));
       let twitch_irc_service = Arc::new(TwitchIrcService::new(app.handle().clone()));
       app.manage(AppState {
         config: config.clone(),

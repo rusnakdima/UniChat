@@ -4,6 +4,7 @@ use crate::crud_get_by_id;
 use crate::crud_get_many;
 use crate::crud_patch;
 use crate::crud_update;
+use crate::Response;
 crud_get_by_id!(get_custom_emote, "custom_emotes");
 crud_get_many!(get_custom_emotes, "custom_emotes");
 crud_create!(create_custom_emote, "custom_emotes");
@@ -15,8 +16,7 @@ pub async fn get_custom_emotes_by_platform(
   state: tauri::State<'_, crate::AppState>,
   platform: String,
   channel_id: Option<String>,
-) -> Result<crate::entities::response_entity::Response, String> {
-  use crate::entities::response_entity::Response;
+) -> Result<Response<serde_json::Value>, String> {
   use nosql_orm::query::Filter;
   let filter = if let Some(ch_id) = channel_id {
     serde_json::json!({
@@ -42,8 +42,8 @@ pub async fn get_custom_emotes_by_platform(
     )
     .await
     .map_err(|e| e.to_string())?;
-  Ok(Response::success_with_data(
+  Ok(Response::success(
     serde_json::json!(docs),
-    &format!("Found {} emotes", docs.len()),
+    Some(&format!("Found {} emotes", docs.len())),
   ))
 }

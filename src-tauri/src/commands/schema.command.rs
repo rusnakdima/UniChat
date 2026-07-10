@@ -1,4 +1,4 @@
-use crate::entities::response_entity::Response;
+use crate::Response;
 use serde_json::Value;
 
 pub const EMBEDDED_SCHEMA: &str = include_str!("../assets/unichat-schema.json");
@@ -40,7 +40,7 @@ pub async fn seed_schema_if_needed(
 pub async fn get_schema(
   state: tauri::State<'_, crate::AppState>,
   id: String,
-) -> Result<Response, String> {
+) -> Result<crate::Response<serde_json::Value>, String> {
   let data = state
     .data
     .json_provider
@@ -48,8 +48,8 @@ pub async fn get_schema(
     .await
     .map_err(|e| e.to_string())?;
   match data {
-    Some(schema) => Ok(Response::success(schema, "Schema found")),
-    None => Ok(Response::error("Schema not found".to_string())),
+    Some(schema) => Ok(Response::success(schema, Some("Schema found"))),
+    None => Ok(Response::error("Schema not found")),
   }
 }
 
@@ -63,7 +63,7 @@ pub async fn save_schema(
   layouts: Value,
   components: Value,
   metadata: Value,
-) -> Result<Response, String> {
+) -> Result<crate::Response<serde_json::Value>, String> {
   let data = serde_json::json!({
     "id": id.clone(),
     "name": name,
@@ -90,7 +90,7 @@ pub async fn save_schema(
       .map_err(|e| e.to_string())?;
     Ok(Response::success(
       serde_json::json!({ "id": id }),
-      "Schema updated",
+      Some("Schema updated"),
     ))
   } else {
     state
@@ -101,13 +101,15 @@ pub async fn save_schema(
       .map_err(|e| e.to_string())?;
     Ok(Response::success(
       serde_json::json!({ "id": id }),
-      "Schema created",
+      Some("Schema created"),
     ))
   }
 }
 
 #[tauri::command]
-pub async fn get_all_schemas(state: tauri::State<'_, crate::AppState>) -> Result<Response, String> {
+pub async fn get_all_schemas(
+  state: tauri::State<'_, crate::AppState>,
+) -> Result<crate::Response<serde_json::Value>, String> {
   let schemas = state
     .data
     .json_provider
@@ -116,7 +118,7 @@ pub async fn get_all_schemas(state: tauri::State<'_, crate::AppState>) -> Result
     .map_err(|e| e.to_string())?;
   Ok(Response::success(
     serde_json::json!({ "schemas": schemas }),
-    format!("Found {} schemas", schemas.len()),
+    Some(&format!("Found {} schemas", schemas.len())),
   ))
 }
 
@@ -124,7 +126,7 @@ pub async fn get_all_schemas(state: tauri::State<'_, crate::AppState>) -> Result
 pub async fn delete_schema(
   state: tauri::State<'_, crate::AppState>,
   id: String,
-) -> Result<Response, String> {
+) -> Result<crate::Response<serde_json::Value>, String> {
   state
     .data
     .json_provider
@@ -133,6 +135,6 @@ pub async fn delete_schema(
     .map_err(|e| e.to_string())?;
   Ok(Response::success(
     serde_json::json!({ "id": id }),
-    "Schema deleted",
+    Some("Schema deleted"),
   ))
 }

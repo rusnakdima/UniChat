@@ -4,6 +4,7 @@ use crate::crud_get_by_id;
 use crate::crud_get_many;
 use crate::crud_patch;
 use crate::crud_update;
+use crate::Response;
 crud_get_by_id!(get_chat_message, "chat_messages");
 crud_get_many!(get_chat_messages, "chat_messages");
 crud_create!(create_chat_message, "chat_messages");
@@ -17,8 +18,7 @@ pub async fn get_chat_messages_by_channel(
   source_channel_id: String,
   skip: Option<u64>,
   limit: Option<u64>,
-) -> Result<crate::entities::response_entity::Response, String> {
-  use crate::entities::response_entity::Response;
+) -> Result<crate::Response<serde_json::Value>, String> {
   use nosql_orm::query::Filter;
   let filter = serde_json::json!({
     "platform": platform,
@@ -38,9 +38,9 @@ pub async fn get_chat_messages_by_channel(
     )
     .await
     .map_err(|e| e.to_string())?;
-  Ok(Response::success_with_data(
+  Ok(Response::success(
     serde_json::json!(docs),
-    &format!("Found {} messages", docs.len()),
+    Some(&format!("Found {} messages", docs.len())),
   ))
 }
 #[tauri::command]
@@ -48,8 +48,7 @@ pub async fn delete_chat_messages_by_channel(
   state: tauri::State<'_, crate::AppState>,
   platform: String,
   source_channel_id: String,
-) -> Result<crate::entities::response_entity::Response, String> {
-  use crate::entities::response_entity::Response;
+) -> Result<crate::Response<serde_json::Value>, String> {
   use nosql_orm::query::Filter;
   let filter = serde_json::json!({
     "platform": platform,
@@ -76,8 +75,8 @@ pub async fn delete_chat_messages_by_channel(
       }
     }
   }
-  Ok(Response::success_with_data(
+  Ok(Response::success(
     serde_json::json!({ "deleted_count": deleted_count }),
-    &format!("Deleted {} messages", deleted_count),
+    Some(&format!("Deleted {} messages", deleted_count)),
   ))
 }

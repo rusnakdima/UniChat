@@ -10,8 +10,6 @@ pub mod chat_command;
 pub mod chat_message_command;
 #[path = "crud_command.rs"]
 pub mod crud_command;
-#[path = "crud.macro.rs"]
-pub mod crud_macro;
 #[path = "custom-emote.command.rs"]
 pub mod custom_emote_command;
 #[path = "dashboard-preferences.command.rs"]

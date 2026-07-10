@@ -4,6 +4,7 @@ use crate::crud_get_by_id;
 use crate::crud_get_many;
 use crate::crud_patch;
 use crate::crud_update;
+use crate::Response;
 crud_get_by_id!(get_chat_channel, "chat_channels");
 crud_get_many!(get_chat_channels, "chat_channels");
 crud_create!(create_chat_channel, "chat_channels");
@@ -15,8 +16,7 @@ pub async fn get_chat_channel_by_platform_and_id(
   state: tauri::State<'_, crate::AppState>,
   platform: String,
   channel_id: String,
-) -> Result<crate::entities::response_entity::Response, String> {
-  use crate::entities::response_entity::Response;
+) -> Result<Response<serde_json::Value>, String> {
   use nosql_orm::query::Filter;
   let filter = serde_json::json!({
     "platform": platform,
@@ -39,7 +39,7 @@ pub async fn get_chat_channel_by_platform_and_id(
   Ok(
     docs
       .first()
-      .map(|doc| Response::success_with_data(doc.clone(), "Found"))
+      .map(|doc| Response::success(doc.clone(), Some("Found")))
       .unwrap_or_else(|| Response::error("Channel not found")),
   )
 }
