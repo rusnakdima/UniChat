@@ -26,18 +26,19 @@
     "format:all": "bun run format && bun run format:rust",
     "lint:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings",
     "lint:rust:fix": "cargo clippy --manifest-path src-tauri/Cargo.toml --fix --allow-dirty",
-    "lint:all": "bun run format:check && bun run lint:rust"
+    "lint:all": "bun run format:check && bun run lint:rust",
+    "test": "vitest run"
   },
   "private": true,
   "dependencies": {
     "@angular/cdk": "^20.2.14",
-    "@angular/common": "^20.3.18",
-    "@angular/compiler": "^20.3.18",
-    "@angular/core": "^20.3.18",
-    "@angular/forms": "^20.3.18",
+    "@angular/common": "^22.0.6",
+    "@angular/compiler": "^22.0.6",
+    "@angular/core": "^22.0.6",
+    "@angular/forms": "^22.0.6",
     "@angular/material": "^20.2.14",
-    "@angular/platform-browser": "^20.3.18",
-    "@angular/router": "^20.3.18",
+    "@angular/platform-browser": "^22.0.6",
+    "@angular/router": "^22.0.6",
     "@tailwindcss/postcss": "4.1.18",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-front/shared": "file:../tauri-front-shared/projects/shared/dist",
@@ -51,9 +52,9 @@
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
-    "@angular/build": "^20.3.22",
-    "@angular/cli": "^20.3.22",
-    "@angular/compiler-cli": "^20.3.18",
+    "@angular/build": "^22.0.6",
+    "@angular/cli": "^22.0.6",
+    "@angular/compiler-cli": "^22.0.6",
     "@tauri-apps/cli": "^2.10.1",
     "@types/dompurify": "^3.2.0",
     "@types/tmi.js": "^1.8.6",
@@ -61,6 +62,8 @@
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "4.1.18",
-    "typescript": "~5.8.3"
+    "typescript": "~6.0.3",
+    "vitest": "^3.0.0",
+    "jsdom": "^25.0.0"
   }
 }
