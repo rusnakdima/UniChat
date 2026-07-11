@@ -1,6 +1,5 @@
-/* sys lib */
-import { Injectable } from "@angular/core";
-export type StorageValidator<T> = (value: unknown) => value is T;
+// Re-export LocalStorageService from @tauri-front/shared
+export { LocalStorageService, type StorageValidator } from "@tauri-front/shared";
 
 export const STORAGE_KEYS = {
   THEME: "unichat-theme",
@@ -20,44 +19,3 @@ export const STORAGE_KEYS = {
   DEBUG_PANEL_SIZE: "debug-panel-size",
   DEBUG_PANEL_OPEN: "debug-panel-open",
 } as const;
-
-@Injectable({
-  providedIn: "root",
-})
-export class LocalStorageService {
-  get<T>(key: string, defaultValue: T, validator?: StorageValidator<T>): T {
-    const storedValue = localStorage.getItem(key);
-
-    if (!storedValue) {
-      return defaultValue;
-    }
-
-    try {
-      const parsed = JSON.parse(storedValue);
-
-      if (validator && validator(parsed)) {
-        return parsed;
-      }
-
-      if (!validator) {
-        return parsed as T;
-      }
-
-      return defaultValue;
-    } catch {
-      return defaultValue;
-    }
-  }
-
-  set<T>(key: string, value: T): void {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-
-  remove(key: string): void {
-    localStorage.removeItem(key);
-  }
-
-  has(key: string): boolean {
-    return localStorage.getItem(key) !== null;
-  }
-}

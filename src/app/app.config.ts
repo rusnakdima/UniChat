@@ -1,10 +1,6 @@
 /* sys lib */
-import {
-  ApplicationConfig,
-  ErrorHandler,
-  provideBrowserGlobalErrorListeners,
-  provideZoneChangeDetection,
-} from "@angular/core";
+import { ApplicationConfig, ErrorHandler } from "@angular/core";
+import { provideUnifiedApp } from "@tauri-front/shared";
 import { provideRouter } from "@angular/router";
 
 /* app */
@@ -15,8 +11,10 @@ import { GlobalErrorHandler } from "@services/core/global-error-handler.service"
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideZoneChangeDetection({ eventCoalescing: true }),
+    ...provideUnifiedApp({
+      enableBrowserErrorListeners: true,
+      enableZoneChangeDetection: true,
+    }),
     provideRouter(routes),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
