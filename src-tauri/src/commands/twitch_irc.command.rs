@@ -1,5 +1,3 @@
-use crate::models::overlay_message_model::OverlayMessageModel;
-use crate::services::twitch_irc::{TwitchChatMessage, TwitchIrcService};
 use crate::AppState;
 use tauri::State;
 

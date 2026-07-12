@@ -8,7 +8,7 @@ use crate::services::auth::token_vault::TokenVaultService;
 use crate::utils::config_helper::SharedConfig;
 use crate::utils::http_client::shared_client;
 use crate::utils::oauth_config_helper::{get_oauth_provider_config, OAuthProviderConfig};
-use crate::{log_debug, log_info, log_warn};
+use crate::{log_debug, log_info};
 use reqwest::Client;
 pub struct AccountService {
   pub http: Client,

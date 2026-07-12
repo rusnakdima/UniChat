@@ -51,9 +51,7 @@ use crate::commands::overlay_command::{
   emit_overlay_config_changed, get_overlay_config, get_overlay_messages,
   init_overlay_config_from_storage, open_overlay_window, start_overlay_server, stop_overlay_server,
 };
-use crate::commands::schema_command::{
-  delete_schema, get_all_schemas, get_schema, save_schema, seed_schema_if_needed,
-};
+use crate::commands::schema_command::{delete_schema, get_all_schemas, get_schema, save_schema};
 use crate::commands::storage_command::StorageState;
 use crate::commands::storage_command::{
   count_storage, exists_storage, query_storage, storage_clear, storage_get, storage_keys,
@@ -63,9 +61,7 @@ use crate::commands::twitch_irc_command::{
   twitch_irc_is_connected, twitch_irc_join_channel, twitch_irc_leave_channel,
   twitch_irc_send_message,
 };
-use crate::commands::update_command::{
-  check_for_update, download_update, get_current_version, install_update,
-};
+
 use crate::constants::OVERLAY_SERVER_PORT;
 use crate::entities::chat_account_entity::ChatAccountEntity;
 use crate::entities::chat_channel_entity::ChatChannelEntity;
@@ -225,10 +221,10 @@ pub fn run() {
       twitch_irc_leave_channel,
       twitch_irc_send_message,
       twitch_irc_is_connected,
-      check_for_update,
-      download_update,
-      install_update,
-      get_current_version,
+      tauri_shared::check_for_update_command,
+      tauri_shared::download_update_command,
+      tauri_shared::install_update_command,
+      tauri_shared::get_current_version,
       get_chat_message,
       get_chat_messages,
       create_chat_message,
@@ -281,7 +277,7 @@ pub fn run() {
       tauri_shared::commands::schema_commands::get_ui_schema,
       tauri_shared::commands::schema_commands::save_ui_schema,
     ]);
-  if let Err(e) = builder.run(tauri::generate_context!()) {
+  if let Err(_e) = builder.run(tauri::generate_context!()) {
     std::process::exit(1);
   }
 }

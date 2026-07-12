@@ -1,7 +1,7 @@
 use crate::utils::http_client::shared_client;
 use crate::utils::http_error_helper::{build_fallback_urls, handle_http_error};
 use crate::utils::validation::{validate_channel_slug, validate_message_id, validate_oauth_token};
-use crate::{log_debug, log_error, log_info};
+use crate::{log_error, log_info};
 use serde::Deserialize;
 use serde::Serialize;
 #[derive(Debug, Deserialize)]

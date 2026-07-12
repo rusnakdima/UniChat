@@ -1,5 +1,4 @@
 use super::update_models::DownloadProgress;
-use crate::log_warn;
 use crate::utils::http_client::shared_client;
 use futures_util::StreamExt;
 use std::path::PathBuf;
@@ -54,7 +53,7 @@ pub async fn download_update_with_progress(
           );
         }
       }
-      Err(e) => {
+      Err(_e) => {
         break;
       }
     }

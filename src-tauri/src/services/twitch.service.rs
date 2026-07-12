@@ -6,7 +6,7 @@ use crate::utils::http_client::shared_client;
 use crate::utils::http_error_helper::handle_http_error;
 use crate::utils::oauth_config_helper::get_oauth_provider_config;
 use crate::AppState;
-use crate::{log_debug, log_error, log_info, log_warn};
+use crate::{log_error, log_info, log_warn};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize)]
 struct HelixEmoteRow {

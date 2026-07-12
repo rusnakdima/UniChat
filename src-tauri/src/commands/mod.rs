@@ -26,5 +26,3 @@ pub mod schema_command;
 pub mod storage_command;
 #[path = "twitch_irc.command.rs"]
 pub mod twitch_irc_command;
-#[path = "update.command.rs"]
-pub mod update_command;

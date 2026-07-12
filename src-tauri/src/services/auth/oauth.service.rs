@@ -1,9 +1,9 @@
+use crate::log_info;
 use crate::models::auth_account_model::{AuthAccountModel, AuthStatusModel};
 use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
 use crate::services::auth::auth_state::OAuthStateService;
 use crate::utils::http_client::shared_client;
 use crate::utils::oauth_config_helper::get_oauth_provider_config;
-use crate::{log_debug, log_info};
 use chrono::{Duration, Utc};
 use reqwest::Client;
 use url::Url;

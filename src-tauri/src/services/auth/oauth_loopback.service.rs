@@ -83,7 +83,7 @@ impl OAuthLoopbackService {
                 }
               }
             }
-            Err(e) => {
+            Err(_e) => {
             }
           }
           let body = if callback_url.is_some() {
@@ -110,7 +110,7 @@ impl OAuthLoopbackService {
             log_warn!("OAuth callback: No valid callback URL found in request for {}", platform_key_owned);
           }
         }
-        Err(e) => {
+        Err(_e) => {
         }
       }
       log_debug!(

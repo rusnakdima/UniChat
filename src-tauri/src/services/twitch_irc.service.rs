@@ -1,5 +1,4 @@
-use crate::models::overlay_message_model::OverlayMessageModel;
-use crate::{log_debug, log_error, log_info, log_warn};
+use crate::{log_error, log_info, log_warn};
 use futures_util::{SinkExt, StreamExt};
 use once_cell::sync::Lazy;
 use regex::Regex;

@@ -1,9 +1,9 @@
 use crate::constants::{
   OAUTH_CODE_VERIFIER_LENGTH, OAUTH_STATE_EXPIRATION_SECS, OAUTH_STATE_LENGTH,
 };
+use crate::log_warn;
 use crate::models::auth_oauth_model::OAuthPendingSessionModel;
 use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
-use crate::{log_debug, log_warn};
 use chrono::Utc;
 use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashMap;
