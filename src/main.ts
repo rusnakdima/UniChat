@@ -1,5 +1,4 @@
-/* sys lib */
-import "@tauri-front/shared"; // Registers all Lit web components
+import "@tauri-front/shared";
 import { bootstrapApplication } from "@angular/platform-browser";
 
 /* app */

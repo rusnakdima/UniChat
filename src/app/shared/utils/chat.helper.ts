@@ -1,4 +1,4 @@
-/* models */
+/* app */
 import {
   ChatChannel,
   ChatMessage,

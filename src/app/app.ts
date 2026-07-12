@@ -1,9 +1,10 @@
-/* sys lib */
+/* angular */
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from "@angular/core";
-import { SchemaRouterService, SchemaSetupService, SchemaRouteViewerComponent } from "@tauri-front/shared";
 
-/* services */
-import { ThemeService } from "@tauri-front/shared";
+/* library */
+import { SchemaRouterService, SchemaSetupService, SchemaRouteViewerComponent, ThemeService } from "@tauri-front/shared";
+
+/* app */
 import { MemoryManagementService } from "@services/core/memory-management.service";
 import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 import { AuthorizationService } from "@services/features/authorization.service";
@@ -46,7 +47,7 @@ export class App implements OnInit {
     void this.channelImagePreloader.preloadAllVisibleChannels();
     void this.setup.setup('unichat', {
       initialRoute: '/dashboard',
-      autoRegisterRoutes: false,
+      autoRegisterRoutes: true,
     });
   }
 }
