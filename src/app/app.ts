@@ -2,7 +2,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from "@angular/core";
 
 /* library */
-import { SchemaRouterService, SchemaSetupService, SchemaRouteViewerComponent, ThemeService } from "@tauri-front/shared";
+import {
+  SchemaRouterService,
+  SchemaSetupService,
+  SchemaRouteViewerComponent,
+  ThemeService,
+} from "@tauri-front/shared";
 
 /* app */
 import { MemoryManagementService } from "@services/core/memory-management.service";
@@ -45,8 +50,8 @@ export class App implements OnInit {
     this.authService.startAutoRefresh();
     void this.authService.loadAllAccountStatuses();
     void this.channelImagePreloader.preloadAllVisibleChannels();
-    void this.setup.setup('unichat', {
-      initialRoute: '/dashboard',
+    void this.setup.setup("unichat", {
+      initialRoute: "/dashboard",
       autoRegisterRoutes: true,
     });
   }
