@@ -3,7 +3,7 @@ import { ApplicationConfig, ErrorHandler } from "@angular/core";
 import { provideUnifiedApp } from "@tauri-front/shared";
 import { provideRouter } from "@angular/router";
 
-/* app */
+/* app:other */
 import { routes } from "@app/app.routes";
 
 /* services */

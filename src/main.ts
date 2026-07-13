@@ -1,7 +1,7 @@
 import "@tauri-front/shared";
 import { bootstrapApplication } from "@angular/platform-browser";
 
-/* app */
+/* app:other */
 import { App } from "@app/app";
 import { appConfig } from "@app/app.config";
 bootstrapApplication(App, appConfig).catch((err) => console.error("Angular bootstrap error:", err));

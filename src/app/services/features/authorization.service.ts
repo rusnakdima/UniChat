@@ -3,8 +3,9 @@ import { Injectable, signal, computed, inject, effect } from "@angular/core";
 /* library */
 import { InvokeWrapperService } from "@tauri-front/shared";
 import { openUrl } from "@tauri-apps/plugin-opener";
-/* app */
+/* app:models */
 import { PlatformType } from "@entities/chat.model";
+/* app:services */
 import { ChatListService } from "@services/data/chat-list.service";
 
 const ACCOUNTS_STORAGE_KEY = "unichat_accounts";

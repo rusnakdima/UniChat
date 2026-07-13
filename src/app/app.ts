@@ -9,7 +9,7 @@ import {
   ThemeService,
 } from "@tauri-front/shared";
 
-/* app */
+/* app:services */
 import { MemoryManagementService } from "@services/core/memory-management.service";
 import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 import { AuthorizationService } from "@services/features/authorization.service";
