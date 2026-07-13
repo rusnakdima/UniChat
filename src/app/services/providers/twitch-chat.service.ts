@@ -1,10 +1,15 @@
-import { Injectable, inject, OnDestroy } from "@angular/core";
+/* angular */
+import { inject, Injectable, OnDestroy } from "@angular/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+/* library */
 import { InvokeWrapperService } from "@tauri-front/shared";
+/* app:services */
 import { AuthorizationService } from "@services/features/authorization.service";
 import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
+/* app:models */
 import { ChatMessage, ChatMessageEmote } from "@entities/chat.model";
+/* app:other */
 import { buildChannelRef } from "@utils/channel-ref.util";
 
 interface TwitchIrcMessage {

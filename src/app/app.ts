@@ -1,19 +1,17 @@
 /* angular */
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from "@angular/core";
-
 /* library */
 import {
+  SchemaRouteViewerComponent,
   SchemaRouterService,
   SchemaSetupService,
-  SchemaRouteViewerComponent,
   ThemeService,
 } from "@tauri-front/shared";
-
 /* app:services */
-import { MemoryManagementService } from "@services/core/memory-management.service";
-import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ConnectionManagerService } from "@services/core/connection-manager.service";
+import { MemoryManagementService } from "@services/core/memory-management.service";
+import { ChannelImagePreloaderService } from "@services/ui/channel-image-preloader.service";
 
 @Component({
   selector: "app-root",

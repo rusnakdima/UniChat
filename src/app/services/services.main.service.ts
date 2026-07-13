@@ -1,6 +1,7 @@
-import { Injectable, inject } from "@angular/core";
-import { InvokeWrapperService } from "@tauri-front/shared";
-import { EventBusService } from "@tauri-front/shared";
+/* angular */
+import { inject, Injectable } from "@angular/core";
+/* library */
+import { EventBusService, InvokeWrapperService } from "@tauri-front/shared";
 
 @Injectable({
   providedIn: "root",

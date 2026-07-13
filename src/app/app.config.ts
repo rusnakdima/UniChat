@@ -1,13 +1,12 @@
 /* angular */
 import { ApplicationConfig, ErrorHandler } from "@angular/core";
-import { provideUnifiedApp } from "@tauri-front/shared";
 import { provideRouter } from "@angular/router";
-
+/* library */
+import { provideUnifiedApp } from "@tauri-front/shared";
+/* app:services */
+import { GlobalErrorHandler } from "@services/core/global-error-handler.service";
 /* app:other */
 import { routes } from "@app/app.routes";
-
-/* services */
-import { GlobalErrorHandler } from "@services/core/global-error-handler.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -1,6 +1,7 @@
-import { Injectable, inject } from "@angular/core";
-import { InvokeWrapperService, SchemaRouterService, UiSchema } from "@tauri-front/shared";
-import { Response } from "@tauri-front/shared";
+/* angular */
+import { inject, Injectable } from "@angular/core";
+/* library */
+import { InvokeWrapperService, Response, SchemaRouterService, UiSchema } from "@tauri-front/shared";
 
 export interface SchemaResponse {
   _id: string;

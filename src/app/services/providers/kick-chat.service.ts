@@ -1,8 +1,13 @@
-import { Injectable, inject, OnDestroy } from "@angular/core";
+/* angular */
+import { inject, Injectable, OnDestroy } from "@angular/core";
+/* library */
 import { InvokeWrapperService } from "@tauri-front/shared";
+/* app:services */
 import { UnifiedStorageService } from "@core/services/unified-storage.service";
 import { DashboardFeedDataService } from "@services/ui/dashboard-feed-data.service";
+/* app:models */
 import { ChatMessage } from "@entities/chat.model";
+/* app:other */
 import { buildChannelRef } from "@utils/channel-ref.util";
 
 const PUSHER_WS_URL =
