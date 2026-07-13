@@ -1,9 +1,3 @@
-/**
- * Local StorageCacheService — kept instead of using @tauri-front/shared's StorageCacheService.
- * Reason: Specialized for ChatMessage data with version-based invalidation, channel-scoped
- * message tracking, and a computed all-messages view. The library version is a generic TTL
- * cache without any chat-specific semantics.
- */
 import { Injectable, signal, computed } from "@angular/core";
 import { ChatMessage } from "@entities/chat.model";
 

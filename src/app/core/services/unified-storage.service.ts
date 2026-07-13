@@ -360,7 +360,10 @@ export class UnifiedStorageService {
 
   deletePersistedMessages(_channelId: string): void {
     try {
-      this.entity.deleteChatMessagesByChannel(_channelId);
+      const parsed = parseChannelRef(_channelId);
+      if (parsed) {
+        this.entity.deleteChatMessagesByChannel(parsed.platform, parsed.channelId);
+      }
     } catch (error) {
       console.error("Failed to delete persisted messages:", error);
     }
