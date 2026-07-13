@@ -30,7 +30,7 @@
       "@store/*": ["src/app/store/*"],
       "@pages/*": ["src/app/pages/*"],
       "@utils/*": ["src/app/utils/*"],
-      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/dist"]
+      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/src"]
     }
   },
   "angularCompilerOptions": {
