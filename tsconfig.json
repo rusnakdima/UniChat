@@ -4,7 +4,6 @@
   "compileOnSave": false,
   "compilerOptions": {
     "strict": true,
-    "ignoreDeprecations": "6.0",
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
@@ -30,7 +29,8 @@
       "@store/*": ["src/app/store/*"],
       "@pages/*": ["src/app/pages/*"],
       "@utils/*": ["src/app/utils/*"],
-      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/src"]
+      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/dist"],
+      "@tauri-front/shared/*": ["../tauri-front-shared/projects/shared/dist/*"]
     }
   },
   "angularCompilerOptions": {

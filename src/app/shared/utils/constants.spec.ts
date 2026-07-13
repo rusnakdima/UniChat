@@ -38,7 +38,9 @@ describe("overlay storage key functions", () => {
   });
 
   it("should generate animation direction key", () => {
-    expect(overlayAnimationDirectionKey(widgetId)).toBe("unichat:overlay:widget-main:animation_direction");
+    expect(overlayAnimationDirectionKey(widgetId)).toBe(
+      "unichat:overlay:widget-main:animation_direction"
+    );
   });
 
   it("should generate transparent bg key", () => {
