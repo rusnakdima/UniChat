@@ -14,7 +14,7 @@ import {
   WidgetStatus,
 } from "@entities/chat.model";
 
-/* services */
+/* app:services */
 import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { extractYoutubeVideoId } from "@utils/youtube-url-parser.util";
 // Create singleton instance for helper functions
