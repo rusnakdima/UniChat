@@ -15,7 +15,7 @@ body {
 
 /* Card component - use class="card" */
 .card {
-  @apply rounded-xl border border-zinc-200 bg-white p-4 shadow-sm;
+  @apply sf-rounded-xl border border-zinc-200 bg-white sf-p-4 sf-shadow-sm;
 }
 .dark .card {
   @apply border-white/10 bg-white/5;
@@ -23,45 +23,45 @@ body {
 
 /* Card text */
 .card-title {
-  @apply text-sm font-semibold;
+  @apply sf-text-sm sf-font-semibold;
 }
 .card-text {
-  @apply text-xs text-zinc-600 dark:text-zinc-400;
+  @apply sf-text-xs text-zinc-600 dark:text-zinc-400;
 }
 
 /* Input fields */
 .input-field {
-  @apply w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-zinc-500;
+  @apply sf-w-full sf-rounded-lg border border-zinc-200 bg-zinc-50 sf-px-3 sf-py-2 sf-text-sm text-zinc-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-zinc-500;
 }
 
 /* Select fields */
 .select-field {
-  @apply w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-white/10 dark:bg-black/20;
+  @apply sf-w-full sf-rounded-lg border border-zinc-200 bg-zinc-50 sf-px-3 sf-py-2 sf-text-sm dark:border-white/10 dark:bg-black/20;
 }
 
 /* Button primary */
 .btn-primary {
-  @apply rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200;
+  @apply sf-rounded-xl bg-zinc-900 sf-px-4 sf-py-2 sf-text-sm sf-font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200;
 }
 
 /* Button secondary */
 .btn-secondary {
-  @apply rounded-xl border border-zinc-900/10 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-zinc-200 dark:hover:bg-white/5;
+  @apply sf-rounded-xl border border-zinc-900/10 bg-white sf-px-4 sf-py-2 sf-text-sm sf-font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-zinc-200 dark:hover:bg-white/5;
 }
 
 /* Button ghost */
 .btn-ghost {
-  @apply rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-white;
+  @apply sf-rounded-lg sf-p-2 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-white;
 }
 
 /* Badge */
 .badge {
-  @apply inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white px-2.5 py-1 text-xs text-zinc-700 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200;
+  @apply sf-inline-flex sf-items-center sf-gasf-p-2 sf-rounded-full border border-zinc-900/10 bg-white px-2.5 py-1 sf-text-xs text-zinc-700 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200;
 }
 
 /* Pill button */
 .pill-btn {
-  @apply rounded-full border px-3 py-1 text-xs font-medium transition;
+  @apply sf-rounded-full border sf-px-3 py-1 sf-text-xs sf-font-medium transition;
 }
 .pill-btn-active {
   @apply border-emerald-500 bg-emerald-500 text-white;
@@ -72,15 +72,15 @@ body {
 
 /* Section header */
 .section-header {
-  @apply text-sm font-semibold tracking-[0.2em] text-zinc-500 uppercase dark:text-zinc-400;
+  @apply sf-text-sm sf-font-semibold tracking-[0.2em] text-zinc-500 uppercase dark:text-zinc-400;
 }
 .section-description {
-  @apply mt-1 text-sm text-zinc-600 dark:text-zinc-400;
+  @apply mt-1 sf-text-sm text-zinc-600 dark:text-zinc-400;
 }
 
 /* Container card */
 .container-card {
-  @apply rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm;
+  @apply sf-rounded-2xl border border-zinc-200 bg-white sf-p-6 sf-shadow-sm;
 }
 .dark .container-card {
   @apply border-white/10 bg-white/5;
@@ -109,12 +109,12 @@ input[type="checkbox"].peer {
 }
 
 input[type="checkbox"].peer + .checkmark {
-  @apply relative inline-flex h-5 w-5 cursor-pointer items-center justify-center;
+  @apply sf-relative sf-inline-flex sf-h-5 sf-w-5 sf-cursor-pointer sf-items-center sf-justify-center;
 }
 
 input[type="checkbox"].peer + .checkmark::before {
   content: "";
-  @apply h-5 w-5 rounded border border-zinc-300 bg-transparent transition-all duration-200 dark:border-zinc-700;
+  @apply sf-h-5 sf-w-5 rounded border border-zinc-300 bg-transparent sf-transition-all sf-duration-200 dark:border-zinc-700;
 }
 
 input[type="checkbox"].peer:checked + .checkmark::before {
@@ -123,7 +123,7 @@ input[type="checkbox"].peer:checked + .checkmark::before {
 
 input[type="checkbox"].peer:checked + .checkmark::after {
   content: "";
-  @apply absolute top-1/2 left-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 transform rounded-sm bg-white;
+  @apply sf-absolute sf-top-1/2 sf-left-1/2 h-2.5 w-2.5 sf---translate-x-1/2 sf---translate-y-1/2 sf-transform rounded-sm bg-white;
 }
 
 input[type="checkbox"].peer:focus + .checkmark::before {
@@ -131,7 +131,7 @@ input[type="checkbox"].peer:focus + .checkmark::before {
 }
 
 input[type="checkbox"].peer:disabled + .checkmark::before {
-  @apply cursor-not-allowed border-zinc-400 bg-zinc-400 dark:border-zinc-600 dark:bg-zinc-600;
+  @apply sf-cursor-not-allowed border-zinc-400 bg-zinc-400 dark:border-zinc-600 dark:bg-zinc-600;
 }
 
 /* ===== Custom Radio Button ===== */
@@ -140,12 +140,12 @@ input[type="radio"].peer {
 }
 
 input[type="radio"].peer + .radio-mark {
-  @apply relative inline-flex h-5 w-5 cursor-pointer items-center justify-center;
+  @apply sf-relative sf-inline-flex sf-h-5 sf-w-5 sf-cursor-pointer sf-items-center sf-justify-center;
 }
 
 input[type="radio"].peer + .radio-mark::before {
   content: "";
-  @apply h-5 w-5 rounded-full border border-zinc-300 bg-transparent transition-all duration-200 dark:border-zinc-700;
+  @apply sf-h-5 sf-w-5 sf-rounded-full border border-zinc-300 bg-transparent sf-transition-all sf-duration-200 dark:border-zinc-700;
 }
 
 input[type="radio"].peer:checked + .radio-mark::before {
@@ -154,7 +154,7 @@ input[type="radio"].peer:checked + .radio-mark::before {
 
 input[type="radio"].peer:checked + .radio-mark::after {
   content: "";
-  @apply absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-white;
+  @apply sf-absolute sf-top-1/2 sf-left-1/2 h-2 w-2 sf---translate-x-1/2 sf---translate-y-1/2 sf-transform sf-rounded-full bg-white;
 }
 
 input[type="radio"].peer:focus + .radio-mark::before {
@@ -162,7 +162,7 @@ input[type="radio"].peer:focus + .radio-mark::before {
 }
 
 input[type="radio"].peer:disabled + .radio-mark::before {
-  @apply cursor-not-allowed border-red-700 bg-red-700;
+  @apply sf-cursor-not-allowed border-red-700 bg-red-700;
 }
 
 /* ===== Chat Emote Styling ===== */
@@ -202,7 +202,7 @@ input[type="radio"].peer:disabled + .radio-mark::before {
 mat-icon {
   @apply h-7.5! w-7.5! text-3xl!;
   line-height: 1 !important;
-  display: inline-flex !important;
+  display: sf-inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   vertical-align: middle !important;
@@ -271,11 +271,11 @@ mat-icon {
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    sf-transform: translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    sf-transform: translateY(0);
   }
 }
 
@@ -284,16 +284,16 @@ mat-icon {
 }
 
 .rotate-180 {
-  transform: rotate(180deg);
+  sf-transform: rotate(180deg);
 }
 
 /* ===== Bottom Sheet Animation ===== */
 @keyframes slide-up {
   from {
-    transform: translateY(100%);
+    sf-transform: translateY(100%);
   }
   to {
-    transform: translateY(0);
+    sf-transform: translateY(0);
   }
 }
 

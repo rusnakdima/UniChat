@@ -41,9 +41,9 @@
     "@angular/router": "^22.0.6",
     "@tailwindcss/postcss": "4.1.18",
     "@tauri-apps/api": "^2.10.0",
-    "@tauri-front/shared": "file:../../tauri-front-shared/projects/shared/dist",
     "@tauri-apps/plugin-deep-link": "^2.4.8",
     "@tauri-apps/plugin-opener": "^2.5.3",
+    "@tauri-front/shared": "file:../tauri-front-shared/projects/shared/dist",
     "dompurify": "^3.3.3",
     "flowbite": "^4.0.2",
     "rxjs": "~7.8.2",
@@ -58,12 +58,10 @@
     "@tauri-apps/cli": "^2.10.1",
     "@types/dompurify": "^3.2.0",
     "@types/tmi.js": "^1.8.6",
+    "jsdom": "^25.0.1",
     "postcss": "^8.5.8",
     "prettier": "^3.8.1",
-    "prettier-plugin-tailwindcss": "^0.7.2",
-    "tailwindcss": "4.1.18",
     "typescript": "~6.0.2",
-    "vitest": "^3.0.0",
-    "jsdom": "^25.0.0"
+    "vitest": "^3.2.7"
   }
 }
