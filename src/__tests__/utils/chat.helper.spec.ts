@@ -44,9 +44,7 @@ import {
   MessageActionStatus,
 } from "../../app/entities/chat.model";
 
-function makeMessage(
-  overrides: Partial<ChatMessage> = {}
-): ChatMessage {
+function makeMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
   const base: ChatMessage = {
     id: "msg-1",
     platform: "twitch",
@@ -378,9 +376,7 @@ describe("chat.helper", () => {
 
     it("encodes special characters in widgetId", () => {
       const result = buildOverlayUrl(9000, "widget with spaces & symbols");
-      expect(result).toContain(
-        encodeURIComponent("widget with spaces & symbols")
-      );
+      expect(result).toContain(encodeURIComponent("widget with spaces & symbols"));
       expect(result).toBe(
         `http://127.0.0.1:9000/overlay?widgetId=${encodeURIComponent(
           "widget with spaces & symbols"
@@ -404,11 +400,7 @@ describe("chat.helper", () => {
     });
 
     it("creates a MessageAction with optional reason", () => {
-      const result = createMessageActionState(
-        "delete",
-        "failed",
-        "user not authorized"
-      );
+      const result = createMessageActionState("delete", "failed", "user not authorized");
 
       expect(result.kind).toBe("delete");
       expect(result.status).toBe("failed");
@@ -417,7 +409,10 @@ describe("chat.helper", () => {
 
     it("returns correct shape for reply action", () => {
       const result = createMessageActionState("reply", "pending");
-      const expected = { kind: "reply" as MessageActionKind, status: "pending" as MessageActionStatus };
+      const expected = {
+        kind: "reply" as MessageActionKind,
+        status: "pending" as MessageActionStatus,
+      };
       expect(result).toMatchObject(expected);
     });
   });

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { PlatformAccount, AuthorizationService } from "../../../app/services/features/authorization.service";
+import {
+  PlatformAccount,
+  AuthorizationService,
+} from "../../../app/services/features/authorization.service";
 import { PlatformType } from "../../../app/entities/chat.model";
 
 /* -------------------------------------------------------------------------- */
@@ -79,7 +82,9 @@ describe("AuthorizationService", () => {
       setItem: (key: string, value: string) => storage.set(key, value),
       removeItem: (key: string) => storage.delete(key),
       clear: () => storage.clear(),
-      get length() { return storage.size; },
+      get length() {
+        return storage.size;
+      },
       key: (i: number) => Array.from(storage.keys())[i] ?? null,
     });
 
@@ -242,9 +247,9 @@ describe("AuthorizationService", () => {
 
       await service.authorize("twitch");
 
-      const calls = mockInvoke.mock.calls.map(c => c[0]);
+      const calls = mockInvoke.mock.calls.map((c) => c[0]);
       expect(calls).toContain("auth_await_callback");
-      const callbackCall = mockInvoke.mock.calls.find(c => c[0] === "auth_await_callback");
+      const callbackCall = mockInvoke.mock.calls.find((c) => c[0] === "auth_await_callback");
       expect(callbackCall).toEqual(["auth_await_callback", { platform: "twitch" }]);
     });
 
@@ -256,7 +261,7 @@ describe("AuthorizationService", () => {
 
       await service.authorize("twitch");
 
-      const calls = mockInvoke.mock.calls.map(c => c[0]);
+      const calls = mockInvoke.mock.calls.map((c) => c[0]);
       expect(calls).toContain("auth_status");
     });
 
@@ -274,10 +279,7 @@ describe("AuthorizationService", () => {
       await service.authorize("youtube");
 
       expect(mockOpenUrl).not.toHaveBeenCalled();
-      expect(mockInvoke).not.toHaveBeenCalledWith(
-        "auth_await_callback",
-        expect.anything()
-      );
+      expect(mockInvoke).not.toHaveBeenCalledWith("auth_await_callback", expect.anything());
     });
 
     it("should not throw when auth_start throws", async () => {
@@ -351,9 +353,7 @@ describe("AuthorizationService", () => {
         userId: "u555",
         authStatus: "Authorized",
       };
-      mockChatListGetChannels.mockReturnValue([
-        { platform: "twitch", channelId: "streamer" },
-      ]);
+      mockChatListGetChannels.mockReturnValue([{ platform: "twitch", channelId: "streamer" }]);
       mockInvoke
         .mockResolvedValueOnce({ auth_url: "https://example.com/auth" })
         .mockResolvedValueOnce(undefined)
@@ -421,15 +421,23 @@ describe("AuthorizationService", () => {
       service["_accounts"].set([twitch, kick]);
 
       mockInvoke.mockResolvedValueOnce({
-        accounts: [{ id: "new-tw", platform: "twitch", username: "newtw", userId: "t1", authStatus: "Authorized" }],
+        accounts: [
+          {
+            id: "new-tw",
+            platform: "twitch",
+            username: "newtw",
+            userId: "t1",
+            authStatus: "Authorized",
+          },
+        ],
       });
 
       await (service as any).loadAccountStatus("twitch");
 
       const accounts = service.accounts;
       expect(accounts).toHaveLength(2);
-      expect(accounts.find(a => a.id === "new-tw")?.platform).toBe("twitch");
-      expect(accounts.find(a => a.id === "ki-1")?.platform).toBe("kick");
+      expect(accounts.find((a) => a.id === "new-tw")?.platform).toBe("twitch");
+      expect(accounts.find((a) => a.id === "ki-1")?.platform).toBe("kick");
     });
 
     it("should handle snake_case fields from API (user_id, avatar_url, etc.)", async () => {
@@ -456,7 +464,15 @@ describe("AuthorizationService", () => {
 
     it("should mark isConnected as true when authStatus is Authorized (camelCase)", async () => {
       mockInvoke.mockResolvedValueOnce({
-        accounts: [{ id: "conn-1", platform: "twitch", username: "user", userId: "u1", authStatus: "Authorized" }],
+        accounts: [
+          {
+            id: "conn-1",
+            platform: "twitch",
+            username: "user",
+            userId: "u1",
+            authStatus: "Authorized",
+          },
+        ],
       });
 
       await (service as any).loadAccountStatus("twitch");
@@ -466,7 +482,15 @@ describe("AuthorizationService", () => {
 
     it("should mark isConnected as true when authStatus is authorized (lowercase)", async () => {
       mockInvoke.mockResolvedValueOnce({
-        accounts: [{ id: "conn-2", platform: "twitch", username: "user", userId: "u1", authStatus: "authorized" }],
+        accounts: [
+          {
+            id: "conn-2",
+            platform: "twitch",
+            username: "user",
+            userId: "u1",
+            authStatus: "authorized",
+          },
+        ],
       });
 
       await (service as any).loadAccountStatus("twitch");
@@ -476,7 +500,15 @@ describe("AuthorizationService", () => {
 
     it("should mark isConnected as false for other authStatus values", async () => {
       mockInvoke.mockResolvedValueOnce({
-        accounts: [{ id: "conn-3", platform: "twitch", username: "user", userId: "u1", authStatus: "revoked" }],
+        accounts: [
+          {
+            id: "conn-3",
+            platform: "twitch",
+            username: "user",
+            userId: "u1",
+            authStatus: "revoked",
+          },
+        ],
       });
 
       await (service as any).loadAccountStatus("twitch");
@@ -540,7 +572,7 @@ describe("AuthorizationService", () => {
       ]);
 
       expect(service.accounts).toHaveLength(2);
-      expect(service.accounts.map(a => a.platform)).toEqual(["twitch", "kick"]);
+      expect(service.accounts.map((a) => a.platform)).toEqual(["twitch", "kick"]);
     });
 
     it("should persist accounts to localStorage", () => {
@@ -579,7 +611,7 @@ describe("AuthorizationService", () => {
 
       // deauthorize is sync but calls the async deauthorizeAccount internally
       // The signal update happens asynchronously, so wait a tick
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(service.getAccountByIdSync("alias-test")).toBeUndefined();
     });

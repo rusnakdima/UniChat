@@ -18,7 +18,9 @@ const { effectSpy, effectCallbacks } = vi.hoisted(() => {
     callbacks.add(sourceFn);
     // Fire immediately (zone-like) so constructor side-effects run now.
     sourceFn();
-    return () => { callbacks.delete(sourceFn); };
+    return () => {
+      callbacks.delete(sourceFn);
+    };
   });
   return { effectSpy, effectCallbacks: callbacks };
 });
@@ -276,7 +278,7 @@ describe("ChatListService", () => {
       flushEffects(); // mock effect doesn't auto-fire on signal updates
       expect(localStorageMock.setItem).toHaveBeenCalled();
       const [, value] = localStorageMock.setItem.mock.calls.find(
-        ([k]) => k === "unichat_channels",
+        ([k]) => k === "unichat_channels"
       )!;
       const saved: ChatChannel[] = JSON.parse(value as string);
       expect(saved).toHaveLength(1);
@@ -313,7 +315,7 @@ describe("ChatListService", () => {
       // Pre-load two channels so we have something to remove
       const channels = [
         makeChannel({ id: "ch-to-remove", channelId: "remove-me" }),
-        makeChannel({ id: "ch-to-keep",    channelId: "keep-me" }),
+        makeChannel({ id: "ch-to-keep", channelId: "keep-me" }),
       ];
       localStorageMock.getItem.mockReturnValue(JSON.stringify(channels));
       service = createService();
@@ -333,7 +335,7 @@ describe("ChatListService", () => {
       flushEffects();
       expect(localStorageMock.setItem).toHaveBeenCalled();
       const [, value] = localStorageMock.setItem.mock.calls.find(
-        ([k]) => k === "unichat_channels",
+        ([k]) => k === "unichat_channels"
       )!;
       const saved: ChatChannel[] = JSON.parse(value as string);
       expect(saved).toHaveLength(1);
@@ -358,9 +360,7 @@ describe("ChatListService", () => {
     beforeEach(() => {
       // Clear outer callback BEFORE creating inner service.
       effectCallbacks.clear();
-      const channels = [
-        makeChannel({ id: "ch-toggle", channelId: "toggle-ch", isVisible: true }),
-      ];
+      const channels = [makeChannel({ id: "ch-toggle", channelId: "toggle-ch", isVisible: true })];
       localStorageMock.getItem.mockReturnValue(JSON.stringify(channels));
       service = createService();
       // Clear setItem calls from this service's constructor (fires saveToStorage
@@ -398,7 +398,7 @@ describe("ChatListService", () => {
       service.toggleChannelVisibility("toggle-ch");
       flushEffects();
       const [, value] = localStorageMock.setItem.mock.calls.find(
-        ([k]) => k === "unichat_channels",
+        ([k]) => k === "unichat_channels"
       )!;
       const saved: ChatChannel[] = JSON.parse(value as string);
       expect(saved[0].isVisible).toBe(false);
@@ -450,7 +450,7 @@ describe("ChatListService", () => {
       service.updateChannelAccount("target-ch", "new-acc");
       flushEffects();
       const [, value] = localStorageMock.setItem.mock.calls.find(
-        ([k]) => k === "unichat_channels",
+        ([k]) => k === "unichat_channels"
       )!;
       const saved: ChatChannel[] = JSON.parse(value as string);
       expect(saved[0].accountId).toBe("new-acc");
@@ -503,7 +503,7 @@ describe("ChatListService", () => {
       service.updateChannelName("name-ch", "NewName");
       flushEffects();
       const [, value] = localStorageMock.setItem.mock.calls.find(
-        ([k]) => k === "unichat_channels",
+        ([k]) => k === "unichat_channels"
       )!;
       const saved: ChatChannel[] = JSON.parse(value as string);
       expect(saved[0].channelName).toBe("NewName");
@@ -583,7 +583,7 @@ describe("ChatListService", () => {
     it("should call cleanMixedEnabledChannelIds on construction with all loaded channel refs", () => {
       const channels = [
         makeChannel({ platform: "twitch", channelId: "tw-1" }),
-        makeChannel({ platform: "kick",   channelId: "ki-2" }),
+        makeChannel({ platform: "kick", channelId: "ki-2" }),
       ];
       localStorageMock.getItem.mockReturnValue(JSON.stringify(channels));
       service = createService();
@@ -598,7 +598,7 @@ describe("ChatListService", () => {
       const channels = [
         makeChannel({ platform: "twitch", channelId: "tw-1", isVisible: true }),
         makeChannel({ platform: "youtube", channelId: "yt-2", isVisible: false }),
-        makeChannel({ platform: "kick",   channelId: "ki-3", isVisible: true }),
+        makeChannel({ platform: "kick", channelId: "ki-3", isVisible: true }),
       ];
       localStorageMock.getItem.mockReturnValue(JSON.stringify(channels));
       service = createService();
