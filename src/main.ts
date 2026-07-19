@@ -1,7 +1,8 @@
+/* angular */
+import { bootstrapApplication } from "@angular/platform-browser";
+/* library */
 import "@tauri-front/shared";
 import { loadStyleVariant } from "@tauri-front/shared";
-import { bootstrapApplication } from "@angular/platform-browser";
-
 /* app:other */
 import { App } from "@app/app";
 import { appConfig } from "@app/app.config";
