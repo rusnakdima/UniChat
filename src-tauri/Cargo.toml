@@ -47,7 +47,7 @@ dirs = "5"
 paste = "1.0"
 log = "0.4"
 nosql_orm = { git = "https://github.com/rusnakdima/nosql_orm.git", branch = "main", features = ["json", "query_cache", "validators"] }
-tauri-shared = { path = "../../tauri-shared" }
+tauri-shared = { path = "../../tauri-shared", features = ["algorithms"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("tauri"))'] }

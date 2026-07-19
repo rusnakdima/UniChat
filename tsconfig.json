@@ -1,5 +1,3 @@
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "compileOnSave": false,
   "compilerOptions": {
@@ -17,30 +15,65 @@
     "target": "ES2022",
     "module": "preserve",
     "baseUrl": "./",
-    "ignoreDeprecations": "6.0",
     "paths": {
-      "@app/*": ["src/app/*"],
-      "@components/*": ["src/app/components/*"],
-      "@directives/*": ["src/app/directives/*"],
-      "@features/*": ["src/app/features/*"],
-      "@entities/*": ["src/app/entities/*"],
-      "@services/*": ["src/app/services/*"],
-      "@core/*": ["src/app/core/*"],
-      "@shared/*": ["src/app/shared/*"],
-      "@store/*": ["src/app/store/*"],
-      "@pages/*": ["src/app/pages/*"],
-      "@utils/*": ["src/app/utils/*"],
-      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/dist"],
-      "@tauri-front/shared/*": ["../tauri-front-shared/projects/shared/dist/*"]
-    }
+      "@app/*": [
+        "src/app/*"
+      ],
+      "@components/*": [
+        "src/app/components/*"
+      ],
+      "@directives/*": [
+        "src/app/directives/*"
+      ],
+      "@features/*": [
+        "src/app/features/*"
+      ],
+      "@entities/*": [
+        "src/app/entities/*"
+      ],
+      "@services/*": [
+        "src/app/services/*"
+      ],
+      "@core/*": [
+        "src/app/core/*"
+      ],
+      "@shared/*": [
+        "src/app/shared/*"
+      ],
+      "@store/*": [
+        "src/app/store/*"
+      ],
+      "@pages/*": [
+        "src/app/pages/*"
+      ],
+      "@utils/*": [
+        "src/app/utils/*"
+      ],
+      "@tauri-front/shared": [
+        "node_modules/@tauri-front/shared"
+      ],
+      "@tauri-front/shared/*": [
+        "node_modules/@tauri-front/shared/*"
+      ]
+    },
+    "ignoreDeprecations": "6.0"
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "typeCheckHostBindings": true,
-    "strictTemplates": true
+    "strictTemplates": true,
+    "disableTypeScriptVersionCheck": true
   },
-  "references": [{ "path": "./tsconfig.app.json" }],
-  "exclude": ["out-tsc", "dist", "node_modules"]
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ],
+  "exclude": [
+    "out-tsc",
+    "dist",
+    "node_modules"
+  ]
 }
