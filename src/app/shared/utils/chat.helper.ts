@@ -1,3 +1,5 @@
+/* app:services */
+import { PlatformResolverService } from "@services/core/platform-resolver.service";
 /* app:models */
 import {
   ChatChannel,
@@ -13,9 +15,6 @@ import {
   WidgetFilter,
   WidgetStatus,
 } from "@entities/chat.model";
-
-/* app:services */
-import { PlatformResolverService } from "@services/core/platform-resolver.service";
 import { extractYoutubeVideoId } from "@utils/youtube-url-parser.util";
 // Create singleton instance for helper functions
 let platformResolver: PlatformResolverService | null = null;

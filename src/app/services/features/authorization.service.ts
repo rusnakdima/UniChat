@@ -1,7 +1,7 @@
 /* angular */
 import { effect, inject, Injectable, signal, computed } from "@angular/core";
-/* library */
 import { openUrl } from "@tauri-apps/plugin-opener";
+/* library */
 import { InvokeWrapperService } from "@tauri-front/shared";
 /* app:services */
 import { ChatListService } from "@services/data/chat-list.service";
