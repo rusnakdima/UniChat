@@ -6,6 +6,4 @@ pub mod auth_oauth_model;
 pub mod overlay_message_model;
 #[path = "platform-type.model.rs"]
 pub mod platform_type_model;
-#[path = "response.model.rs"]
-pub mod response;
-pub use response::{Response, Status};
+// Response and Status are re-exported from tauri_shared in lib.rs

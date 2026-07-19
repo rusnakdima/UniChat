@@ -1,7 +1,7 @@
 //! Application Configuration Helper
 //! Centralized config loading from environment variables and .env files
 //! Inspired by TaskFlow's approach with runtime fallback support
-use crate::utils::errors::AppError;
+use crate::errors::AppError;
 use std::collections::HashMap;
 use std::sync::Arc;
 #[derive(Debug, Clone)]

@@ -3,14 +3,13 @@
 pub mod auth_twitch_helper;
 #[path = "config.helper.rs"]
 pub mod config_helper;
-pub mod errors;
+// AppError is in crate::errors module (from tauri_shared)
 pub mod http_client;
 #[path = "http-error.helper.rs"]
 pub mod http_error_helper;
 #[path = "oauth-config.helper.rs"]
 pub mod oauth_config_helper;
-#[path = "response.utils.rs"]
-pub mod response;
+// Response is re-exported from tauri_shared in lib.rs
 #[path = "sanitizer.helper.rs"]
 pub mod sanitizer_helper;
 pub mod validation;
