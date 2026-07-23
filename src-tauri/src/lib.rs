@@ -1,17 +1,25 @@
 pub mod commands;
 mod constants;
+pub mod domain;
 pub mod entities;
 pub mod errors;
 pub mod loging;
 pub mod models;
-pub mod repositories;
+pub mod providers;
 pub mod services;
 pub mod utils;
 
 // tauri-shared re-exports
-pub use tauri_shared::get_ui_schema;
+
+pub use crate::providers::DbProvider;
+pub use nosql_orm::prelude::DatabaseProvider;
+use nosql_orm::providers::JsonProvider;
+use std::sync::Arc;
+pub use tauri_shared::algorithms::AlgorithmRegistry;
+pub use tauri_shared::crud::service::CrudService;
 pub use tauri_shared::response::{Response, Status};
 pub use tauri_shared::save_ui_schema;
+use tauri_shared::storage::{setup_schema_system, SchemaConfig, SchemaSyncState};
 
 use crate::commands::auth_provider_command::{
   auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
@@ -68,18 +76,14 @@ use crate::entities::chat_channel_entity::ChatChannelEntity;
 use crate::entities::chat_message_entity::ChatMessageEntity;
 use crate::entities::custom_emote_entity::CustomEmoteEntity;
 use crate::entities::dashboard_preferences_entity::DashboardPreferencesEntity;
-use crate::repositories::data_repository::DataProvider;
 use crate::services::auth::AccountService;
 use crate::services::overlay_server::overlay_server_service::OverlayServerService;
 use crate::utils::config_helper::{AppConfig, SharedConfig};
-use nosql_orm::providers::JsonProvider;
 use nosql_orm::relations::register_relations_for_entity;
 use services::twitch_irc::TwitchIrcService;
-use std::sync::Arc;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
-use tauri_shared::crud::service::CrudService;
 pub struct AppState {
   pub config: SharedConfig,
   pub account_service: Arc<AccountService>,
@@ -89,7 +93,7 @@ pub struct AppState {
   pub storage: StorageState,
 }
 pub struct DataState {
-  pub json_provider: DataProvider,
+  pub json_provider: DbProvider,
   pub crud_service: Arc<CrudService>,
 }
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -124,29 +128,29 @@ pub fn run() {
         .expect("Failed to get app data directory");
       let json_db_path = app_data_dir.clone();
       std::fs::create_dir_all(&json_db_path).ok();
+      let schema_config = SchemaConfig::from_env("unichat", app_data_dir.clone());
+      let system = tauri::async_runtime::block_on(setup_schema_system(schema_config))
+        .expect("Failed to setup schema system");
+      if let Some(sync) = system.sync_service {
+        app.manage(sync);
+      }
       let json_provider = tauri::async_runtime::block_on(JsonProvider::new(&json_db_path))
         .expect("Failed to create JSON provider");
       app.manage(json_provider.clone());
-      let json_provider_clone = json_provider.clone();
-      let data_provider = DataProvider::Json(Arc::new(json_provider.clone()));
-
-      // Seed default schema if not already present
-      tauri::async_runtime::block_on(crate::commands::schema_command::seed_schema_if_needed(
-        &data_provider,
-      ))
-      .expect("Failed to seed default schema");
+      let json_provider_arc = Arc::new(json_provider.clone());
 
       let crud_service = Arc::new(tauri_shared::crud::service::CrudService::new(
-        json_provider_clone,
+        json_provider.clone(),
       ));
       let twitch_irc_service = Arc::new(TwitchIrcService::new(app.handle().clone()));
+      app.manage(AlgorithmRegistry::new());
       app.manage(AppState {
         config: config.clone(),
         account_service,
         overlay_server_service: overlay_server,
         twitch_irc_service: twitch_irc_service.clone(),
         data: DataState {
-          json_provider: data_provider,
+          json_provider: DbProvider(json_provider_arc.clone()),
           crud_service,
         },
         storage: StorageState::new(),
@@ -271,11 +275,12 @@ pub fn run() {
       count_storage,
       exists_storage,
       get_schema,
+      tauri_shared::commands::algorithm_commands::execute_algorithm,
+      tauri_shared::commands::algorithm_commands::list_algorithms,
+      tauri_shared::get_schema,
       save_schema,
       get_all_schemas,
       delete_schema,
-      tauri_shared::commands::schema_commands::get_ui_schema,
-      tauri_shared::commands::schema_commands::save_ui_schema,
     ]);
   if let Err(_e) = builder.run(tauri::generate_context!()) {
     std::process::exit(1);
