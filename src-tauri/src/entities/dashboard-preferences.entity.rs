@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use nosql_orm::{Model, Validate};
 #[derive(Debug, Clone, Serialize, Deserialize, Model, Validate)]
 #[table_name("dashboard_preferences")]
+#[serde(rename_all = "camelCase")]
 pub struct DashboardPreferencesEntity {
   pub id: Option<String>,
   #[validate(required)]

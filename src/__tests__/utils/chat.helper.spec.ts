@@ -24,10 +24,7 @@ vi.mock("@utils/youtube-url-parser.util", () => ({
 // Import after mocks are set up
 import {
   generateTimestamp,
-  sortMessagesByRecency,
-  sortMessagesChronological,
   isSafeRemoteImageUrl,
-  groupByPlatform,
   createChatMessage,
   getPlatformLabel,
   getDensityCardClasses,
@@ -35,6 +32,7 @@ import {
   buildOverlayUrl,
   createMessageActionState,
 } from "../../app/shared/utils/chat.helper";
+import { sortBy, groupByField } from "@tauri-front/shared";
 
 import {
   ChatMessage,
@@ -99,7 +97,7 @@ describe("chat.helper", () => {
         makeMessage({ id: "c", timestamp: "2024-01-01T11:00:00.000Z" }),
       ];
 
-      const result = sortMessagesByRecency(messages);
+      const result = sortBy(messages, "timestamp", "desc");
 
       expect(result[0].id).toBe("b");
       expect(result[1].id).toBe("c");
@@ -113,20 +111,20 @@ describe("chat.helper", () => {
       ];
       const originalFirst = messages[0].id;
 
-      sortMessagesByRecency(messages);
+      sortBy(messages, "timestamp", "desc");
 
       expect(messages[0].id).toBe(originalFirst);
     });
 
     it("handles a single message", () => {
       const messages = [makeMessage({ id: "only" })];
-      const result = sortMessagesByRecency(messages);
+      const result = sortBy(messages, "timestamp", "desc");
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe("only");
     });
 
     it("handles an empty array", () => {
-      const result = sortMessagesByRecency([]);
+      const result = sortBy([] as ChatMessage[], "timestamp", "desc");
       expect(result).toHaveLength(0);
     });
   });
@@ -139,7 +137,7 @@ describe("chat.helper", () => {
         makeMessage({ id: "c", timestamp: "2024-01-01T11:00:00.000Z" }),
       ];
 
-      const result = sortMessagesChronological(messages);
+      const result = sortBy(messages, "timestamp", "asc");
 
       expect(result[0].id).toBe("b");
       expect(result[1].id).toBe("c");
@@ -153,7 +151,7 @@ describe("chat.helper", () => {
       ];
       const originalFirst = messages[0].id;
 
-      sortMessagesChronological(messages);
+      sortBy(messages, "timestamp", "asc");
 
       expect(messages[0].id).toBe(originalFirst);
     });
@@ -203,7 +201,7 @@ describe("chat.helper", () => {
         { platform: "twitch" as PlatformType, name: "msg4" },
       ];
 
-      const result = groupByPlatform(items);
+      const result = groupByField(items, "platform") as Record<PlatformType, typeof items>;
 
       expect(result["twitch"]).toHaveLength(2);
       expect(result["kick"]).toHaveLength(1);
@@ -215,7 +213,7 @@ describe("chat.helper", () => {
     it("returns empty arrays when no items match a platform", () => {
       const items = [{ platform: "twitch" as PlatformType, name: "msg1" }];
 
-      const result = groupByPlatform(items);
+      const result = groupByField(items, "platform") as Record<PlatformType, typeof items>;
 
       expect(result["twitch"]).toHaveLength(1);
       expect(result["kick"]).toHaveLength(0);
@@ -223,7 +221,10 @@ describe("chat.helper", () => {
     });
 
     it("handles empty array input", () => {
-      const result = groupByPlatform([]);
+      const result = groupByField(
+        [] as { platform: PlatformType; name: string }[],
+        "platform"
+      ) as Record<PlatformType, { platform: PlatformType; name: string }[]>;
       expect(result["twitch"]).toHaveLength(0);
       expect(result["kick"]).toHaveLength(0);
       expect(result["youtube"]).toHaveLength(0);

@@ -4,6 +4,7 @@ use crate::crud_get_by_id;
 use crate::crud_get_many;
 use crate::crud_patch;
 use crate::crud_update;
+use crate::DatabaseProvider;
 use crate::Response;
 crud_get_by_id!(get_custom_emote, "custom_emotes");
 crud_get_many!(get_custom_emotes, "custom_emotes");

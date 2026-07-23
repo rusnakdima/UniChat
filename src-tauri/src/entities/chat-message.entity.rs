@@ -11,6 +11,7 @@ use nosql_orm::{Model, Validate};
 #[index("source_channel_id", 1)]
 #[index("source_user_id", 1)]
 #[index("created_at", -1)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatMessageEntity {
   pub id: Option<String>,
   pub platform: String,

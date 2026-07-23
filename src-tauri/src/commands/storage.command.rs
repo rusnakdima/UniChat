@@ -1,3 +1,4 @@
+use crate::DatabaseProvider;
 use crate::Response;
 use nosql_orm::query::Filter;
 use serde_json::Value;

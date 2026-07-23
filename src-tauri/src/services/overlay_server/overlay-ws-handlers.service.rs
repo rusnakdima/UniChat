@@ -1,5 +1,6 @@
 //! Overlay WebSocket handlers module
 //! Handles WebSocket connections for overlay subscribers and message sources
+use crate::constants::MAX_LEN;
 use crate::constants::{MAX_WIDGET_IDS, MESSAGE_MAX_PER_WIDGET, WS_RECEIVE_TIMEOUT_SECS};
 use crate::models::overlay_message_model::{
   OverlayMessageModel, OverlayWidgetFilterModel, OverlayWsIncomingModel, OverlayWsSubscribeModel,
@@ -8,10 +9,10 @@ use crate::services::overlay_server::overlay_router::OverlayRouterState;
 use crate::services::overlay_server::overlay_subscriber_manager::{
   OverlayServerState, OverlaySubscriber,
 };
-use crate::utils::sanitizer_helper::sanitize_for_overlay;
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
 use std::sync::Arc;
+use tauri_shared::algorithms::sanitize_for_overlay;
 use tokio::sync::{mpsc, RwLock};
 /// Query parameters for overlay WebSocket connections
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -156,7 +157,7 @@ async fn handle_overlay_source(
         if let Ok(incoming) = serde_json::from_str::<OverlayWsIncomingModel>(&text) {
           if incoming.kind == "chatMessage" {
             if let Some(message) = incoming.message {
-              let sanitized_text = sanitize_for_overlay(&message.text);
+              let sanitized_text = sanitize_for_overlay(&message.text, MAX_LEN);
               let overlay_message = OverlayMessageModel {
                 id: message.id,
                 platform: message.platform,

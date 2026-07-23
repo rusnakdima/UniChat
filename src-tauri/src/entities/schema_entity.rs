@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Model, Validate)]
 #[table_name("schemas")]
+#[serde(rename_all = "camelCase")]
 pub struct SchemaEntity {
   pub id: Option<String>,
   pub name: String,

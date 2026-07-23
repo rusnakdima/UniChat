@@ -1,13 +1,5 @@
-/* angular */
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from "@angular/core";
-/* library */
-import {
-  SchemaRouteViewerComponent,
-  SchemaRouterService,
-  SchemaSetupService,
-  ThemeService,
-} from "@tauri-front/shared";
-/* app:services */
+import { Component, inject, signal, OnInit } from "@angular/core";
+import { SchemaShellComponent } from "@tauri-front/shared";
 import { AuthorizationService } from "@services/features/authorization.service";
 import { ConnectionManagerService } from "@services/core/connection-manager.service";
 import { MemoryManagementService } from "@services/core/memory-management.service";
@@ -16,18 +8,14 @@ import { ChannelImagePreloaderService } from "@services/ui/channel-image-preload
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [SchemaRouteViewerComponent],
+  imports: [SchemaShellComponent],
   templateUrl: "./app.html",
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App implements OnInit {
-  private readonly themeService = inject(ThemeService);
+export class AppComponent implements OnInit {
   private readonly memoryService = inject(MemoryManagementService);
   private readonly channelImagePreloader = inject(ChannelImagePreloaderService);
   private readonly authService = inject(AuthorizationService);
   private readonly connectionManager = inject(ConnectionManagerService);
-  private readonly schemaRouter = inject(SchemaRouterService);
-  private readonly setup = inject(SchemaSetupService);
 
   readonly isOverlay = signal<boolean>(this.checkIsOverlay());
 
@@ -38,19 +26,13 @@ export class App implements OnInit {
     const pathname = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
     const widgetId = searchParams.get("widgetId");
-
     return pathname === "/overlay" || pathname === "/overlay-management" || !!widgetId;
   }
 
   ngOnInit(): void {
-    this.themeService.init();
     this.memoryService.startAutoPrune(60000);
     this.authService.startAutoRefresh();
     void this.authService.loadAllAccountStatuses();
     void this.channelImagePreloader.preloadAllVisibleChannels();
-    void this.setup.setup("unichat", {
-      initialRoute: "/dashboard",
-      autoRegisterRoutes: true,
-    });
   }
 }

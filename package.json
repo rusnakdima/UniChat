@@ -40,6 +40,7 @@
     "@angular/material": "~22.0.4",
     "@angular/platform-browser": "^22.0.6",
     "@angular/router": "^22.0.6",
+    "@mdi/font": "^7.4.47",
     "@tailwindcss/postcss": "4.1.18",
     "@tauri-apps/api": "^2.10.0",
     "@tauri-apps/plugin-deep-link": "^2.4.8",

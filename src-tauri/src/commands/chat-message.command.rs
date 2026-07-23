@@ -4,6 +4,7 @@ use crate::crud_get_by_id;
 use crate::crud_get_many;
 use crate::crud_patch;
 use crate::crud_update;
+use crate::DatabaseProvider;
 use crate::Response;
 crud_get_by_id!(get_chat_message, "chat_messages");
 crud_get_many!(get_chat_messages, "chat_messages");

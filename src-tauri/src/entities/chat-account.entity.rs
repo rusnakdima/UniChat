@@ -9,6 +9,7 @@ use nosql_orm::{Model, Validate};
 #[timestamp]
 #[index("platform", 1)]
 #[index("user_id", 1)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatAccountEntity {
   pub id: Option<String>,
   pub platform: String,

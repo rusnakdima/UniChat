@@ -16,6 +16,8 @@ import {
   WidgetStatus,
 } from "@entities/chat.model";
 import { extractYoutubeVideoId } from "@utils/youtube-url-parser.util";
+/* library */
+import { sortBy, groupByField } from "@tauri-front/shared";
 // Create singleton instance for helper functions
 let platformResolver: PlatformResolverService | null = null;
 
@@ -28,18 +30,6 @@ function getPlatformResolver(): PlatformResolverService {
 
 export function generateTimestamp(): string {
   return new Date().toISOString();
-}
-
-export function sortMessagesByRecency(messages: ChatMessage[]): ChatMessage[] {
-  return [...messages].sort(
-    (left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime()
-  );
-}
-
-export function sortMessagesChronological(messages: ChatMessage[]): ChatMessage[] {
-  return [...messages].sort(
-    (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
-  );
 }
 
 const BLANK_PIXEL_GIF =
@@ -69,27 +59,7 @@ export function silenceBrokenChatImage(ev: Event): void {
 }
 
 export function buildSplitFeed(messages: ChatMessage[]): Record<PlatformType, ChatMessage[]> {
-  return groupByPlatform(messages);
-}
-
-/**
- * Group items by platform type
- * Utility function to avoid duplicate filtering logic
- */
-export function groupByPlatform<T extends { platform: PlatformType }>(
-  items: T[]
-): Record<PlatformType, T[]> {
-  const grouped: Record<PlatformType, T[]> = {
-    twitch: [],
-    kick: [],
-    youtube: [],
-  };
-
-  for (const item of items) {
-    grouped[item.platform].push(item);
-  }
-
-  return grouped;
+  return groupByField(messages, "platform") as Record<PlatformType, ChatMessage[]>;
 }
 
 export function createMessageActionState(
@@ -131,7 +101,7 @@ export function getWidgetSummary(widget: WidgetConfig, messages: ChatMessage[]):
 export function groupChannelsByPlatform(
   channels: ChatChannel[]
 ): Record<PlatformType, ChatChannel[]> {
-  return groupByPlatform(channels);
+  return groupByField(channels, "platform") as Record<PlatformType, ChatChannel[]>;
 }
 
 export function getAuthorizationUrl(platform: PlatformType): string {

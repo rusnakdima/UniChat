@@ -10,6 +10,7 @@ use nosql_orm::{Model, Validate};
 #[index("platform", 1)]
 #[index("channel_id", 1)]
 #[index("account_id", 1)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatChannelEntity {
   pub id: Option<String>,
   pub platform: String,

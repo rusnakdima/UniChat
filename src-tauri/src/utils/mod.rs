@@ -10,8 +10,6 @@ pub mod http_error_helper;
 #[path = "oauth-config.helper.rs"]
 pub mod oauth_config_helper;
 // Response is re-exported from tauri_shared in lib.rs
-#[path = "sanitizer.helper.rs"]
-pub mod sanitizer_helper;
 pub mod validation;
 #[path = "youtube-api-auth.helper.rs"]
 pub mod youtube_api_auth;

@@ -2,6 +2,7 @@ use crate::log_warn;
 use crate::models::auth_account_model::AuthCommandResultModel;
 use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
 use crate::AppState;
+use crate::DatabaseProvider;
 use tauri::State;
 #[tauri::command]
 pub async fn auth_start(

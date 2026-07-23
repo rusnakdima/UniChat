@@ -5,15 +5,16 @@ macro_rules! crud_get_by_id {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       id: String,
-    ) -> Result<crate::Response<serde_json::Value>, String> {
+    ) -> Result<tauri_shared::Response<serde_json::Value>, String> {
+      use crate::DatabaseProvider;
       let result = state
         .data
         .json_provider
         .find_by_id($table, &id)
         .await
         .map_err(|e| e.to_string())?
-        .map(|doc| crate::Response::<serde_json::Value>::success(doc, Some("Found")))
-        .unwrap_or_else(|| crate::Response::<serde_json::Value>::not_found(stringify!($table)));
+        .map(|doc| tauri_shared::Response::success(doc, Some("Found")))
+        .unwrap_or_else(|| tauri_shared::Response::not_found(stringify!($table)));
       Ok(result)
     }
   };
@@ -29,7 +30,8 @@ macro_rules! crud_get_many {
       limit: Option<u64>,
       sort_by: Option<String>,
       sort_asc: Option<bool>,
-    ) -> Result<crate::Response<serde_json::Value>, String> {
+    ) -> Result<tauri_shared::Response<serde_json::Value>, String> {
+      use crate::DatabaseProvider;
       use nosql_orm::query::Filter;
       let filter_obj = filter
         .as_ref()
@@ -48,7 +50,7 @@ macro_rules! crud_get_many {
         )
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::Response::<serde_json::Value>::success(
+      Ok(tauri_shared::Response::success(
         serde_json::json!(docs),
         Some(&format!("Found {} items", docs.len())),
       ))
@@ -62,17 +64,15 @@ macro_rules! crud_create {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       data: serde_json::Value,
-    ) -> Result<crate::Response<serde_json::Value>, String> {
+    ) -> Result<tauri_shared::Response<serde_json::Value>, String> {
+      use crate::DatabaseProvider;
       let doc = state
         .data
         .json_provider
         .insert($table, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::Response::<serde_json::Value>::success(
-        doc,
-        Some("Created"),
-      ))
+      Ok(tauri_shared::Response::success(doc, Some("Created")))
     }
   };
 }
@@ -84,17 +84,15 @@ macro_rules! crud_update {
       state: tauri::State<'_, crate::AppState>,
       id: String,
       data: serde_json::Value,
-    ) -> Result<crate::Response<serde_json::Value>, String> {
+    ) -> Result<tauri_shared::Response<serde_json::Value>, String> {
+      use crate::DatabaseProvider;
       let doc = state
         .data
         .json_provider
         .update($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::Response::<serde_json::Value>::success(
-        doc,
-        Some("Updated"),
-      ))
+      Ok(tauri_shared::Response::success(doc, Some("Updated")))
     }
   };
 }
@@ -106,17 +104,15 @@ macro_rules! crud_patch {
       state: tauri::State<'_, crate::AppState>,
       id: String,
       data: serde_json::Value,
-    ) -> Result<crate::Response<serde_json::Value>, String> {
+    ) -> Result<tauri_shared::Response<serde_json::Value>, String> {
+      use crate::DatabaseProvider;
       let doc = state
         .data
         .json_provider
         .patch($table, &id, data)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::Response::<serde_json::Value>::success(
-        doc,
-        Some("Patched"),
-      ))
+      Ok(tauri_shared::Response::success(doc, Some("Patched")))
     }
   };
 }
@@ -127,14 +123,15 @@ macro_rules! crud_delete {
     pub async fn $route(
       state: tauri::State<'_, crate::AppState>,
       id: String,
-    ) -> Result<crate::Response<serde_json::Value>, String> {
+    ) -> Result<tauri_shared::Response<serde_json::Value>, String> {
+      use crate::DatabaseProvider;
       state
         .data
         .json_provider
         .delete($table, &id)
         .await
         .map_err(|e| e.to_string())?;
-      Ok(crate::Response::<serde_json::Value>::success(
+      Ok(tauri_shared::Response::success(
         serde_json::json!({ "id": id }),
         Some("Deleted"),
       ))

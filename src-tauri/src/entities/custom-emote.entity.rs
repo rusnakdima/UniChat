@@ -9,6 +9,7 @@ use nosql_orm::{Model, Validate};
 #[timestamp]
 #[index("platform", 1)]
 #[index("channel_id", 1)]
+#[serde(rename_all = "camelCase")]
 pub struct CustomEmoteEntity {
   pub id: Option<String>,
   pub platform: String,

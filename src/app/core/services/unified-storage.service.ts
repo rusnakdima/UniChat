@@ -9,7 +9,7 @@ import { ChatMessagePresentationService } from "@services/ui/chat-message-presen
 import { HighlightNotificationService } from "@services/ui/highlight-notification.service";
 import { MessageTypeDetectorService } from "@services/ui/message-type-detector.service";
 import { OverlaySourceBridgeService } from "@services/ui/overlay-source-bridge.service";
-import { groupByPlatform } from "@shared/utils/chat.helper";
+import { groupByField } from "@tauri-front/shared";
 import { buildChannelRef, parseChannelRef } from "@utils/channel-ref.util";
 import { APP_CONFIG } from "@shared/utils/constants";
 
@@ -57,7 +57,7 @@ export class UnifiedStorageService {
   });
 
   readonly messagesByPlatform = computed(() => {
-    return groupByPlatform(this.allMessages());
+    return groupByField(this.allMessages(), "platform") as Record<PlatformType, ChatMessage[]>;
   });
 
   constructor() {
