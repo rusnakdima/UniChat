@@ -25,25 +25,14 @@ use crate::commands::auth_provider_command::{
   auth_await_callback, auth_complete, auth_disconnect, auth_refresh, auth_start, auth_status,
   auth_validate,
 };
-use crate::commands::chat_account_command::{
-  create_chat_account, delete_chat_account, get_chat_account,
-  get_chat_account_by_platform_and_user, get_chat_accounts, get_chat_accounts_by_platform,
-  patch_chat_account, update_chat_account,
-};
-use crate::commands::chat_channel_command::{
-  create_chat_channel, delete_chat_channel, get_chat_channel, get_chat_channel_by_platform_and_id,
-  get_chat_channels, patch_chat_channel, update_chat_channel,
-};
+
 use crate::commands::chat_command::{
   kick_delete_chat_message, kick_fetch_channel_emotes, kick_fetch_channel_info,
   kick_fetch_chatroom_id, kick_fetch_recent_messages, kick_fetch_user_info, kick_send_chat_message,
   twitch_delete_message, twitch_fetch_channel_emotes, youtube_fetch_channel_info_by_api_key,
   youtube_fetch_chat_messages, youtube_fetch_live_video_id_by_api_key,
 };
-use crate::commands::chat_message_command::{
-  create_chat_message, delete_chat_message, delete_chat_messages_by_channel, get_chat_message,
-  get_chat_messages, get_chat_messages_by_channel, patch_chat_message, update_chat_message,
-};
+
 use crate::commands::crud_command::crud_execute;
 use crate::commands::custom_emote_command::{
   create_custom_emote, delete_custom_emote, get_custom_emote, get_custom_emotes,
@@ -108,6 +97,19 @@ pub fn run() {
     .plugin(tauri_plugin_deep_link::init())
     .plugin(tauri_plugin_mcp_bridge::init())
     .plugin(tauri_plugin_shell::init())
+    .plugin(
+      tauri_plugin_log::Builder::new()
+        .format(|out, message, record| {
+          out.finish(format_args!(
+            "[{}] [{}] [unichat] [{}] {}",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            record.level(),
+            record.target(),
+            message
+          ))
+        })
+        .build(),
+    )
     .setup(|app| {
       let config = Arc::new(AppConfig::new());
       config
@@ -229,29 +231,6 @@ pub fn run() {
       tauri_shared::download_update_command,
       tauri_shared::install_update_command,
       tauri_shared::get_current_version,
-      get_chat_message,
-      get_chat_messages,
-      create_chat_message,
-      update_chat_message,
-      patch_chat_message,
-      delete_chat_message,
-      get_chat_messages_by_channel,
-      delete_chat_messages_by_channel,
-      get_chat_channel,
-      get_chat_channels,
-      create_chat_channel,
-      update_chat_channel,
-      patch_chat_channel,
-      delete_chat_channel,
-      get_chat_channel_by_platform_and_id,
-      get_chat_account,
-      get_chat_accounts,
-      create_chat_account,
-      update_chat_account,
-      patch_chat_account,
-      delete_chat_account,
-      get_chat_account_by_platform_and_user,
-      get_chat_accounts_by_platform,
       get_dashboard_preferences,
       get_dashboard_preferences_list,
       create_dashboard_preferences,
