@@ -500,7 +500,7 @@
     ],
     "template": "${this.label\n        ? html`<span class=\"selector-label\" id=\"${this.labelId || \"\"}\">${this.label}</span>",
     "css": ":host {\n      display: inline-flex;\n      flex-direction: column;\n      gap: 0.25rem;\n    }\n\n    .selector-label {\n      font-size: 0.875rem;\n      font-weight: 500;\n      color: var(--text-primary);\n    }\n\n    .select-wrapper {\n      position: relative;\n      display: inline-flex;\n      align-items: center;\n    }\n\n    select {\n      appearance: none;\n      -webkit-appearance: none;\n      padding: 0.5rem 2rem 0.5rem 0.75rem;\n      border-radius: 0.5rem;\n      border: 1px solid var(--border-color);\n      background-color: var(--bg-elevated);\n      color: var(--text-primary);\n      font-size: 0.875rem;\n      font-family: inherit;\n      cursor: pointer;\n      outline: none;\n      transition: border-color 0.15s;\n    }\n\n    select:focus {\n      border-color: var(--accent);\n      box-shadow: 0 0 0 1px var(--accent);\n    }\n\n    .chevron-icon {\n      position: absolute;\n      right: 0.5rem;\n      pointer-events: none;\n      width: 1rem;\n      height: 1rem;\n      color: var(--text-muted);\n    }"
-503:   },
+  },
   {
     "id": "locale-switcher",
     "name": "AppLocaleSwitcher",
