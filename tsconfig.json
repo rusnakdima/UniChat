@@ -16,45 +16,19 @@
     "module": "preserve",
     "baseUrl": "./",
     "paths": {
-      "@app/*": [
-        "src/app/*"
-      ],
-      "@components/*": [
-        "src/app/components/*"
-      ],
-      "@directives/*": [
-        "src/app/directives/*"
-      ],
-      "@features/*": [
-        "src/app/features/*"
-      ],
-      "@entities/*": [
-        "src/app/entities/*"
-      ],
-      "@services/*": [
-        "src/app/services/*"
-      ],
-      "@core/*": [
-        "src/app/core/*"
-      ],
-      "@shared/*": [
-        "src/app/shared/*"
-      ],
-      "@store/*": [
-        "src/app/store/*"
-      ],
-      "@pages/*": [
-        "src/app/pages/*"
-      ],
-      "@utils/*": [
-        "src/app/utils/*"
-      ],
-      "@tauri-front/shared": [
-        "node_modules/@tauri-front/shared"
-      ],
-      "@tauri-front/shared/*": [
-        "node_modules/@tauri-front/shared/*"
-      ]
+      "@app/*": ["src/app/*"],
+      "@components/*": ["src/app/components/*"],
+      "@directives/*": ["src/app/directives/*"],
+      "@features/*": ["src/app/features/*"],
+      "@entities/*": ["src/app/entities/*"],
+      "@services/*": ["src/app/services/*"],
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@store/*": ["src/app/store/*"],
+      "@pages/*": ["src/app/pages/*"],
+      "@utils/*": ["src/app/utils/*"],
+      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/dist"],
+      "@tauri-front/shared/*": ["../tauri-front-shared/projects/shared/dist/*"]
     },
     "ignoreDeprecations": "6.0"
   },
@@ -71,9 +45,5 @@
       "path": "./tsconfig.app.json"
     }
   ],
-  "exclude": [
-    "out-tsc",
-    "dist",
-    "node_modules"
-  ]
+  "exclude": ["out-tsc", "dist", "node_modules"]
 }

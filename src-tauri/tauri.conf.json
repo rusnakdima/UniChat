@@ -16,7 +16,10 @@
         "label": "main",
         "title": "unichat",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "minWidth": 400,
+        "minHeight": 400,
+        "devtools": true
       }
     ],
     "security": {
