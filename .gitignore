@@ -57,5 +57,11 @@ Thumbs.db
 # Angular cache (nested)
 **/.angular/
 
+# SvelteKit
+.svelte-kit/
+
+# Build
+build/
+
 # Schemas (temporary dev files)
 /schemas/
