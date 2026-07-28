@@ -14,6 +14,6 @@ export default defineConfig({
 		}
 	},
 	optimizeDeps: {
-		include: ['@tauri-front/shared']
+		exclude: ['@tauri-front/shared']
 	}
 });

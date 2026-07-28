@@ -25,7 +25,7 @@ export default defineConfig({
       '@store': resolve(__dirname, 'src/app/store'),
       '@pages': resolve(__dirname, 'src/app/pages'),
       '@utils': resolve(__dirname, 'src/app/utils'),
-      '@tauri-front/shared': resolve(__dirname, '../tauri-front-shared/projects/shared/dist'),
+      '@tauri-front/shared': resolve(__dirname, 'src/__mocks__/@tauri-front/shared.ts'),
     },
   },
 });

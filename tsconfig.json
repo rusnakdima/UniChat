@@ -1,49 +1,24 @@
 {
-  "compileOnSave": false,
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "useDefineForClassFields": false,
-    "isolatedModules": false,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "importHelpers": true,
-    "target": "ES2022",
-    "module": "preserve",
-    "baseUrl": "./",
-    "paths": {
-      "@app/*": ["src/app/*"],
-      "@components/*": ["src/app/components/*"],
-      "@directives/*": ["src/app/directives/*"],
-      "@features/*": ["src/app/features/*"],
-      "@entities/*": ["src/app/entities/*"],
-      "@services/*": ["src/app/services/*"],
-      "@core/*": ["src/app/core/*"],
-      "@shared/*": ["src/app/shared/*"],
-      "@store/*": ["src/app/store/*"],
-      "@pages/*": ["src/app/pages/*"],
-      "@utils/*": ["src/app/utils/*"],
-      "@tauri-front/shared": ["../tauri-front-shared/projects/shared/dist"],
-      "@tauri-front/shared/*": ["../tauri-front-shared/projects/shared/dist/*"]
-    },
-    "ignoreDeprecations": "6.0"
-  },
-  "angularCompilerOptions": {
-    "enableI18nLegacyMessageIdFormat": false,
-    "strictInjectionParameters": true,
-    "strictInputAccessModifiers": true,
-    "typeCheckHostBindings": true,
-    "strictTemplates": true,
-    "disableTypeScriptVersionCheck": true
-  },
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    }
-  ],
-  "exclude": ["out-tsc", "dist", "node_modules"]
+	"compileOnSave": false,
+	"compilerOptions": {
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"skipLibCheck": true,
+		"useDefineForClassFields": false,
+		"isolatedModules": true,
+		"target": "ES2022",
+		"module": "preserve",
+		"baseUrl": "./",
+		"paths": {
+			"$lib/*": ["./src/lib/*"],
+			"$app/*": ["./src/app/*"],
+			"@tauri-front/shared": ["../tauri-front-shared/projects/shared/dist"],
+			"@tauri-front/shared/*": ["../tauri-front-shared/projects/shared/dist/*"]
+		},
+		"ignoreDeprecations": "6.0"
+	},
+	"exclude": ["out-tsc", "dist", "node_modules"]
 }

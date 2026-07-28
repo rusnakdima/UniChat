@@ -12,7 +12,7 @@
     "tauri:build:debug": "tauri build --debug",
     "tauri:build:fast": "tauri build --no-bundle",
     "tauri:build:android": "tauri android build",
-    "test": "vitest run"
+    "test": "bun vitest run"
   },
   "private": true,
   "dependencies": {
