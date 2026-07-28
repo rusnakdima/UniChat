@@ -4,349 +4,102 @@
 /* Flowbite CSS */
 @import "flowbite/dist/flowbite.min.css";
 
-/* MDI Font */
-@import "@mdi/font/css/materialdesignicons.min.css";
-
 @source "../node_modules/flowbite";
 
 @variant dark (&:where(.dark, .dark *));
 @variant light (&:where(:not(.dark), :not(.dark *)));
 @plugin "flowbite/plugin";
 
-/* ===== Root Layout - prevent viewport scroll ===== */
-html,
-body {
-  height: 100%;
-  overflow: hidden;
+/* Theme tokens */
+@theme {
+  /* Primary */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+
+  /* Text */
+  --color-text: #171717;
+  --color-text-secondary: #525252;
+  --color-text-muted: #a3a3a3;
+
+  /* Surface */
+  --color-surface: #ffffff;
+  --color-surface-container: #eeeeee;
+  --color-surface-elevated: #ffffff;
+
+  /* Border */
+  --color-border: #e5e5e5;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.2s ease-out forwards;
+  --animate-slide-up: slide-up 0.3s ease-out forwards;
+  --animate-message-highlighted-pulse: message-highlighted-pulse 2s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes message-highlighted-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(168, 85, 247, 0.2); }
+    50% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.4); }
+  }
 }
 
-/* ===== Reusable Component Classes ===== */
-
-/* Card component - use class="card" */
-.card {
-  @apply sf-rounded-xl border border-zinc-200 bg-white sf-p-4 sf-shadow-sm;
-}
-.dark .card {
-  @apply border-white/10 bg-white/5;
-}
-
-/* Card text */
-.card-title {
-  @apply sf-text-sm sf-font-semibold;
-}
-.card-text {
-  @apply sf-text-xs text-zinc-600 dark:text-zinc-400;
+/* Dark mode tokens */
+html.dark,
+.dark {
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-surface: #090e14;
+  --color-surface-container: #1c1b1f;
+  --color-surface-elevated: #1a2332;
+  --color-border: rgba(255, 255, 255, 0.15);
 }
 
-/* Input fields */
-.input-field {
-  @apply sf-w-full sf-rounded-lg border border-zinc-200 bg-zinc-50 sf-px-3 sf-py-2 sf-text-sm text-zinc-900 transition outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-zinc-500;
-}
-
-/* Select fields */
-.select-field {
-  @apply sf-w-full sf-rounded-lg border border-zinc-200 bg-zinc-50 sf-px-3 sf-py-2 sf-text-sm dark:border-white/10 dark:bg-black/20;
-}
-
-/* Button primary */
-.btn-primary {
-  @apply sf-rounded-xl bg-zinc-900 sf-px-4 sf-py-2 sf-text-sm sf-font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200;
-}
-
-/* Button secondary */
-.btn-secondary {
-  @apply sf-rounded-xl border border-zinc-900/10 bg-white sf-px-4 sf-py-2 sf-text-sm sf-font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-zinc-200 dark:hover:bg-white/5;
-}
-
-/* Button ghost */
-.btn-ghost {
-  @apply sf-rounded-lg sf-p-2 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-white;
-}
-
-/* Badge */
-.badge {
-  @apply sf-inline-flex sf-items-center sf-gasf-p-2 sf-rounded-full border border-zinc-900/10 bg-white px-2.5 py-1 sf-text-xs text-zinc-700 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200;
-}
-
-/* Pill button */
-.pill-btn {
-  @apply sf-rounded-full border sf-px-3 py-1 sf-text-xs sf-font-medium transition;
-}
-.pill-btn-active {
-  @apply border-emerald-500 bg-emerald-500 text-white;
-}
-.pill-btn-inactive {
-  @apply border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:bg-black/20 dark:text-zinc-300;
-}
-
-/* Section header */
-.section-header {
-  @apply sf-text-sm sf-font-semibold tracking-[0.2em] text-zinc-500 uppercase dark:text-zinc-400;
-}
-.section-description {
-  @apply mt-1 sf-text-sm text-zinc-600 dark:text-zinc-400;
-}
-
-/* Container card */
-.container-card {
-  @apply sf-rounded-2xl border border-zinc-200 bg-white sf-p-6 sf-shadow-sm;
-}
-.dark .container-card {
-  @apply border-white/10 bg-white/5;
-}
-
-/* Full height reset for proper flex layout */
+/* Base styles */
 html,
 body {
   height: 100%;
   margin: 0;
   padding: 0;
-}
-
-/* Custom element hosts for routed pages participate in block layout */
-app-settings-page-view,
-app-overlay-management-view {
-  display: block;
-  min-height: 0;
-}
-
-/* Custom Checkbox & Radio Styling (TaskFlow-inspired) */
-
-/* ===== Custom Checkbox ===== */
-input[type="checkbox"].peer {
-  @apply sr-only;
-}
-
-input[type="checkbox"].peer + .checkmark {
-  @apply sf-relative sf-inline-flex sf-h-5 sf-w-5 sf-cursor-pointer sf-items-center sf-justify-center;
-}
-
-input[type="checkbox"].peer + .checkmark::before {
-  content: "";
-  @apply sf-h-5 sf-w-5 rounded border border-zinc-300 bg-transparent sf-transition-all sf-duration-200 dark:border-zinc-700;
-}
-
-input[type="checkbox"].peer:checked + .checkmark::before {
-  @apply border-blue-500 bg-blue-600;
-}
-
-input[type="checkbox"].peer:checked + .checkmark::after {
-  content: "";
-  @apply sf-absolute sf-top-1/2 sf-left-1/2 h-2.5 w-2.5 sf---translate-x-1/2 sf---translate-y-1/2 sf-transform rounded-sm bg-white;
-}
-
-input[type="checkbox"].peer:focus + .checkmark::before {
-  @apply ring-2 ring-blue-500/30;
-}
-
-input[type="checkbox"].peer:disabled + .checkmark::before {
-  @apply sf-cursor-not-allowed border-zinc-400 bg-zinc-400 dark:border-zinc-600 dark:bg-zinc-600;
-}
-
-/* ===== Custom Radio Button ===== */
-input[type="radio"].peer {
-  @apply sr-only;
-}
-
-input[type="radio"].peer + .radio-mark {
-  @apply sf-relative sf-inline-flex sf-h-5 sf-w-5 sf-cursor-pointer sf-items-center sf-justify-center;
-}
-
-input[type="radio"].peer + .radio-mark::before {
-  content: "";
-  @apply sf-h-5 sf-w-5 sf-rounded-full border border-zinc-300 bg-transparent sf-transition-all sf-duration-200 dark:border-zinc-700;
-}
-
-input[type="radio"].peer:checked + .radio-mark::before {
-  @apply border-blue-500 bg-blue-600;
-}
-
-input[type="radio"].peer:checked + .radio-mark::after {
-  content: "";
-  @apply sf-absolute sf-top-1/2 sf-left-1/2 h-2 w-2 sf---translate-x-1/2 sf---translate-y-1/2 sf-transform sf-rounded-full bg-white;
-}
-
-input[type="radio"].peer:focus + .radio-mark::before {
-  @apply ring-2 ring-blue-500/30;
-}
-
-input[type="radio"].peer:disabled + .radio-mark::before {
-  @apply sf-cursor-not-allowed border-red-700 bg-red-700;
-}
-
-/* ===== Chat Emote Styling ===== */
-
-/* Base emote styling - maintains consistent height */
-.chat-emote {
-  height: 24px;
-  width: 24px;
-  object-fit: contain;
-  vertical-align: middle;
-  display: inline-block;
-}
-
-/* Dynamic width emotes - for non-square emotes (Kick, custom, etc.) */
-.chat-emote.chat-emote-dynamic {
-  width: auto;
-  max-width: 60px; /* Prevent overly wide emotes */
-  height: 24px;
-}
-
-/* Overlay emote styling - same dynamic approach */
-.overlay-emote {
-  height: 24px;
-  width: 24px;
-  object-fit: contain;
-  vertical-align: middle;
-  display: inline-block;
-}
-
-.overlay-emote.overlay-emote-dynamic {
-  width: auto;
-  max-width: 60px;
-  height: 24px;
-}
-
-/* Align with Angular Material's <mat-icon> rendering. */
-mat-icon {
-  @apply h-7.5! w-7.5! text-3xl!;
-  line-height: 1 !important;
-  display: sf-inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  vertical-align: middle !important;
-  font-family:
-    "Material Icons", "Material Icons Outlined", "Material Icons Round", "Material Icons Sharp",
-    sans-serif !important;
-  overflow: hidden !important;
-}
-
-/* ===== Message Type Styling ===== */
-
-/* Returning User - Warm amber highlight */
-.message-type-returning {
-  @apply border-amber-300/50 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5;
-}
-
-/* First Message - Cyan sparkle highlight */
-.message-type-first-message {
-  @apply border-cyan-400/50 bg-cyan-50/30 dark:border-cyan-500/30 dark:bg-cyan-500/5;
-}
-
-/* Highlighted Message - Premium purple styling (mod/VIP/announcement) */
-.message-type-highlighted {
-  @apply border-purple-400/60 bg-purple-50/40 dark:border-purple-500/40 dark:bg-purple-500/10;
-  border-width: 2px;
-  animation: message-highlighted-pulse 2s ease-in-out infinite;
-}
-
-/* ===== Message Animations ===== */
-
-/* Highlighted message pulse animation */
-@keyframes message-highlighted-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(168, 85, 247, 0.4);
-  }
-}
-
-/* Dark mode adjustments */
-.dark .message-type-highlighted {
-  animation: message-highlighted-pulse-dark 2s ease-in-out infinite;
-}
-
-@keyframes message-highlighted-pulse-dark {
-  0%,
-  100% {
-    box-shadow: 0 0 8px rgba(168, 85, 247, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(168, 85, 247, 0.3);
-  }
-}
-
-/* Reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  .message-type-highlighted {
-    animation: none;
-  }
-}
-
-/* ===== Settings Section Animations ===== */
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    sf-transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    sf-transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out;
-}
-
-.rotate-180 {
-  sf-transform: rotate(180deg);
-}
-
-/* ===== Bottom Sheet Animation ===== */
-@keyframes slide-up {
-  from {
-    sf-transform: translateY(100%);
-  }
-  to {
-    sf-transform: translateY(0);
-  }
-}
-
-.bottom-sheet {
-  animation: slide-up 0.3s ease-out;
-}
-
-/* ===== Safe Area Padding for Mobile ===== */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-/* ===== Touch-friendly targets ===== */
-@media (hover: none) {
-  .touch-target {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
-html,
-body {
-  height: 100%;
-}
-body {
-  margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-/* ===== Glass Effect ===== */
+/* Root layout - prevent viewport scroll */
+html,
+body {
+  overflow: hidden;
+}
+
+/* Glass effect */
 .glass {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
+
 .dark .glass {
   background: rgba(24, 24, 27, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ===== Chat Container Scrollbar ===== */
+/* Chat container scrollbar */
 .chat-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -358,49 +111,125 @@ body {
   background: #3f3f46;
 }
 
-/* ===== Platform Border Accents ===== */
-.platform-twitch {
-  border-left: 4px solid #9146ff;
-}
-.platform-kick {
-  border-left: 4px solid #53fc18;
-}
-.platform-youtube {
-  border-left: 4px solid #ff0000;
-}
+/* Platform border accents */
+.platform-twitch { border-left: 4px solid #9146ff; }
+.platform-kick { border-left: 4px solid #53fc18; }
+.platform-youtube { border-left: 4px solid #ff0000; }
 
-/* ===== Platform Text Colors ===== */
-.text-twitch {
-  color: #9146ff;
-}
-.text-kick {
-  color: #53fc18;
-}
-.text-youtube {
-  color: #ff0000;
-}
-
-/* Dark mode platform text colors - preserve colors in dark mode */
-.dark .text-twitch {
-  color: #9146ff;
-}
-.dark .text-kick {
-  color: #53fc18;
-}
-.dark .text-youtube {
-  color: #ff0000;
-}
+/* Platform text colors */
+.text-twitch { color: #9146ff; }
+.text-kick { color: #53fc18; }
+.text-youtube { color: #ff0000; }
 
 /* Platform button backgrounds */
-.bg-twitch {
-  background-color: #9146ff;
-  color: white;
+.bg-twitch { background-color: #9146ff; color: white; }
+.bg-kick { background-color: #53fc18; color: black; }
+.bg-youtube { background-color: #ff0000; color: white; }
+
+/* Message type styling */
+.message-type-returning {
+  border-color: rgba(251, 191, 36, 0.5);
+  background-color: rgba(254, 243, 199, 0.3);
 }
-.bg-kick {
-  background-color: #53fc18;
-  color: black;
+.dark .message-type-returning {
+  border-color: rgba(251, 191, 36, 0.3);
+  background-color: rgba(251, 191, 36, 0.05);
 }
-.bg-youtube {
-  background-color: #ff0000;
-  color: white;
+
+.message-type-first-message {
+  border-color: rgba(34, 211, 238, 0.5);
+  background-color: rgba(165, 243, 252, 0.3);
+}
+.dark .message-type-first-message {
+  border-color: rgba(34, 211, 238, 0.3);
+  background-color: rgba(34, 211, 238, 0.05);
+}
+
+.message-type-highlighted {
+  border-color: rgba(168, 85, 247, 0.6);
+  background-color: rgba(233, 213, 255, 0.4);
+  border-width: 2px;
+  animation: message-highlighted-pulse 2s ease-in-out infinite;
+}
+.dark .message-type-highlighted {
+  border-color: rgba(168, 85, 247, 0.4);
+  background-color: rgba(168, 85, 247, 0.1);
+  animation: message-highlighted-pulse-dark 2s ease-in-out infinite;
+}
+
+@keyframes message-highlighted-pulse-dark {
+  0%, 100% { box-shadow: 0 0 8px rgba(168, 85, 247, 0.15); }
+  50% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.3); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .message-type-highlighted {
+    animation: none;
+  }
+}
+
+/* Bottom sheet animation */
+.bottom-sheet {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Safe area padding for mobile */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Touch-friendly targets */
+@media (hover: none) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Chat emote styling */
+.chat-emote {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.chat-emote-dynamic {
+  width: auto;
+  max-width: 60px;
+  height: 24px;
+}
+
+.overlay-emote {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.overlay-emote-dynamic {
+  width: auto;
+  max-width: 60px;
+  height: 24px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }

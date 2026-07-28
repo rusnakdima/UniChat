@@ -31,8 +31,9 @@ import {
   getDensityTextClasses,
   buildOverlayUrl,
   createMessageActionState,
+  sortBy,
+  groupByField,
 } from "../../app/shared/utils/chat.helper";
-import { sortBy, groupByField } from "@tauri-front/shared";
 
 import {
   ChatMessage,
