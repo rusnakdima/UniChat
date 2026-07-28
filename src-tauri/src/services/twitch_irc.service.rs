@@ -1,4 +1,3 @@
-use crate::{log_error, log_info, log_warn};
 use futures_util::{SinkExt, StreamExt};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -6,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
+use tauri_shared::{log_error, log_info, log_warn};
 use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 

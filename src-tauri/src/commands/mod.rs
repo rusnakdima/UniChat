@@ -8,8 +8,6 @@ pub mod chat_channel_command;
 pub mod chat_command;
 #[path = "chat-message.command.rs"]
 pub mod chat_message_command;
-#[path = "crud_command.rs"]
-pub mod crud_command;
 #[path = "custom-emote.command.rs"]
 pub mod custom_emote_command;
 #[path = "dashboard-preferences.command.rs"]

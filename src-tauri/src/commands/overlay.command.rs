@@ -1,9 +1,9 @@
 use crate::constants::MAX_WIDGET_IDS;
 use crate::models::overlay_message_model::OverlayMessageModel;
 use crate::services::overlay_server::overlay_helpers::filter_and_sort_messages;
-use crate::{log_debug, log_info};
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
+use tauri_shared::{log_debug, log_info};
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverlayServerStartResultModel {

@@ -55,7 +55,7 @@ impl AppConfig {
     let has_kick = self.kick_client_id.is_some() && self.kick_client_secret.is_some();
     let has_youtube = self.youtube_client_id.is_some() && self.youtube_client_secret.is_some();
     if !has_twitch && !has_kick && !has_youtube {
-      return Err(AppError::Config(
+      return Err(AppError::ValidationError(
         "At least one OAuth provider must be configured. Please set credentials for Twitch, Kick, or YouTube.".to_string()
       ));
     }

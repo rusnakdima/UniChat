@@ -3,7 +3,7 @@ mod constants;
 pub mod domain;
 pub mod entities;
 pub mod errors;
-pub mod loging;
+
 pub mod models;
 pub mod providers;
 pub mod services;
@@ -33,7 +33,6 @@ use crate::commands::chat_command::{
   youtube_fetch_chat_messages, youtube_fetch_live_video_id_by_api_key,
 };
 
-use crate::commands::crud_command::crud_execute;
 use crate::commands::custom_emote_command::{
   create_custom_emote, delete_custom_emote, get_custom_emote, get_custom_emotes,
   get_custom_emotes_by_platform, patch_custom_emote, update_custom_emote,
@@ -114,7 +113,7 @@ pub fn run() {
       let config = Arc::new(AppConfig::new());
       config
         .validate()
-        .map_err(|e| log_error!("Config validation failed: {}", e))
+        .map_err(|e| tauri_shared::log_error!("Config validation failed: {}", e))
         .ok();
       let frontend_dist_dir = resolve_frontend_dist_dir(app);
       let overlay_server = Arc::new(OverlayServerService::new(frontend_dist_dir));
@@ -142,7 +141,7 @@ pub fn run() {
       let json_provider_arc = Arc::new(json_provider.clone());
 
       let crud_service = Arc::new(tauri_shared::crud::service::CrudService::new(
-        json_provider.clone(),
+        json_provider_arc.clone(),
       ));
       let twitch_irc_service = Arc::new(TwitchIrcService::new(app.handle().clone()));
       app.manage(AlgorithmRegistry::new());
@@ -194,7 +193,7 @@ pub fn run() {
       _ => {}
     })
     .invoke_handler(tauri::generate_handler![
-      crud_execute,
+      tauri_shared::crud_execute,
       auth_start,
       auth_await_callback,
       auth_complete,
@@ -254,7 +253,7 @@ pub fn run() {
       count_storage,
       exists_storage,
       get_schema,
-      tauri_shared::commands::algorithm_commands::execute_algorithm,
+      tauri_shared::commands::algorithm_commands::algo_execute,
       tauri_shared::commands::algorithm_commands::list_algorithms,
       tauri_shared::get_schema,
       save_schema,

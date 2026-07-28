@@ -1,8 +1,8 @@
-use crate::{log_debug, log_error, log_info, log_warn};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver};
 use std::sync::Mutex;
 use std::time::Duration as StdDuration;
+use tauri_shared::{log_debug, log_error, log_info, log_warn};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::runtime::Handle;

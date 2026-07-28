@@ -1,13 +1,13 @@
 use crate::constants::{
   OAUTH_CODE_VERIFIER_LENGTH, OAUTH_STATE_EXPIRATION_SECS, OAUTH_STATE_LENGTH,
 };
-use crate::log_warn;
 use crate::models::auth_oauth_model::OAuthPendingSessionModel;
 use crate::models::platform_type_model::{PlatformKey, PlatformTypeModel};
 use chrono::Utc;
 use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashMap;
 use std::sync::Mutex;
+use tauri_shared::log_warn;
 pub struct OAuthStateService {
   sessions: Mutex<HashMap<String, OAuthPendingSessionModel>>,
 }
