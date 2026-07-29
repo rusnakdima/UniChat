@@ -1,3 +1,5 @@
+#[path = "macros.rs"]
+pub mod macros;
 #[path = "auth-provider.command.rs"]
 pub mod auth_provider_command;
 #[path = "chat-account.command.rs"]
@@ -14,8 +16,6 @@ pub mod custom_emote_command;
 pub mod dashboard_preferences_command;
 #[path = "icons.command.rs"]
 pub mod icons_command;
-#[path = "macros.rs"]
-pub mod macros;
 #[path = "overlay.command.rs"]
 pub mod overlay_command;
 #[path = "schema.command.rs"]
