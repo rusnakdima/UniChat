@@ -54,3 +54,6 @@ Thumbs.db
 *.mdaur/
 
 *.md
+# SvelteKit
+.svelte-kit/
+build/
