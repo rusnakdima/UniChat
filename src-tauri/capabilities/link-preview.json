@@ -1,7 +1,0 @@
-{
-  "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "link-preview",
-  "description": "Secondary webview windows opened for external link previews",
-  "windows": ["link-preview-*"],
-  "permissions": ["core:default", "opener:default"]
-}
