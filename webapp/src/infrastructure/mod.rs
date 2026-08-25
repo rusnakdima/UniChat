@@ -4,6 +4,7 @@
 //! platform APIs, persistence, and system integration.
 
 pub mod api;
+pub mod data_store;
 pub mod storage;
 pub mod platform;
 

@@ -1,0 +1,39 @@
+@startuml logic-twitch-irc
+title UniChat — Twitch IRC lifecycle & message pipeline (reference logic from master)
+
+participant "UI / dashboard" as UI
+participant "twitch_irc.command" as CMD
+participant "TwitchIrcService\n(twitch_irc.service.rs)" as IRC
+participant "wss://irc.chat.twitch.tv" as WS
+queue "per-channel connection map\n((channel_id, user) -> conn)" as MAP
+
+UI -> CMD: twitch_irc_join_channel(channel_id, name, username, oauth_token)
+CMD -> IRC: join_channel(...)
+IRC -> MAP: existing connection for key?
+alt already connected
+  IRC --> CMD: Ok (idempotent join)
+else none
+  IRC -> WS: CAP req :tags\nPASS oauth:<token>\nNICK <username>\nJOIN #<channel_name>
+  WS --> IRC: PINGs / JOIN ack
+  IRC -> MAP: store connection
+  IRC -> task: spawn read loop
+end
+
+loop read loop per connection
+  WS -> IRC: raw line
+  IRC -> IRC: parse_twitch_message(raw)\n- "PING" -> reply "PONG :tmi.twitch.tv"\n- PRIVMSG -> IrcMessage{\n    id, channel_id, username, text,\n    badges[], emotes[], is_action,\n    timestamp }\n- USERNOTICE/other -> ignored
+  IRC ->> UI: emit event to frontend\n(message bus / app handle emit)
+end
+
+UI -> CMD: twitch_irc_send_message(channel_id, channel_name, message)
+IRC -> WS: PRIVMSG #<channel_name> :<message>
+
+UI -> CMD: twitch_irc_is_connected(channel_id, channel_name)
+IRC -> MAP: lookup -> bool
+
+UI -> CMD: twitch_irc_leave_channel(channel_id, channel_name)
+IRC -> WS: PART #<channel_name>
+IRC -> MAP: remove connection
+
+note over CMD: dioxus-migration status:\nwebapp/src/infrastructure/api.rs::TwitchIrcClient only logs;\nis_connected() = false; handler parse_irc_message returns None.\nNo websocket, no PING keep-alive, no tag parsing.
+@enduml

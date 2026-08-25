@@ -2,10 +2,10 @@
 
 #![allow(non_snake_case)]
 
-mod domain;
-mod application;
-mod infrastructure;
-mod presentation;
+pub mod domain;
+pub mod application;
+pub mod infrastructure;
+pub mod presentation;
 
 use dioxus::prelude::*;
 
@@ -20,8 +20,20 @@ use crate::domain::repositories::*;
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .init();
-    
+
     log::info!("Starting UniChat Desktop v0.4.0");
+
+    // Open the persistent JSON store (master used app_data_dir/unichat_db).
+    let data_dir = dioxus_shared::env::EnvConfig::load().data_dir;
+    let db_dir = std::path::Path::new(&data_dir).join("unichat_db");
+    if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        if let Err(e) = rt.block_on(crate::infrastructure::data_store::init_data_storage_in(&db_dir)) {
+            log::warn!("Failed to open data store at {}: {}", db_dir.display(), e);
+        }
+    }
     
     dioxus::LaunchBuilder::desktop()
         .launch(App);

@@ -4,6 +4,8 @@
 //! for the UniChat application.
 
 pub mod entities;
+pub mod irc;
+pub mod overlay;
 pub mod repositories;
 pub mod services;
 
